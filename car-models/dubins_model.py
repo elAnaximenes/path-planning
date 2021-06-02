@@ -13,19 +13,6 @@ def clip(value, minimum, maximum):
         value = minimum
     return value
 
-def get_num_steps(dubinsPrimitive):
-    numSteps = 0
-    if dubinsPrimitive == 'S':
-        numSteps = 1000
-    elif dubinsPrimitive == 'L' or dubinsPrimitive == 'R':
-        numSteps = 2000
-    else:
-        print('unknown dubins primitive supplied: ' + dubinsPrimitive)
-        exit(-1)
-
-    return numSteps
-
-
 def get_control_variable(dubinsPrimitive):
     controlVariable = None
     if dubinsPrimitive == 'S':
@@ -63,26 +50,18 @@ class DubinsCar:
     # current positional state info
     def get_car_position(self):
         return self.x, self.y, self.theta
-    
-def dubins_car_simulation(testCase = "S"):
+
+def test_dubins_car(dubinsCarModel, testCase):
 
     # path state history
     path = {'x': [], 'y': [], 'theta': []}
-
-    # big U is the interval on which little our control variable(angular velocity), can be chosen from
-    # see equation 15.43 for details
-    maxSteeringAngle = math.pi / 2.0
-    U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
-
-    # instantiate car model
-    dubinsCarModel = DubinsCar(velocity = 0.5, inputRange = U, dt=0.001)
 
     # iterate through each primitive in word
     for dubinsPrimitive in testCase:
 
         # set control variable based on right, straight or left direction
         controlVariable = get_control_variable(dubinsPrimitive) 
-        numSteps = get_num_steps(dubinsPrimitive)
+        numSteps = 2000 
 
         # simulate car path
         for i in range(numSteps):
@@ -91,14 +70,29 @@ def dubins_car_simulation(testCase = "S"):
             path['y'].append(y)
             path['theta'].append(theta)
 
+    return path
+
+   
+def dubins_car_simulation(testCase = "S"):
+
+    # big U is the interval of possible control variable(angular velocity) values
+    # see equation 15.43 for details
+    maxSteeringAngle = math.pi / 2.0
+    U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
+
+    # instantiate car model
+    dubinsCarModel = DubinsCar(velocity = 0.5, inputRange = U, dt=0.001)
+
+    # test dubins car for this primitive
+    path = test_dubins_car(dubinsCarModel, testCase)
+
     # plot path
-    plt.plot(path['x'], path['y'], 'o', color='black')
-    # car origin
-    plt.plot(0.0, 0.0, 'x', color='red', markersize=25)
+    plt.plot(path['x'], path['y'], 'o', color='black') # car path
+    plt.plot(0.0, 0.0, 'x', color='red', markersize=25)# car origin
     plt.title(testCase)
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
-    if len(testCase) == 1:
+    if len(testCase) == 1: # scale figure for single primitive
         pass
     else:
         plt.xlim(-2.5, 2.5)
