@@ -89,7 +89,5 @@ def simple_car_simulation(wheelBase = 1.0):
     plt.plot(simpleCar.x, simpleCar.y, 'o', color = 'black')
     plt.show()
 
-
-
 if __name__ == "__main__":
     simple_car_simulation()
