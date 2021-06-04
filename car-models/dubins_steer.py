@@ -6,6 +6,19 @@ import random
 from matplotlib import patches
 from dubins_model import DubinsCar
 
+"""
+##############
+
+Command Line:
+python dubins_steer.py [train]
+
+train is optional 
+argument  if  you
+want  to  specify 
+a    test    case
+
+##############
+"""
 # rho (euclidean distance -> origin to target)
 # beta (angle -> direct path to target and final header)
 # alpha (angle -> initial header and direct path to target)
