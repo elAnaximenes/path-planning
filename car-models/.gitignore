@@ -1,1 +1,2 @@
-saved-paths/*.mat
+saved-paths/*
+__pycache__

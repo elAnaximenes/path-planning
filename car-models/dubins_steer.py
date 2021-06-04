@@ -10,38 +10,33 @@ from dubins_model import DubinsCar
 # beta (angle -> direct path to target and final header)
 # alpha (angle -> initial header and direct path to target)
 
-def controller(dubinsCar, error):
-    
-    alpha = error[1]
-    beta = error[2]
-    kAlpha = 8.0
-    kBeta = -1.5
-    omega = (kAlpha * alpha) + (kBeta * beta)
-    controlInput = omega
-
-    return controlInput 
-
 class Steer:
 
-    def __init__(self, dubinsCar, origin, target, acceptableError=0.01, maxIterations=100):
+    def __init__(self, dubinsCar, origin, target, acceptableError=0.01, maxIterations=100, targetHeader=False):
 
         self.dubinsCar = dubinsCar 
         self.state = origin
         self.target = target
-        self.error = self._calculate_error()
-        self.acceptableError = acceptableError
         self.maxIterations = maxIterations
         self.iterations = 0
+        self.targetHeader = targetHeader
+        self.error = self._calculate_error()
+        self.acceptableError = acceptableError
     
     def _calculate_error(self):
 
-        error = np.zeros(3)
-        # rho
-        error[0] = np.linalg.norm(self.target[:2] - self.state[:2])
-        # alpha
-        error[1] = (math.atan2(self.target[1] - self.state[1], self.target[0] - self.state[0]) % (math.pi * 2.0)) - self.state[2] 
-        # beta
-        error[2] = -1.0 * (self.dubinsCar.state['theta'] + error[1] - self.target[2])
+        rho = np.linalg.norm(self.target[:2] - self.state[:2])
+        alpha = (math.atan2(self.target[1] - self.state[1], self.target[0] - self.state[0]) % (math.pi * 2.0)) - self.state[2] 
+        if alpha > math.pi:
+            alpha = math.pi - alpha
+        if abs(alpha) > math.pi / 2.0:
+            alpha *= ((math.pi / 2.0) / abs(alpha))
+        if self.targetHeader:
+            beta = -1.0 * (self.state[2] + alpha - self.target[2])
+        else:
+            beta = 0.0
+
+        error = np.array([rho, alpha, beta])
 
         return error
 
@@ -52,32 +47,60 @@ class Steer:
     def run(self):
 
         path = {'x': [], 'y': [], 'theta': []}
+
         # keep stepping until max iter or within certain radius of target
         while (self.error[0] > self.acceptableError) and (self.iterations < self.maxIterations):
-            controlInput = controller(self.dubinsCar, self.error)
+
+            controlInput = self._controller()
+
             carNextState = self.dubinsCar.step(controlInput).values() # dict values
             self.state = np.fromiter(carNextState, dtype=float) # convert to numpy array
             self.update_error()
+
             path['x'].append(self.state[0])
             path['y'].append(self.state[1])
             path['theta'].append(self.state[2])
+
             self.iterations += 1
 
         return path
-            
-def plot_path(path, origin, target):
 
-    i = 0
+    def _controller(self):
+    
+        alpha = self.error[1]
+        beta = self.error[2] 
+        kAlpha = 8.0
+        kBeta = -1.5
+        omega = (kAlpha * alpha) + (kBeta * beta)
+        controlInput = omega
+
+        return controlInput 
+            
+def plot_path(path, origin, target, acceptableError, initialAlpha):
+
     # draw car path as arrows on plot 
+    i = 0
     for x,y,theta in zip(path['x'], path['y'], path['theta']):
         if i % 100 == 0:
             plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
         i += 1
 
-    #plt.plot(path['x'], path['y'], '-', color='black')  # car path
-    plt.plot(origin[0], origin[1], 'x', color='red', markersize=25) # car origin
+    # text shifts
+    xShift = 0.1
+    yShift = -0.2
 
-    plt.plot(target[0], target[1], 'o', color='blue', markersize=25) # car origin
+    # origin
+    plt.plot(origin[0], origin[1], 'x', color='red', markersize=25)
+    originStr = 'x: {:.2f}\ny: {:.2f}'.format(origin[0], origin[1])
+    #plt.text(origin[0] + xShift, origin[1] + yShift, originStr) 
+
+    # target
+    targetArea = plt.Circle((target[0], target[1]), acceptableError, color='blue', fill=False)
+    plt.gca().add_patch(targetArea)
+    targetStr = 'x: {:.2f}\ny: {:.2f}'.format(target[0], target[1])
+    plt.text(target[0] + xShift, target[1] + yShift, targetStr) 
+
+    # display
     plt.title('Car Path')
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
@@ -99,22 +122,32 @@ def simulate_steer_function(origin = np.array([0.0, 0.0, 0.0]), target = np.arra
     maxIterations = 10000
     dubinsCar = instantiate_car(origin)
    
-    # simulator
+    # set up agent 
     steerFunction = Steer(dubinsCar, origin, target, acceptableError, maxIterations)
     
     # simulate path from origin to target
     path = steerFunction.run()
-    plot_path(path, origin, target) 
+    plot_path(path, origin, target, acceptableError, steerFunction) 
 
 if __name__ == '__main__':
     
     userSelection = 'TEST'
+
     if len(sys.argv) == 2:
         userSelection = sys.argv[1].upper()
 
     if userSelection == 'TRAIN':
         origin = np.array([0.0, 0.0, 0.0])
-        target = np.array([-2.0, 2.0, -0.5 * math.pi])
+        target = np.array([2.0, 2.0, 0.0])
+        simulate_steer_function(origin, target)
+        origin = np.array([0.0, 0.0, 0.0])
+        target = np.array([2.0, -2.0, 0.0])
+        simulate_steer_function(origin, target)
+        origin = np.array([0.0, 0.0, 0.0])
+        target = np.array([-2.0, -2.0, 0.0])
+        simulate_steer_function(origin, target)
+        origin = np.array([0.0, 0.0, 0.0])
+        target = np.array([-2.0, 2.0, 0.0])
         simulate_steer_function(origin, target)
 
     else:
