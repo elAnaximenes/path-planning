@@ -92,7 +92,7 @@ def plot_path(path, origin, target, acceptableError, initialAlpha):
     # origin
     plt.plot(origin[0], origin[1], 'x', color='red', markersize=25)
     originStr = 'x: {:.2f}\ny: {:.2f}'.format(origin[0], origin[1])
-    #plt.text(origin[0] + xShift, origin[1] + yShift, originStr) 
+    plt.text(origin[0] + xShift, origin[1] + yShift, originStr) 
 
     # target
     targetArea = plt.Circle((target[0], target[1]), acceptableError, color='blue', fill=False)
