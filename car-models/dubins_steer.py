@@ -26,11 +26,14 @@ class Steer:
     def _calculate_error(self):
 
         rho = np.linalg.norm(self.target[:2] - self.state[:2])
+
         alpha = (math.atan2(self.target[1] - self.state[1], self.target[0] - self.state[0]) % (math.pi * 2.0)) - self.state[2] 
         if alpha > math.pi:
             alpha = math.pi - alpha
         if abs(alpha) > math.pi / 2.0:
             alpha *= ((math.pi / 2.0) / abs(alpha))
+
+        # is there a header the robot needs to achieve at the final position? 
         if self.targetHeader:
             beta = -1.0 * (self.state[2] + alpha - self.target[2])
         else:
@@ -136,6 +139,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         userSelection = sys.argv[1].upper()
 
+    # for development, can specify specific cases
     if userSelection == 'TRAIN':
         origin = np.array([0.0, 0.0, 0.0])
         target = np.array([2.0, 2.0, 0.0])
@@ -150,11 +154,17 @@ if __name__ == '__main__':
         target = np.array([-2.0, 2.0, 0.0])
         simulate_steer_function(origin, target)
 
+    # randomly generate test cases for steer function to handle
     else:
         for i in range(10):
+            # set random origin
             origin = np.random.uniform(low = 0.0, high = 2.0, size = (3,)) 
             origin[2] = random.uniform(0.0, 2.0 * math.pi)
+
+            # set random target
             target = np.random.uniform(low = 0.0, high = 2.0, size = (3,)) 
             target[2] = random.uniform(0.0, 2.0 * math.pi)
+
+            # simulation
             simulate_steer_function(origin, target) 
 
