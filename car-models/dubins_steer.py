@@ -25,7 +25,7 @@ a    test    case
 
 class Steer:
 
-    def __init__(self, dubinsCar, origin, target, acceptableError=0.01, maxIterations=100, targetHeader=False):
+    def __init__(self, dubinsCar, origin, target, acceptableError=0.01, maxIterations=10000, targetHeader=False):
 
         self.dubinsCar = dubinsCar 
         self.state = origin
@@ -101,7 +101,7 @@ def plot_path(path, origin, target, acceptableError, initialAlpha):
             plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
         i += 1
 
-    # text shifts
+    # text coordinate label shifts
     xShift = 0.1
     yShift = -0.2
 
@@ -143,6 +143,8 @@ def simulate_steer_function(origin = np.array([0.0, 0.0, 0.0]), target = np.arra
     
     # simulate path from origin to target
     path = steerFunction.run()
+
+    # display path on graph
     plot_path(path, origin, target, acceptableError, steerFunction) 
 
 if __name__ == '__main__':
