@@ -15,7 +15,8 @@ class DubinsOptimalPlanner:
         self.origin = origin
         self.target = target
 
-    def _left_straight(self, parameters):
+    @staticmethod
+    def _left_straight(parameters):
 
         alpha, distance = parameters
         car = self.dubinsCar
@@ -27,7 +28,8 @@ class DubinsOptimalPlanner:
 
         return firstEqn, secondEqn
 
-    def _right_straight(self, parameters):
+    @staticmethod
+    def _right_straight(parameters, car, origin, target):
 
         alpha, distance = parameters
         car = self.dubinsCar
@@ -42,9 +44,9 @@ class DubinsOptimalPlanner:
     def calculate_dubins_parameters(self, word):
 
         if word == 'LS':
-            alpha, distance = fsolve(self._left_straight, (0.0,0.0))
+            alpha, distance = fsolve(self._left_straight, [0.0,0.0])
         if word == 'RS':
-            alpha, distance = fsolve(self._right_straight, (0.0,0.0))
+            alpha, distance = fsolve(self._right_straight, [0.0,0.0])
 
         return alpha, distance
 
