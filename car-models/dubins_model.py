@@ -35,6 +35,7 @@ class DubinsCar:
             value = maximum
         elif value < minimum:
             value = minimum
+
         return value
 
 def get_control_input(dubinsPrimitive):
