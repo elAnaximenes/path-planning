@@ -88,12 +88,12 @@ def dubins_car_simulation(testCase = "S"):
 
     # big U is the interval of possible control variable(angular velocity) values
     # see equation 15.43 for details
-    maxSteeringAngle = math.pi / 2.0
+    maxSteeringAngle = math.pi / 2.00001 
     U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
 
     # instantiate car model
     initialState = [0.0, 0.0, 0.0]
-    dubinsCarModel = DubinsCar(initialState, velocity = 1.0, inputRange = U, dt=0.001)
+    dubinsCarModel = DubinsCar(initialState, velocity = 1.0, inputRange = U, dt=0.000001)
 
     # test dubins car for this primitive
     path = test_dubins_car(dubinsCarModel, testCase)
