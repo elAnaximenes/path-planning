@@ -1,5 +1,6 @@
 import sys
 import math
+import random
 import matplotlib.pyplot as plt
 import numpy as np
 from dubins_model import DubinsCar
@@ -32,24 +33,22 @@ class DubinsOptimalPlanner:
         distance = 0.0
 
         print(deltaX, deltaY)
-        if self._target_in_front_of_car():
-            print('yes')
-            deltaX = abs(deltaX)
-            deltaY = abs(deltaY)
+        deltaX = abs(deltaX)
+        deltaY = abs(deltaY)
 
         # turn first
         if word == 'LS' or word == 'RS':
             if self._target_in_front_of_car():
                 alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
             else:
-                alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
+                alpha = -2.0 * math.atan((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
             distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
             
         # drive straight first
         elif word == 'SR':
             pass
 
-        print(alpha, distance)
+        print("alpha, distance:", alpha, distance)
         
         return alpha, distance
 
@@ -178,23 +177,63 @@ def plot_path(path, origin, target, acceptableError):
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
     plt.axis("equal")
-    plt.savefig('./optimal.png')
+    plt.savefig('./optimal-{}-{}.png'.format(target[0], target[1]))
     plt.show()
+
+
+def simulate_dubins_optimal_path_planner(startPosition, target):
+
+        # configure and create dubins car
+        velocity = 1.0
+        maxSteeringAngle = (math.pi / 4.0) 
+        U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
+        dubinsCar = DubinsCar(startPosition, velocity, U)
+
+        # create planner
+        planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
+        if planner.minTurningRadius > np.linalg.norm(target[:2] - startPosition[:2]):
+            print('too close')
+            return
+
+        # get planner's path
+        path = planner.run()
+
+        # graph path
+        acceptableError = 0.1
+        plot_path(path, startPosition, target, acceptableError)
+
 
 if __name__ == '__main__':
 
-    startPosition = np.array([0.0, 0.0, -0.5*math.pi ])
-    target = np.array([4.0, 4.0, 0.0])
+    userSelection = 'test'
+    if len(sys.argv) > 1:
+        userSelection = sys.argv[1].lower()
 
-    velocity = 1.0
-    maxSteeringAngle = (math.pi / 4.0) 
-    U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
-    dubinsCar = DubinsCar(startPosition, velocity, U)
+    if userSelection == 'train':
+        # set starting position and target
+        startPosition = np.array([0.0, 0.0, 0.0])
+        target = np.array([4.0, 4.0, 0.0])
+        simulate_dubins_optimal_path_planner(startPosition, target)
 
-    planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
+        startPosition = np.array([0.0, 0.0, 0.0])
+        target = np.array([-4.0, 4.0, 0.0])
+        simulate_dubins_optimal_path_planner(startPosition, target)
 
-    path = planner.run()
-    print(path['x'][-1], path['y'][-1])
-    acceptableError = 0.1
-    plot_path(path, startPosition, target, acceptableError)
+        startPosition = np.array([0.0, 0.0, 0.0])
+        target = np.array([4.0, -4.0, 0.0])
+        simulate_dubins_optimal_path_planner(startPosition, target)
+
+        startPosition = np.array([0.0, 0.0, 0.0])
+        target = np.array([-4.0, -4.0, 0.0])
+        simulate_dubins_optimal_path_planner(startPosition, target)
+
+    else:
+        for i in range(10):
+            # set starting position and target
+            startPosition = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
+            startPosition[2] = random.uniform(0.0, 2.0 * math.pi)
+            target = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
+            target[2] = random.uniform(0.0, 2.0 * math.pi)
+
+            simulate_dubins_optimal_path_planner(startPosition, target)
 
