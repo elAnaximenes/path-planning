@@ -10,8 +10,7 @@ class DubinsOptimalPlanner:
     def __init__(self, dubinsCar, startPosition, target):
 
         self.dubinsCar = dubinsCar
-        self.angularVelocity = dubinsCar.umax
-        self.minTurningRadius = dubinsCar.velocity / self.angularVelocity
+        self.minTurningRadius = dubinsCar.velocity / dubinsCar.umax
         self.startPosition = startPosition 
         self.target = target
         self.angularDistanceTraveled = 0.0
@@ -25,15 +24,71 @@ class DubinsOptimalPlanner:
 
         return deltaX, deltaY, r
 
-    def _left_straight(self, alpha, distance):
+    def calculate_dubins_parameters(self, word):
+
+        # distance from car to target, minimum turning radius of car
+        deltaX, deltaY, r = self.get_path_parameters()
+        alpha = 0.0
+        distance = 0.0
+
+        print(deltaX, deltaY)
+        if self._target_in_front_of_car():
+            print('yes')
+            deltaX = abs(deltaX)
+            deltaY = abs(deltaY)
+
+        # turn first
+        if word == 'LS' or word == 'RS':
+            if self._target_in_front_of_car():
+                alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
+            else:
+                alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
+            distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
+            
+        # drive straight first
+        elif word == 'SR':
+            pass
+
+        print(alpha, distance)
         
-        arcLength = self.minTurningRadius * alpha 
+        return alpha, distance
+
+    def _target_in_front_of_car(self):
+        deltaX, deltaY, r = self.get_path_parameters()
+
+        # dot product car direction and distance vector to target to determine
+        # if target is initially in front of or behind car
+        targetVector = np.array([deltaX, deltaY])
+        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(startPosition[2])])
+        targetInFrontOfCar = np.dot(carDirectionVector, targetVector) > 0
+
+        if targetInFrontOfCar:
+            print('target in front of car')
+        else:
+            print('target behind car')
+
+        return targetInFrontOfCar
+
+    def _target_left_of_car(self):
+        deltaX, deltaY, r = self.get_path_parameters()
+
+        # cross product direction vector of car and vector from car to target
+        # to determine which side of car target is on
+        targetVector = np.array([deltaX, deltaY, 0.0])
+        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(startPosition[2]), 0.0])
+        targetLeftOfCar = np.cross(carDirectionVector, targetVector)[2] > 0
+
+        return targetLeftOfCar 
+
+    def _turn_straight(self, alpha, distance, angularVelocity):
+        
+        arcLength = abs(self.minTurningRadius * alpha)
         path = {'x': [], 'y': [], 'theta': []}
 
         # turn car
         while self.angularDistanceTraveled < arcLength:
             self.angularDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
-            state = self.dubinsCar.step(self.angularVelocity)
+            state = self.dubinsCar.step(angularVelocity)
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
@@ -48,49 +103,16 @@ class DubinsOptimalPlanner:
 
         return path
 
-    def _right_straight(self):
+    def _straight_turn(self):
         
         pass
-
-
-    def _straight_left(self):
-
-        pass
-    
-    def _straight_right(self):
-        
-        pass
-
-    def calculate_dubins_parameters(self, word):
-
-        # distance from car to target, minimum turning radius of car
-        deltaX, deltaY, r = self.get_path_parameters()
-
-        # turn first
-        if word == 'LS' or word == 'RS':
-            alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
-            distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
-            alpha %= math.pi
-             
-
-        # straight first
-        elif word == 'SR':
-            pass
-        elif word == 'SL':
-            pass
-
-        return alpha, distance
 
     def calculate_word(self):
 
-        # x and y distance from start to finish
         deltaX, deltaY, r = self.get_path_parameters()
 
-        # angle of target relative to car starting position
-        targetAngleFromCar = math.atan(deltaY / deltaX)
-
         # is target left or right of car
-        if targetAngleFromCar > self.dubinsCar.state['theta']:
+        if self._target_left_of_car():
             word = 'L'
         else:
             word = 'R'
@@ -102,6 +124,8 @@ class DubinsOptimalPlanner:
             word += 'S'
         else:
             word = 'S' + word
+
+        print(word)
 
         return word 
 
@@ -115,8 +139,10 @@ class DubinsOptimalPlanner:
         alpha, distance = self.calculate_dubins_parameters(word)
 
         # steer car to target
-        if word == 'LS' or word == 'RS':
-            path = self._left_straight(alpha, distance)
+        if word == 'LS':
+            path = self._turn_straight(alpha, distance, self.dubinsCar.umax)
+        elif word == 'RS':
+            path = self._turn_straight(alpha, distance, self.dubinsCar.umin)
 
         # history of car coordinates and orientations
         return path
@@ -126,7 +152,7 @@ def plot_path(path, origin, target, acceptableError):
     # draw car path as arrows on plot 
     i = 0
     rho = np.linalg.norm(target[:2] - origin[:2])
-    print(rho)
+
     for x,y,theta in zip(path['x'], path['y'], path['theta']):
         if i % (500 * int(rho)) == 0:
             plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
@@ -152,12 +178,13 @@ def plot_path(path, origin, target, acceptableError):
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
     plt.axis("equal")
+    plt.savefig('./optimal.png')
     plt.show()
 
 if __name__ == '__main__':
 
-    startPosition = np.array([0.0, 0.0, 0.0])
-    target = np.array([2.0, 2.0, 0.0])
+    startPosition = np.array([0.0, 0.0, -0.5*math.pi ])
+    target = np.array([4.0, 4.0, 0.0])
 
     velocity = 1.0
     maxSteeringAngle = (math.pi / 4.0) 
@@ -167,6 +194,7 @@ if __name__ == '__main__':
     planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
 
     path = planner.run()
+    print(path['x'][-1], path['y'][-1])
     acceptableError = 0.1
     plot_path(path, startPosition, target, acceptableError)
 
