@@ -3,8 +3,12 @@ import math
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+from celluloid import Camera
 from dubins_model import DubinsCar
 
+"""""""""""
+Usage: dubins_optimal_planner.py animate test
+"""""""""""
 
 class DubinsOptimalPlanner:
 
@@ -32,7 +36,6 @@ class DubinsOptimalPlanner:
         alpha = 0.0
         distance = 0.0
 
-        print(deltaX, deltaY)
         deltaX = abs(deltaX)
         deltaY = abs(deltaY)
 
@@ -48,7 +51,6 @@ class DubinsOptimalPlanner:
         elif word == 'SR':
             pass
 
-        print("alpha, distance:", alpha, distance)
         
         return alpha, distance
 
@@ -59,13 +61,8 @@ class DubinsOptimalPlanner:
         # dot product car direction and distance vector to target to determine
         # if target is initially in front of or behind car
         targetVector = np.array([deltaX, deltaY])
-        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(startPosition[2])])
+        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(self.startPosition[2])])
         targetInFrontOfCar = np.dot(carDirectionVector, targetVector) > 0
-
-        if targetInFrontOfCar:
-            print('target in front of car')
-        else:
-            print('target behind car')
 
         return targetInFrontOfCar
 
@@ -75,7 +72,7 @@ class DubinsOptimalPlanner:
         # cross product direction vector of car and vector from car to target
         # to determine which side of car target is on
         targetVector = np.array([deltaX, deltaY, 0.0])
-        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(startPosition[2]), 0.0])
+        carDirectionVector = np.array([math.cos(self.startPosition[2]), math.sin(self.startPosition[2]), 0.0])
         targetLeftOfCar = np.cross(carDirectionVector, targetVector)[2] > 0
 
         return targetLeftOfCar 
@@ -129,8 +126,6 @@ class DubinsOptimalPlanner:
         else:
             word = 'S' + word
 
-        print(word)
-
         return word 
 
     # plan path and steer car to target
@@ -183,10 +178,10 @@ def plot_path(path, origin, target, acceptableError):
     plt.ylabel('Y Position')
     plt.axis("equal")
     #plt.savefig('./optimal-{}-{}.png'.format(target[0], target[1]))
-    plt.show()
+    #plt.show()
 
 
-def simulate_dubins_optimal_path_planner(startPosition, target):
+def simulate_dubins_optimal_path_planner(startPosition, target, animate=True):
 
         # configure and create dubins car
         velocity = 1.0
@@ -196,8 +191,8 @@ def simulate_dubins_optimal_path_planner(startPosition, target):
 
         # create planner
         planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
-        if planner.minTurningRadius > np.linalg.norm(target[:2] - startPosition[:2]):
-            print('too close')
+        if planner.minTurningRadius > abs(np.linalg.norm(target[:2] - startPosition[:2])):
+            print('target within minimum turning radius')
             return
 
         # get planner's path
@@ -205,28 +200,54 @@ def simulate_dubins_optimal_path_planner(startPosition, target):
 
         # graph path
         acceptableError = 0.1
-        plot_path(path, startPosition, target, acceptableError)
+        if animate:
+            plot_path(path, startPosition, target, acceptableError)
+
+        # test car made it to goal
+        carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
+        distanceToGoal = abs(np.linalg.norm(carFinalPosition[:2] - target[:2]))
+        assert distanceToGoal < acceptableError, 'Car did not reach goal'
+
+def train(animate=True):
+
+    # set starting position and target
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([2.0, 2.0, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target)
+
+def test(animate=True):
+    for i in range(100):
+        # set starting position 
+        startPosition = np.array([0.0, 0.0, 0.0])
+
+        # set random target
+        target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+
+        # run simulation
+        simulate_dubins_optimal_path_planner(startPosition, target, animate)
+
+    print('passed all tests!')
+
 
 if __name__ == '__main__':
 
-    userSelection = 'test'
-    if len(sys.argv) > 1:
-        userSelection = sys.argv[1].lower()
+    testOrTrain = 'test'
+    animate = False 
 
-    if userSelection == 'train':
-        # set starting position and target
-        startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([-6.0, 0.5, 0.0])
-        simulate_dubins_optimal_path_planner(startPosition, target)
-
+    # unpack command line arguments
+    if len(sys.argv) < 2:
+        print('Usage: {} train/test [animate]'.format(sys.argv[0]))
+        exit(2)
     else:
-        for i in range(10):
-            # set starting position and target
-            #startPosition = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
-            #startPosition[2] = random.uniform(0.0, 2.0 * math.pi)
-            startPosition = np.array([0.0, 0.0, 0.0])
-            target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
-            target[2] = random.uniform(0.0, 2.0 * math.pi)
+        testOrTrain = sys.argv[1].lower()
 
-            simulate_dubins_optimal_path_planner(startPosition, target)
+    if len(sys.argv) == 3:
+        if sys.argv[2].lower() == 'animate':
+            animate = True
+
+    # run_simulation
+    if testOrTrain== 'train':
+        train(animate)
+    else:
+        test(animate)
 

@@ -88,7 +88,7 @@ def dubins_car_simulation(testCase = "S"):
 
     # big U is the interval of possible control variable(angular velocity) values
     # see equation 15.43 for details
-    maxSteeringAngle = math.pi / 2.00001 
+    maxSteeringAngle = math.pi / 2.0
     U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
 
     # instantiate car model
