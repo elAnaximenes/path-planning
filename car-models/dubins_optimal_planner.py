@@ -53,6 +53,7 @@ class DubinsOptimalPlanner:
         return alpha, distance
 
     def _target_in_front_of_car(self):
+
         deltaX, deltaY, r = self.get_path_parameters()
 
         # dot product car direction and distance vector to target to determine
@@ -177,7 +178,7 @@ def plot_path(path, origin, target, acceptableError):
     plt.xlabel('X Position')
     plt.ylabel('Y Position')
     plt.axis("equal")
-    plt.savefig('./optimal-{}-{}.png'.format(target[0], target[1]))
+    #plt.savefig('./optimal-{}-{}.png'.format(target[0], target[1]))
     plt.show()
 
 
@@ -202,7 +203,6 @@ def simulate_dubins_optimal_path_planner(startPosition, target):
         acceptableError = 0.1
         plot_path(path, startPosition, target, acceptableError)
 
-
 if __name__ == '__main__':
 
     userSelection = 'test'
@@ -212,27 +212,16 @@ if __name__ == '__main__':
     if userSelection == 'train':
         # set starting position and target
         startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([4.0, 4.0, 0.0])
-        simulate_dubins_optimal_path_planner(startPosition, target)
-
-        startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([-4.0, 4.0, 0.0])
-        simulate_dubins_optimal_path_planner(startPosition, target)
-
-        startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([4.0, -4.0, 0.0])
-        simulate_dubins_optimal_path_planner(startPosition, target)
-
-        startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([-4.0, -4.0, 0.0])
+        target = np.array([6.0, 4.0, 0.0])
         simulate_dubins_optimal_path_planner(startPosition, target)
 
     else:
         for i in range(10):
             # set starting position and target
-            startPosition = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
-            startPosition[2] = random.uniform(0.0, 2.0 * math.pi)
-            target = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
+            #startPosition = np.random.uniform(low = 0.0, high = 10.0, size = (3,)) 
+            #startPosition[2] = random.uniform(0.0, 2.0 * math.pi)
+            startPosition = np.array([0.0, 0.0, 0.0])
+            target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
             target[2] = random.uniform(0.0, 2.0 * math.pi)
 
             simulate_dubins_optimal_path_planner(startPosition, target)
