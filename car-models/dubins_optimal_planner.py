@@ -41,7 +41,7 @@ class DubinsOptimalPlanner:
             if self._target_in_front_of_car():
                 alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
             else:
-                alpha = -2.0 * math.atan((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
+                alpha = -2.0 * math.atan2((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))), (deltaY - (2 * r)))
             distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
             
         # drive straight first
@@ -87,16 +87,20 @@ class DubinsOptimalPlanner:
 
         # turn car
         while self.angularDistanceTraveled < arcLength:
+
             self.angularDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
             state = self.dubinsCar.step(angularVelocity)
+
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
         # drive car straight to goal
         while self.linearDistanceTraveled < distance:
+
             self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
             state = self.dubinsCar.step(0.0)
+
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
@@ -212,7 +216,7 @@ if __name__ == '__main__':
     if userSelection == 'train':
         # set starting position and target
         startPosition = np.array([0.0, 0.0, 0.0])
-        target = np.array([6.0, 4.0, 0.0])
+        target = np.array([-6.0, 0.5, 0.0])
         simulate_dubins_optimal_path_planner(startPosition, target)
 
     else:
