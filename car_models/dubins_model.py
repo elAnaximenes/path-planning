@@ -9,13 +9,17 @@ class DubinsCar:
     def __init__(self, initialState, velocity, inputRange, dt=1.0/10000.0):
 
         self.state = {}
-        self.state['x'] = initialState[0] 
-        self.state['y'] = initialState[1] 
-        self.state['theta'] = initialState[2] 
+        self.set_state(initialState)
         self.velocity = velocity
         self.dt = dt
         self.umin = inputRange[0]
         self.umax = inputRange[1]
+
+    def set_state(self, newState):
+        self.state['x'] = newState[0]
+        self.state['y'] = newState[1]
+        self.state['theta'] = newState[2]
+
 
     # update car positional state info
     def step(self, u):
