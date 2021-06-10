@@ -18,13 +18,18 @@ class DubinsCarRRT:
             self.path = {'x':[], 'y':[], 'theta':[]}
             self.parent = None
 
-    def __init__(self, dubinsCar, startingPosition, targetList, obstacleList = None):
+    def __init__(self, dubinsCar, startingPosition, targetList, obstacleList = None, animate = False):
 
         self.car = dubinsCar
         self.root = self.NodeRRT(startingPosition) 
         self.nodeList = [self.root]
         self.targetList = targetList
         self.obstacleList = obstacleList
+        self.animate = animate
+        self.fig = None
+        if(self.animate):
+            self._setup_animation()
+
 
     def _is_point_reachable(self, originNode, destinationPoint, path=None):
 
@@ -56,6 +61,12 @@ class DubinsCarRRT:
 
         return path, pathLength
 
+    def _setup_animation():
+        pass
+
+    def _animate():
+        pass
+
     def simulate(self):
         
         targetIdx = 0
@@ -75,6 +86,7 @@ class DubinsCarRRT:
             shortestPathLength = None
             startNode = None
             
+            # search tree for nearest neighbor to new point
             for node in self.nodeList:
 
                 # get dubins optimal path and length
@@ -88,14 +100,14 @@ class DubinsCarRRT:
 
             # check for viable path from parent node to new point
             if self._is_point_reachable(startNode, randomPoint, shortestPath):
-                nodeToAdd = NodeRRT(randomPoint)
+                nodeToAdd = self.NodeRRT(randomPoint)
+
+    
 
 def test_dubins_car_RRT():
 
     # set car original position
     startPosition = np.array([0.0, 0.0, 0.0])
-
-
 
     # configure and create dubins car
     velocity = 1.0
