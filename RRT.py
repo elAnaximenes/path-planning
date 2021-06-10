@@ -15,8 +15,10 @@ class DubinsCarRRT:
             self.x = position[0] 
             self.y = position[1] 
             self.theta = position[2] 
+            self.position = position
             self.path = {'x':[], 'y':[], 'theta':[]}
             self.parent = None
+            self.state = None
 
     def __init__(self, dubinsCar, startingPosition, targetList, obstacleList = None, animate = False):
 
@@ -29,7 +31,6 @@ class DubinsCarRRT:
         self.fig = None
         if(self.animate):
             self._setup_animation()
-
 
     def _is_point_reachable(self, originNode, destinationPoint, path=None):
 
@@ -51,11 +52,14 @@ class DubinsCarRRT:
 
     def _calculate_dubins_path_length(self, originNode, destinationPoint):
 
-        dubinsState = np.array([originNode.x, originNode.y, originNode.theta])
+        # re-initialize dubins car to be at origin node
+        dubinsState = originNode.position 
         self.car.set_state(dubinsState)
 
+        # instantiate optimal planner
         planner = DubinsOptimalPlanner(self.car, dubinsState, destinationPoint)
 
+        # get optimal path produced by planner
         path = planner.run()
         pathLength = planner.angularDistanceTraveled + planner.linearDistanceTraveled
 
@@ -88,6 +92,10 @@ class DubinsCarRRT:
             
             # search tree for nearest neighbor to new point
             for node in self.nodeList:
+                
+                # nodes that cannot turn fast enough to reach point
+                if abs(np.linalg.norm(node.position[2] - randomPoint)) < (2.0 * self.car.minTurningRadius):
+                    continue
 
                 # get dubins optimal path and length
                 path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
@@ -100,9 +108,8 @@ class DubinsCarRRT:
 
             # check for viable path from parent node to new point
             if self._is_point_reachable(startNode, randomPoint, shortestPath):
-                nodeToAdd = self.NodeRRT(randomPoint)
-
-    
+                carStateAtPoint = np.array([shortestPath['x'][-1], shortestPath['y'][-1], shortestPath['theta'][-1]])
+                nodeToAdd = self.NodeRRT(carStateAtPoint)
 
 def test_dubins_car_RRT():
 

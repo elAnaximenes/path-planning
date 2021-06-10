@@ -3,6 +3,7 @@ import math
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 from car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from car_models.dubins_model import DubinsCar
 
@@ -88,11 +89,11 @@ def train(animate=True):
         plt.show()
 
 def test(animate=True):
-    numTestCases = 100
+    numTestCases = 1000
     if animate:
         numTestCases = 10
 
-    for i in range(numTestCases):
+    for i in tqdm(range(numTestCases)):
         # set starting position 
         startPosition = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
         theta = random.uniform(0.0, 2.0 * math.pi)
@@ -112,6 +113,7 @@ def test(animate=True):
             plt.plot(target[0], target[1], 'x', color='red', markersize=25)
             plt.quiver(startPosition[0], startPosition[1], math.cos(theta), math.sin(theta)) 
             plt.show()
+            exit(-1)
 
     print('passed all tests!')
 
