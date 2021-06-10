@@ -40,11 +40,7 @@ class DubinsOptimalPlanner:
         deltaX = abs(deltaX)
         deltaY = abs(deltaY)
 
-        print(deltaX, deltaY)
-        print(word)
-
         # turn first
-        
         if word == 'LS' or word == 'RS':
             if self._target_in_front_of_car():
                 alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))

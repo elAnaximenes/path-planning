@@ -50,8 +50,10 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True):
 
         # create planner
         planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
-        print('turning radius', planner.minTurningRadius)
-        if planner.minTurningRadius > abs(np.linalg.norm(target[:2] - startPosition[:2])):
+
+        # don't simulate if target is within minimum turning radius
+        distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
+        if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
             print('target within minimum turning radius')
             return
 
