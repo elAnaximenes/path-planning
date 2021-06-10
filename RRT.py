@@ -1,6 +1,7 @@
 import math
 import sys
 import random
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import json
@@ -87,20 +88,32 @@ class DubinsCarRRT:
         self.nodeList.append(nodeToAdd)
 
         return nodeToAdd
-
+    
     def _setup_animation(self):
 
         plt.ion()
         self.fig = plt.figure()
-        self.ax = self.fig.add_subplot()
+        self.ax = self.fig.gca()
         self.ax.set_title('Dubins Car RRT')
         self.ax.axis('equal')
         self.ax.set_ylabel('Y-distance(M)')
         self.ax.set_xlabel('X-distance(M)')
         self.ax.plot(self.root.x, self.root.y, 'x')
-        plt.show()
 
+        for obstacle in self.obstacleList:
+            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+            self.ax.add_patch(obs)
+            self.fig.canvas.draw()
+
+        for target in self.targetList:
+            tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
+            self.ax.add_patch(tar)
+            self.fig.canvas.draw()
+    
     def _animate(self):
+        pass
+        
+    def _animate_static(self):
 
         fig = plt.figure()
 
@@ -178,7 +191,7 @@ class DubinsCarRRT:
             finalPathToTarget = self._get_path_from_node_to_point(self.nodeList[-1], target)
             self._add_node(self.nodeList[-1], finalPathToTarget)
 
-        self._animate()
+        self._animate_static()
 
 def load_scene():
 
