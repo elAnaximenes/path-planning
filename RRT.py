@@ -3,6 +3,7 @@ import sys
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 from car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from car_models.dubins_model import DubinsCar
 
@@ -32,7 +33,7 @@ class DubinsCarRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 20
+        self.maxIter = 100
         #if(self.animate):
             #self._setup_animation()
 
@@ -135,12 +136,12 @@ class DubinsCarRRT:
 
         iteration = 0
 
-        while False and not isTargetReachable and iteration < self.maxIter:
+        while not isTargetReachable and iteration < self.maxIter:
 
             iteration += 1
 
             # sample random point
-            randomPoint = np.random.uniform(low = -5.0, high = 5.0, size = (2,)) 
+            randomPoint = np.random.uniform(low = -10.0, high = 10.0, size = (2,)) 
 
             # setup to begin search 
             shortestPath = None
@@ -172,14 +173,33 @@ class DubinsCarRRT:
                 isTargetReachable = self._is_point_reachable(self.nodeList[-1], target)
 
         
-        if False and iteration < self.maxIter:
+        if iteration < self.maxIter:
             # finally, connect last node to target and add target to nodelist
             finalPathToTarget = self._get_path_from_node_to_point(self.nodeList[-1], target)
             self._add_node(self.nodeList[-1], finalPathToTarget)
 
         self._animate()
 
+def load_scene():
 
+    scene = None
+
+    with open('./data/scene.json') as f:
+        scene = json.load(f)
+
+    targets = scene['targets']
+    targetList = []
+    for target in targets:
+        t = [target['x'], target['y'], target['radius']]
+        targetList.append(t)
+
+    obstacles = scene['obstacles']
+    obstacleList = []
+    for obstacle in obstacles:
+        o = [obstacle['x'], obstacle['y'], obstacle['radius']]
+        obstacleList.append(o)
+    
+    return targetList, obstacleList
 
 def test_dubins_car_RRT(animate=False):
 
@@ -192,13 +212,8 @@ def test_dubins_car_RRT(animate=False):
     U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
     dubinsCar = DubinsCar(startPosition, velocity, U)
 
-    # set targets (x, y, radius)
-    targetList = [[5.0, 5.0, 1.0]]
-    targetList = [np.array(target) for target in targetList]
-
-    # set obstacles (x, y, radius)
-    obstacleList = [[3.0, 5.0, 0.5], [5.0, 3.0, 1.0], [2.0, 3.0, 0.8], [3.0, 3.0, 0.5], [6.0, 2.0, 2.0]]
-    obstacleList = [np.array(obstacle) for obstacle in obstacleList]
+    # get scene information
+    targetList, obstacleList = load_scene() 
 
     rrtSimulator = DubinsCarRRT(dubinsCar, startPosition, targetList, obstacleList, animate=animate)
 
