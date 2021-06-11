@@ -8,6 +8,11 @@ import json
 from car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from car_models.dubins_model import DubinsCar
 
+"""
+USAGE: python RRT.py [animate] [scene_selection]
+eg: python RRT.py animate cluttered_room
+"""
+
 class DubinsCarRRT:
     
     class NodeRRT:
@@ -304,7 +309,7 @@ def load_scene(sceneSelection):
     
     return targetList, obstacleList
 
-def test_dubins_car_RRT(sceneSelection, animate=False):
+def test_dubins_car_RRT(animate, sceneSelection):
 
     # set car original position
     startPosition = np.array([0.0, 0.0, 0.0])
@@ -317,28 +322,21 @@ def test_dubins_car_RRT(sceneSelection, animate=False):
     dubinsCar = DubinsCar(startPosition, velocity, U, dt=timeStep)
 
     # get scene information
-    targetList, obstacleList = load_scene() 
+    targetList, obstacleList = load_scene(sceneSelection) 
 
     rrtSimulator = DubinsCarRRT(dubinsCar, startPosition, targetList, obstacleList, animate=animate)
 
     path = rrtSimulator.simulate()
 
 if __name__ == '__main__':
-
-    print('usage: {} scene_name [animate]'.format(sys.argv[0]))
     
     sceneSelection = 'cluttered_room'
 
-    if len(sys.argv == 1):
-        sceneSelection = sys.argv[1]
-
     animate = False
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         animate = True
 
-    test_dubins_car_RRT(sceneSelection, animate)
-        
-    
+    if len(sys.argv) > 2:
+        sceneSelection = sys.argv[2]
 
-    
-
+    test_dubins_car_RRT(animate, sceneSelection)
