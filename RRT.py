@@ -41,6 +41,13 @@ class DubinsCarRRT:
         self.pathFromStartToTarget = {'nodes': [], 'path': {'x': [], 'y': [], 'theta': []}} 
         if self.animate:
             self._setup_animation()
+    
+    def _select_random_target(self):
+
+        targetIdx = random.randint(0, len(self.scene.targets) - 1)
+        target = self.scene.targets[targetIdx]
+
+        return target
 
     def _sample_random_point(self):
 
@@ -50,14 +57,14 @@ class DubinsCarRRT:
 
         return randomPoint
 
-    def _get_path_from_node_to_point(self, originNode, destinationPoint):
+    def _is_path_out_of_bounds(self, x, y):
 
-        dubinsState = np.array([originNode.x, originNode.y, originNode.theta])
-        self.car.set_state(dubinsState)
-        planner = DubinsOptimalPlanner(self.car, dubinsState, destinationPoint)
-        path = planner.run()
-
-        return path
+        if x > self.scene.dimensions['xmax']\
+                or x < self.scene.dimensions['xmin']\
+                or y > self.scene.dimensions['ymax']\
+                or y < self.scene.dimensions['ymin']:
+                    return True
+        return False
 
     def _is_point_reachable(self, originNode, destinationPoint, path=None):
 
@@ -67,6 +74,8 @@ class DubinsCarRRT:
         # checking if target is reachable
         if path is None:
             path = self._get_path_from_node_to_point(originNode, destinationPoint)
+            if path is None:
+                return False
         
         i = 0
         # check for obstacle collisions
@@ -75,6 +84,9 @@ class DubinsCarRRT:
 
             if i % 100 == 0:
 
+                if self._is_path_out_of_bounds(x, y):
+                    return False
+
                 # invalid path if point collides with obstacle
                 for obstacle in self.scene.obstacles:
                     if abs(np.linalg.norm(point - obstacle[:2])) < obstacle[2]:
@@ -82,6 +94,46 @@ class DubinsCarRRT:
             i += 1
 
         return True
+
+    def _find_nearest_node_to_new_point(self, randomPoint):
+
+        # setup to begin search 
+        shortestPath = None
+        shortestPathLength = None
+        startNode = None
+        
+        # search tree for nearest neighbor to new point
+        for node in self.nodeList:
+
+            # ignore nodes that are too close to point 
+            if abs(np.linalg.norm(node.position[:2] - randomPoint)) < (2.0 * self.car.minTurningRadius):
+                continue
+
+            # get dubins optimal path and length
+            path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
+
+            # store shortest path
+            if shortestPathLength is None or pathLength < shortestPathLength:
+                shortestPathLength = pathLength
+                shortestPath = path
+                startNode = node
+
+                if self.animate:
+                    self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
+
+        return shortestPath, shortestPathLength, startNode
+
+    def _get_path_from_node_to_point(self, startNode, destinationPoint):
+
+        if abs(np.linalg.norm(startNode.position[:2] - destinationPoint[:2])) < (2.0 * self.car.minTurningRadius):
+            return None 
+
+        dubinsState = np.array([startNode.x, startNode.y, startNode.theta])
+        self.car.set_state(dubinsState)
+        planner = DubinsOptimalPlanner(self.car, dubinsState, destinationPoint)
+        path = planner.run()
+
+        return path
 
     def _calculate_dubins_path_length(self, originNode, destinationPoint):
 
@@ -108,6 +160,24 @@ class DubinsCarRRT:
 
         return nodeToAdd
 
+    def _set_final_path_from_start_to_target(self, target):
+
+        finalPathToTarget = self._get_path_from_node_to_point(self.nodeList[-1], target)
+        targetNode = self._add_node(self.nodeList[-1], finalPathToTarget)
+
+        node = targetNode
+
+        while node is not None:
+
+            self.pathFromStartToTarget['nodes'].append(node)
+            self.pathFromStartToTarget['path']['x'] = node.path['x'] + self.pathFromStartToTarget['path']['x']
+            self.pathFromStartToTarget['path']['y'] = node.path['y'] + self.pathFromStartToTarget['path']['y']
+            self.pathFromStartToTarget['path']['theta'] = node.path['theta'] + self.pathFromStartToTarget['path']['theta']
+            node = node.parent
+
+        if self.animate:
+            self._update_animation(target, path=self.pathFromStartToTarget['path'], event='reached target') 
+
     def _draw_point_and_path(self, point, pathToPlot, colorSelection, style = '-' ):
 
         plottedPoint, = self.ax.plot(point[0], point[1], color='black', marker = 'x', markersize=5)
@@ -132,8 +202,8 @@ class DubinsCarRRT:
         self.fig = plt.figure()
         self.ax = self.fig.gca()
         self.ax.set_title('Dubins Car RRT - {}'.format(self.scene.name))
-        plt.xlim(-12.0, 12.0)
-        plt.ylim(-12.0, 12.0)
+        plt.xlim(self.scene.dimensions['xmin'] - 1.0, self.scene.dimensions['xmax'] + 1.0)
+        plt.ylim(self.scene.dimensions['ymin'] - 1.0, self.scene.dimensions['ymax'] + 1.0)
         self.ax.set_aspect('equal')
         self.ax.set_ylabel('Y-distance(M)')
         self.ax.set_xlabel('X-distance(M)')
@@ -158,7 +228,6 @@ class DubinsCarRRT:
                 'reached target': 'blue'}
 
         pathToPlot = {'x': [], 'y':[]}
-
         i = 0
         for x, y in zip(path['x'], path['y']):
 
@@ -177,47 +246,22 @@ class DubinsCarRRT:
     # RRT ALGORITHM
     def simulate(self):
         
-        targetIdx = random.randint(0, len(self.scene.targets) - 1)
-        # select target from list
-        target = self.scene.targets[targetIdx]
-
+        target = self._select_random_target()
+        
         # check for valid path from root to target
         isTargetReachable = self._is_point_reachable(self.root, target)
 
         iteration = 0
-
         while not isTargetReachable and iteration < self.maxIter:
 
             iteration += 1
 
             randomPoint = self._sample_random_point()
+            shortestPath, shortestPathLength, startNode = self._find_nearest_node_to_new_point(randomPoint)
 
-            # setup to begin search 
-            shortestPath = None
-            shortestPathLength = None
-            startNode = None
-            
-            # search tree for nearest neighbor to new point
-            for node in self.nodeList:
-
-                # ignore nodes that are too close to point 
-                if abs(np.linalg.norm(node.position[:2] - randomPoint)) < (2.0 * self.car.minTurningRadius):
-                    continue
-
-                # get dubins optimal path and length
-                path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
-
-                # store shortest path
-                if shortestPathLength is None or pathLength < shortestPathLength:
-                    shortestPathLength = pathLength
-                    shortestPath = path
-                    startNode = node
-
-                    if self.animate:
-                        self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
-
-            isPointReachable = self._is_point_reachable(startNode, randomPoint, shortestPath)
             # check for viable path from parent node to new point
+            isPointReachable = self._is_point_reachable(startNode, randomPoint, shortestPath)
+
             if isPointReachable:
                 self._add_node(startNode, shortestPath)
                 isTargetReachable = self._is_point_reachable(self.nodeList[-1], target)
@@ -225,26 +269,12 @@ class DubinsCarRRT:
                 if self.animate:
                     self._update_animation(point=randomPoint, path=shortestPath, event='valid path')
 
-            elif self.animate and not isPointReachable:
+            elif self.animate:
                 self._update_animation(point=randomPoint, path=shortestPath, event='invalid path')
         
+        # finally, connect last node to target and add target to nodelist
         if iteration < self.maxIter:
-            # finally, connect last node to target and add target to nodelist
-            finalPathToTarget = self._get_path_from_node_to_point(self.nodeList[-1], target)
-            targetNode = self._add_node(self.nodeList[-1], finalPathToTarget)
-
-            node = targetNode
-
-            while node is not None:
-
-                self.pathFromStartToTarget['nodes'].append(node)
-                self.pathFromStartToTarget['path']['x'] = node.path['x'] + self.pathFromStartToTarget['path']['x']
-                self.pathFromStartToTarget['path']['y'] = node.path['y'] + self.pathFromStartToTarget['path']['y']
-                self.pathFromStartToTarget['path']['theta'] = node.path['theta'] + self.pathFromStartToTarget['path']['theta']
-                node = node.parent
-
-            if self.animate:
-                self._update_animation(target, path=self.pathFromStartToTarget['path'], event='reached target') 
+            self._set_final_path_from_start_to_target(target)
 
         if self.animate:
             plt.show()
