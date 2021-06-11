@@ -28,21 +28,27 @@ class DubinsCarRRT:
             if path is not None:
                 self.path = path
 
-
-    def __init__(self, dubinsCar, startingPosition, targetList, obstacleList = None, animate = False):
+    def __init__(self, dubinsCar, scene, animate = False):
 
         self.car = dubinsCar
-        self.root = self.NodeRRT(startingPosition) 
+        self.root = self.NodeRRT(scene.carStart) 
         self.nodeList = [self.root]
-        self.targetList = targetList
-        self.obstacleList = obstacleList
+        self.scene = scene
         self.animate = animate
         self.fig = None
         self.ax = None
         self.maxIter = 100
         self.pathFromStartToTarget = {'nodes': [], 'path': {'x': [], 'y': [], 'theta': []}} 
-        if(self.animate):
+        if self.animate:
             self._setup_animation()
+
+    def _sample_random_point(self):
+
+        randomPoint = np.zeros(2,)
+        randomPoint[0] = random.uniform(self.scene.dimensions['xmin'], self.scene.dimensions['xmax']) 
+        randomPoint[1] = random.uniform(self.scene.dimensions['ymin'], self.scene.dimensions['ymax']) 
+
+        return randomPoint
 
     def _get_path_from_node_to_point(self, originNode, destinationPoint):
 
@@ -70,10 +76,9 @@ class DubinsCarRRT:
             if i % 100 == 0:
 
                 # invalid path if point collides with obstacle
-                for obstacle in self.obstacleList:
+                for obstacle in self.scene.obstacles:
                     if abs(np.linalg.norm(point - obstacle[:2])) < obstacle[2]:
                         return False
-
             i += 1
 
         return True
@@ -102,12 +107,31 @@ class DubinsCarRRT:
         self.nodeList.append(nodeToAdd)
 
         return nodeToAdd
-    
+
+    def _draw_point_and_path(self, point, pathToPlot, colorSelection, style = '-' ):
+
+        plottedPoint, = self.ax.plot(point[0], point[1], color='black', marker = 'x', markersize=5)
+        plottedPath, = self.ax.plot(pathToPlot['x'], pathToPlot['y'], color=colorSelection,  linestyle=style, markersize = 2)
+
+        return plottedPoint, plottedPath
+
+    def _draw_obstacle(self, obstacle):
+
+        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+        self.ax.add_patch(obs)
+        self.fig.canvas.draw()
+
+    def _draw_target(self, target):
+
+        tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
+        self.ax.add_patch(tar)
+        self.fig.canvas.draw()
+
     def _setup_animation(self):
 
         self.fig = plt.figure()
         self.ax = self.fig.gca()
-        self.ax.set_title('Dubins Car RRT')
+        self.ax.set_title('Dubins Car RRT - {}'.format(self.scene.name))
         plt.xlim(-12.0, 12.0)
         plt.ylim(-12.0, 12.0)
         self.ax.set_aspect('equal')
@@ -115,18 +139,12 @@ class DubinsCarRRT:
         self.ax.set_xlabel('X-distance(M)')
         self.ax.plot(self.root.x, self.root.y, 'x')
 
-        for obstacle in self.obstacleList:
-
-            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-            self.ax.add_patch(obs)
-            self.fig.canvas.draw()
+        for obstacle in self.scene.obstacles:
+            self._draw_obstacle(obstacle)
             plt.pause(0.0001)
 
-        for target in self.targetList:
-
-            tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
-            self.ax.add_patch(tar)
-            self.fig.canvas.draw()
+        for target in self.scene.targets:
+            self._draw_target(target)
             plt.pause(0.0001)
     
     def _update_animation(self, point, path, event):
@@ -134,86 +152,34 @@ class DubinsCarRRT:
         if path is None:
             return 
 
+        eventToColorDict = {'candidate': 'orange',\
+                'valid path':'green',\
+                'invalid path': 'red',\
+                'reached target': 'blue'}
+
         pathToPlot = {'x': [], 'y':[]}
 
         i = 0
         for x, y in zip(path['x'], path['y']):
-            sparsenessOfPath = 1000
 
-            if i % sparsenessOfPath == 0:
+            if i % 1000 == 0:
                 pathToPlot['x'].append(x)
                 pathToPlot['y'].append(y)
             i += 1       
 
-        if event == 'candidate':
-            plottedPoint, = self.ax.plot(point[0], point[1], color='black', marker = 'x', markersize=5)
-            plottedPath, = self.ax.plot(pathToPlot['x'], pathToPlot['y'], color = 'orange',  linestyle='dotted', markersize = 2)
-            plt.pause(0.1)
-            
+        plottedPoint, plottedPath = self._draw_point_and_path(point, path, eventToColorDict[event])
+        plt.pause(0.1)
+
+        if event == 'invalid path' or event == 'candidate':
             plottedPoint.remove()
             plottedPath.remove()
-
-        else:
-            if event == 'valid path':
-                colorSelection = 'green'
-
-            elif event == 'invalid path':
-                colorSelection = 'red'
-
-            elif event == 'reached target':
-                colorSelection = 'blue'
-
-            plottedPoint, = self.ax.plot(point[0], point[1], color='black', marker = 'x', markersize=5)
-            plottedPath, = self.ax.plot(pathToPlot['x'], pathToPlot['y'], color=colorSelection, marker='.', markersize=2)
-            plt.pause(0.1)
-
-            if event == 'invalid path':
-                plottedPath.remove()
-                plottedPoint.remove()
         
-    def _draw_static(self):
-
-        fig = plt.figure()
-        # root
-        plt.plot(self.nodeList[0].x, self.nodeList[0].y, color='red', marker = 'x', markersize=10)
-
-        for node in self.nodeList[1:]:
-
-            plt.plot(node.x, node.y, color='black', marker = 'x', markersize=5)
-
-            i = 0
-            for x, y in zip(node.path['x'], node.path['y']):
-
-                if i % 1000 == 0:
-                    plt.plot(x, y, color='green', marker = '.', markersize = 2)
-                i += 1
-
-        i = 0
-        for x, y in zip(self.pathFromStartToTarget['path']['x'], self.pathFromStartToTarget['path']['y']):
-
-            if i % 1000 == 0:
-                plt.plot(x, y, color='blue', marker = '.', markersize = 2)
-            i += 1
-
-        for obstacle in self.obstacleList:
-
-            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-            plt.gca().add_patch(obs)
-
-        for target in self.targetList:
-
-            tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
-            plt.gca().add_patch(tar)
-
-        plt.axis("equal")
-        plt.show()
-
     # RRT ALGORITHM
     def simulate(self):
         
-        targetIdx = random.randint(0, len(self.targetList) - 1)
+        targetIdx = random.randint(0, len(self.scene.targets) - 1)
         # select target from list
-        target = self.targetList[targetIdx]
+        target = self.scene.targets[targetIdx]
 
         # check for valid path from root to target
         isTargetReachable = self._is_point_reachable(self.root, target)
@@ -224,8 +190,7 @@ class DubinsCarRRT:
 
             iteration += 1
 
-            # sample random point
-            randomPoint = np.random.uniform(low = -10.0, high = 10.0, size = (2,)) 
+            randomPoint = self._sample_random_point()
 
             # setup to begin search 
             shortestPath = None
@@ -283,36 +248,50 @@ class DubinsCarRRT:
 
         if self.animate:
             plt.show()
-        else:
-            self._draw_static()
 
-def load_scene(sceneSelection):
+class Scene:
 
-    scene = None
+    def __init__(self, sceneName=None):
 
-    with open('./scenes/{}.json'.format(sceneSelection)) as f:
-        scene = json.load(f)
+        self.name = sceneName.replace('_', ' ')
+        self.targets = []
+        self.obstacles = []
+        self.dimensions = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 0.0, 'ymax': 0.0}
+        self.carStart = None
+        if self.name is not None:
+            self.load_scene_from_json(sceneName)
 
-    targets = scene['targets']
-    targetList = []
-    for target in targets:
 
-        t = [target['x'], target['y'], target['radius']]
-        targetList.append(t)
+    def load_scene_from_json(self, sceneName):
 
-    obstacles = scene['obstacles']
-    obstacleList = []
-    for obstacle in obstacles:
+        jsonScene= None
 
-        o = [obstacle['x'], obstacle['y'], obstacle['radius']]
-        obstacleList.append(o)
-    
-    return targetList, obstacleList
+        with open('./scenes/{}.json'.format(sceneName)) as f:
+            jsonScene = json.load(f)
 
-def test_dubins_car_RRT(animate, sceneSelection):
+        targetsFromJson= jsonScene['targets']
+        for target in targetsFromJson:
+
+            t = [target['x'], target['y'], target['radius']]
+            self.targets.append(t)
+
+        obstaclesFromJson = jsonScene['obstacles']
+        for obstacle in obstaclesFromJson:
+
+            o = [obstacle['x'], obstacle['y'], obstacle['radius']]
+            self.obstacles.append(o)
+
+        self.carStart = np.array([jsonScene['car']['x'], jsonScene['car']['y'], jsonScene['car']['theta']])
+
+        self.dimensions = jsonScene['dimensions']
+
+def test_dubins_car_RRT(animate, sceneName):
+
+    # load scene information
+    scene = Scene(sceneName)
 
     # set car original position
-    startPosition = np.array([0.0, 0.0, 0.0])
+    startPosition = scene.carStart
 
     # configure and create dubins car
     velocity = 1.0
@@ -321,22 +300,21 @@ def test_dubins_car_RRT(animate, sceneSelection):
     timeStep = 0.0001
     dubinsCar = DubinsCar(startPosition, velocity, U, dt=timeStep)
 
-    # get scene information
-    targetList, obstacleList = load_scene(sceneSelection) 
+    # create simulator
+    rrtSimulator = DubinsCarRRT(dubinsCar, scene, animate=animate)
 
-    rrtSimulator = DubinsCarRRT(dubinsCar, startPosition, targetList, obstacleList, animate=animate)
-
+    # run RRT algorithm and get final path from car start to target
     path = rrtSimulator.simulate()
 
 if __name__ == '__main__':
     
-    sceneSelection = 'cluttered_room'
+    sceneName= 'cluttered_room'
 
     animate = False
     if len(sys.argv) > 1:
         animate = True
 
     if len(sys.argv) > 2:
-        sceneSelection = sys.argv[2]
+        sceneName = sys.argv[2]
 
-    test_dubins_car_RRT(animate, sceneSelection)
+    test_dubins_car_RRT(animate, sceneName)
