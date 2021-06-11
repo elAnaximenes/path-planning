@@ -242,7 +242,31 @@ class DubinsCarRRT:
         if event == 'invalid path' or event == 'candidate':
             plottedPoint.remove()
             plottedPath.remove()
-        
+
+
+    def _extend(self, target):
+ 
+        isTargetReachable = False
+
+        randomPoint = self._sample_random_point()
+        shortestPath, shortestPathLength, startNode = self._find_nearest_node_to_new_point(randomPoint)
+
+        # check for viable path from parent node to new point
+        isPointReachable = self._is_point_reachable(startNode, randomPoint, shortestPath)
+
+        if isPointReachable:
+            self._add_node(startNode, shortestPath)
+            isTargetReachable = self._is_point_reachable(self.nodeList[-1], target)
+
+            if self.animate:
+                self._update_animation(point=randomPoint, path=shortestPath, event='valid path')
+
+        elif self.animate:
+            self._update_animation(point=randomPoint, path=shortestPath, event='invalid path')
+
+        return isTargetReachable
+    
+       
     # RRT ALGORITHM
     def simulate(self):
         
@@ -254,24 +278,10 @@ class DubinsCarRRT:
         iteration = 0
         while not isTargetReachable and iteration < self.maxIter:
 
+            # extend tree
+            isTargetReachable = self._extend(target)
             iteration += 1
 
-            randomPoint = self._sample_random_point()
-            shortestPath, shortestPathLength, startNode = self._find_nearest_node_to_new_point(randomPoint)
-
-            # check for viable path from parent node to new point
-            isPointReachable = self._is_point_reachable(startNode, randomPoint, shortestPath)
-
-            if isPointReachable:
-                self._add_node(startNode, shortestPath)
-                isTargetReachable = self._is_point_reachable(self.nodeList[-1], target)
-
-                if self.animate:
-                    self._update_animation(point=randomPoint, path=shortestPath, event='valid path')
-
-            elif self.animate:
-                self._update_animation(point=randomPoint, path=shortestPath, event='invalid path')
-        
         # finally, connect last node to target and add target to nodelist
         if iteration < self.maxIter:
             self._set_final_path_from_start_to_target(target)
