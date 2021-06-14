@@ -2,6 +2,7 @@
 \usepackage{graphicx}
 \usepackage{animate}
 \usepackage[mode=buildnew]{standalone}
+\usepackage{amsmath}
 
 \title{SURE Intern Progress Report: June 7-13}
 \institute{Dynamic Adaptive Robotic Technologies Lab\\[\medskipamount]\includegraphics[width= 0.6\textwidth, height=.25\textheight]{./images/dart_logo.png}}
@@ -19,11 +20,19 @@
 		\begin{columns}[T]
 			\begin{column}{.5\textwidth}
 			\begin{itemize}
-				\item Hello
-				\item World
+				\item $\theta \leftarrow$ car initial orientation.
+				\item $\rho \leftarrow$ Linear distance from car to goal.
+				\item $\alpha \leftarrow$ Angular difference between $\theta$ and $\rho$.
+
+				\item $\theta, \alpha \in [0, 2\pi]$.
+				\item  
 			\end{itemize}
 			\end{column}
 			\begin{column}{.5\textwidth}
+				$$ \begin{bmatrix}
+					1 & 2 & 3\\
+					a & b & c\\
+				\end{bmatrix}$$
 
 			\end{column}
 		\end{columns}
