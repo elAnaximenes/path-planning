@@ -26,11 +26,9 @@ def draw_scene(scene, path, sampleNum):
         ax.add_patch(tar)
         fig.canvas.draw()
     
-    ax.plot(path['x'], path['y'], color=colorSelection, linestyle='-', markersize=2)
+    ax.plot(path['x'], path['y'], color='blue', linestyle='-', markersize=2)
         
-    plt.show()
     plt.savefig('./presentations/june_14/paths/{}-{}.png'.format(scene.name.replace(' ', '_'), sampleNum))
-    
 
 def load_paths(sceneName, batchNum):
     print('loading paths')
@@ -46,12 +44,12 @@ sceneName = 'simple_room'
 scene = RRT.Scene(sceneName)
 print('scene loaded')
 
-batchNum = 0
+batchNum = 1
 numSamples = 100
 paths = load_paths(sceneName, batchNum)
 for i in range(100):
     print('drawing path {}'.format(i))
-    path = paths[''.format(i)]['path']
+    path = paths['{}'.format(i)]['path']
 
     draw_scene(scene, path, i)
 
