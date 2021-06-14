@@ -68,7 +68,7 @@ def test_dubins_car(dubinsCarModel, testCase):
 
         # set control variable based on right, straight or left direction
         controlInput = get_control_input(dubinsPrimitive) 
-        numSteps = 3000 
+        numSteps = 30000
 
         # simulate car path
         for i in range(numSteps):
@@ -98,7 +98,7 @@ def dubins_car_simulation(testCase = "S"):
 
     # instantiate car model
     initialState = [0.0, 0.0, 0.0]
-    dubinsCarModel = DubinsCar(initialState, velocity = 1.0, inputRange = U, dt=0.000001)
+    dubinsCarModel = DubinsCar(initialState, velocity = 1.0, inputRange = U, dt=0.0001)
 
     # test dubins car for this primitive
     path = test_dubins_car(dubinsCarModel, testCase)
