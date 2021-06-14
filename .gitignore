@@ -1,0 +1,13 @@
+saved-paths/*
+__pycache__
+*.png
+*.pdf
+*.out
+*.log
+*.aux
+*.toc
+*.nav
+*.snm
+*.gif
+paths/
+

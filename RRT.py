@@ -5,6 +5,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import csv
 from car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from car_models.dubins_model import DubinsCar
 
@@ -38,7 +39,7 @@ class DubinsCarRRT:
         self.fig = None
         self.ax = None
         self.maxIter = 100
-        self.pathFromStartToTarget = {'nodes': [], 'path': {'x': [], 'y': [], 'theta': []}} 
+        self.pathFromStartToTarget = None 
         if self.animate:
             self._setup_animation()
     
@@ -47,7 +48,7 @@ class DubinsCarRRT:
         targetIdx = random.randint(0, len(self.scene.targets) - 1)
         target = self.scene.targets[targetIdx]
 
-        return target
+        return target, targetIdx
 
     def _sample_random_point(self):
 
@@ -165,6 +166,7 @@ class DubinsCarRRT:
         finalPathToTarget = self._get_path_from_node_to_point(self.nodeList[-1], target)
         targetNode = self._add_node(self.nodeList[-1], finalPathToTarget)
 
+        self.pathFromStartToTarget = {'nodes': [], 'path': {'x': [], 'y': [], 'theta': []}} 
         node = targetNode
 
         while node is not None:
@@ -177,7 +179,7 @@ class DubinsCarRRT:
 
         if self.animate:
             self._update_animation(target, path=self.pathFromStartToTarget['path'], event='reached target') 
-
+        
     def _draw_point_and_path(self, point, pathToPlot, colorSelection, style = '-' ):
 
         plottedPoint, = self.ax.plot(point[0], point[1], color='black', marker = 'x', markersize=5)
@@ -243,7 +245,6 @@ class DubinsCarRRT:
             plottedPoint.remove()
             plottedPath.remove()
 
-
     def _extend(self, target):
  
         isTargetReachable = False
@@ -270,7 +271,7 @@ class DubinsCarRRT:
     # RRT ALGORITHM
     def simulate(self):
         
-        target = self._select_random_target()
+        target, targetIdx = self._select_random_target()
         
         # check for valid path from root to target
         isTargetReachable = self._is_point_reachable(self.root, target)
@@ -288,6 +289,12 @@ class DubinsCarRRT:
 
         if self.animate:
             plt.show()
+
+        sample = {}
+        sample['target'] = {'coordinates': target, 'index': targetIdx }
+        sample['path'] = self.pathFromStartToTarget['path']
+
+        return sample
 
 class Scene:
 
@@ -344,7 +351,9 @@ def test_dubins_car_RRT(animate, sceneName):
     rrtSimulator = DubinsCarRRT(dubinsCar, scene, animate=animate)
 
     # run RRT algorithm and get final path from car start to target
-    path = rrtSimulator.simulate()
+    sample = rrtSimulator.simulate()
+
+    return sample 
 
 if __name__ == '__main__':
     
@@ -357,4 +366,4 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         sceneName = sys.argv[2]
 
-    test_dubins_car_RRT(animate, sceneName)
+    sample = test_dubins_car_RRT(animate, sceneName)
