@@ -1,6 +1,5 @@
 saved-paths/*
 __pycache__
-*.png
 *.pdf
 *.out
 *.log
