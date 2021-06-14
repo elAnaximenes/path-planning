@@ -92,7 +92,7 @@ class Steer:
 
         return controlInput 
             
-def plot_path(path, origin, target, acceptableError, initialAlpha):
+def plot_path(path, origin, target, acceptableError):
 
     # draw car path as arrows on plot 
     i = 0
@@ -117,9 +117,9 @@ def plot_path(path, origin, target, acceptableError, initialAlpha):
     plt.text(target[0] + xShift, target[1] + yShift, targetStr) 
 
     # display
-    plt.title('Car Path')
-    plt.xlabel('X Position')
-    plt.ylabel('Y Position')
+    plt.title('Dubins Controller')
+    plt.xlabel('X Position (m)')
+    plt.ylabel('Y Position (m)')
     plt.axis("equal")
     plt.show()
 
@@ -131,7 +131,7 @@ def instantiate_car(origin=[0.0, 0.0, 0.0], velocity=0.5, maxSteeringAngle=0.25*
 
     return dubinsCarModel
 
-def simulate_steer_function(origin = np.array([0.0, 0.0, 0.0]), target = np.array([2.0, 2.0, 0.0]) ):
+def simulate_steer_function(origin = np.array([0.0, 0.0, 0.0]), target = np.array([2.0, 2.0, 0.0])):
 
     # set up model
     acceptableError = 0.1
@@ -145,7 +145,7 @@ def simulate_steer_function(origin = np.array([0.0, 0.0, 0.0]), target = np.arra
     path = steerFunction.run()
 
     # display path on graph
-    plot_path(path, origin, target, acceptableError, steerFunction) 
+    plot_path(path, origin, target, acceptableError) 
 
 if __name__ == '__main__':
     
@@ -156,18 +156,12 @@ if __name__ == '__main__':
 
     # for development, can specify specific cases
     if userSelection == 'TRAIN':
-        origin = np.array([0.0, 0.0, 0.0])
-        target = np.array([2.0, 2.0, 0.0])
-        simulate_steer_function(origin, target)
-        origin = np.array([0.0, 0.0, 0.0])
-        target = np.array([2.0, -2.0, 0.0])
-        simulate_steer_function(origin, target)
-        origin = np.array([0.0, 0.0, 0.0])
-        target = np.array([-2.0, -2.0, 0.0])
-        simulate_steer_function(origin, target)
-        origin = np.array([0.0, 0.0, 0.0])
-        target = np.array([-2.0, 2.0, 0.0])
-        simulate_steer_function(origin, target)
+        origin = np.array([0.19, 1.01, 1.51*math.pi])
+        target = np.array([1.49, 1.97, 0.0])
+        simulate_steer_function(origin, target, 1)
+        origin = np.array([0.18, 1.55, 1.05*math.pi])
+        target = np.array([1.89, 1.34, 0.0])
+        simulate_steer_function(origin, target, 2)
 
     # randomly generate test cases for steer function to handle
     else:

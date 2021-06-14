@@ -29,18 +29,13 @@ def draw_scene(scene, path, sampleNum):
     ax.plot(path['x'], path['y'], color=colorSelection, linestyle='-', markersize=2)
         
     plt.show()
-    plt.savefig('./presentations/june_14/paths/{}-{}.png'.format(scene.name.replace(' ', '_'), sampleNum))
-    
 
 def load_paths(sceneName, batchNum):
     print('loading paths')
-    with open('./paths/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
+    with open('./batches/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
         path = json.load(f)
     print('paths loaded')
     return path
-
-
-
 
 sceneName = 'simple_room'
 scene = RRT.Scene(sceneName)
