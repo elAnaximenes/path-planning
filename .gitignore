@@ -8,6 +8,6 @@ __pycache__
 *.nav
 *.snm
 *.gif
-paths/
 car_models/saved_paths/
+batches/
 

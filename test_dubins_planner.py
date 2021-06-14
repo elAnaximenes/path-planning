@@ -7,7 +7,7 @@ from tqdm import tqdm
 from car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from car_models.dubins_model import DubinsCar
 
-def plot_path(path, origin, target, acceptableError):
+def plot_path(path, origin, target, acceptableError, iteration):
 
     # draw car path as arrows on plot 
     i = 0
@@ -25,26 +25,23 @@ def plot_path(path, origin, target, acceptableError):
     # origin
     plt.plot(origin[0], origin[1], 'x', color='red', markersize=25)
     originStr = 'x: {:.2f}\ny: {:.2f}'.format(origin[0], origin[1])
-    plt.text(origin[0] + xShift, origin[1] + yShift, originStr) 
 
     # target
     targetArea = plt.Circle((target[0], target[1]), acceptableError, color='blue', fill=False)
     plt.gca().add_patch(targetArea)
     targetStr = 'x: {:.2f}\ny: {:.2f}'.format(target[0], target[1])
-    plt.text(target[0] + xShift, target[1] + yShift, targetStr) 
 
     # display
-    plt.title('Car Path')
-    plt.xlabel('X Position')
-    plt.ylabel('Y Position')
+    plt.title('Dubins Optimal Path Planner')
+    plt.xlabel('X Position (m)')
+    plt.ylabel('Y Position (m)')
     plt.axis("equal")
-    #plt.savefig('./optimal-{}-{}.png'.format(target[0], target[1]))
     plt.show()
 
-def simulate_dubins_optimal_path_planner(startPosition, target, animate=True):
+def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, iteration=0):
 
         # configure and create dubins car
-        velocity = 1.0
+        velocity = 0.5
         maxSteeringAngle = (math.pi / 4.0) 
         U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
         dubinsCar = DubinsCar(startPosition, velocity, U)
@@ -64,7 +61,7 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True):
         # graph path
         acceptableError = 0.1
         if animate:
-            plot_path(path, startPosition, target, acceptableError)
+            plot_path(path, startPosition, target, acceptableError, iteration)
 
         # test car made it to goal
         carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
@@ -74,19 +71,12 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True):
 def train(animate=True):
 
     # set starting position and target
-    # startPosition = np.array([0.0, 0.0, 0.0])
-    startPosition = np.array([-6.69014496, -5.22168806, 6.05981901])
-    target = np.array([-7.04362138, -6.4742526, 8.03410311])
-    try:
-        simulate_dubins_optimal_path_planner(startPosition, target, animate)
-    except Exception as e:
-        print(e)
-        print('planner failed on:')
-        print('start:', startPosition)
-        print('target:', target)
-        plt.plot(target[0], target[1], 'x', color='red', markersize=25)
-        plt.quiver(startPosition[0], startPosition[1], math.cos(startPosition[2]), math.sin(startPosition[2])) 
-        plt.show()
+    startPosition = np.array([0.19, 1.01, 1.51*math.pi])
+    target = np.array([1.49, 1.97, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.18, 1.55, 1.05*math.pi])
+    target = np.array([1.89, 1.34, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
 
 def test(animate=True):
     numTestCases = 1000
@@ -104,7 +94,7 @@ def test(animate=True):
 
         # run simulation
         try:
-            simulate_dubins_optimal_path_planner(startPosition, target, animate)
+            simulate_dubins_optimal_path_planner(startPosition, target, animate, i)
         except Exception as e:
             print(e)
             print('planner failed on:')
@@ -138,14 +128,3 @@ if __name__ == '__main__':
         train(animate)
     else:
         test(animate)
-"""
-math domain error
-planner failed on:
-start: [-6.69014496 -5.22168806  6.05981901]
-target: [-7.04362138 -6.4742526   8.03410311]
-target within minimum turning radius
-math domain error
-planner failed on:
-start: [-6.06385355  5.83064607  3.72977143]
-target: [-5.68483299  4.58086041  6.26231519]
-"""

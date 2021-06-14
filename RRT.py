@@ -42,7 +42,7 @@ class DubinsCarRRT:
         self.pathFromStartToTarget = None 
         if self.animate:
             self._setup_animation()
-    
+
     def _select_random_target(self):
 
         targetIdx = random.randint(0, len(self.scene.targets) - 1)
