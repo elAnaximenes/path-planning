@@ -1,7 +1,7 @@
 import json 
 import sys
 import argparse
-import RRT
+import dubins_path_planner.RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName):
     with open('./paths/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:

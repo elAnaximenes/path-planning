@@ -40,33 +40,33 @@ def plot_path(path, origin, target, acceptableError, iteration):
 
 def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, iteration=0):
 
-        # configure and create dubins car
-        velocity = 0.5
-        maxSteeringAngle = (math.pi / 4.0) 
-        U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
-        dubinsCar = DubinsCar(startPosition, velocity, U)
+    # configure and create dubins car
+    velocity = 0.5
+    maxSteeringAngle = (math.pi / 4.0) 
+    U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
+    dubinsCar = DubinsCar(startPosition, velocity, U)
 
-        # create planner
-        planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
+    # create planner
+    planner = DubinsOptimalPlanner(dubinsCar, startPosition, target)
 
-        # don't simulate if target is within minimum turning radius
-        distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
-        if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
-            print('target within minimum turning radius')
-            return
+    # don't simulate if target is within minimum turning radius
+    distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
+    if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
+        print('target within minimum turning radius')
+        return
 
-        # get planner's path
-        path = planner.run()
+    # get planner's path
+    path = planner.run()
 
-        # graph path
-        acceptableError = 0.1
-        if animate:
-            plot_path(path, startPosition, target, acceptableError, iteration)
+    # graph path
+    acceptableError = 0.1
+    if animate:
+        plot_path(path, startPosition, target, acceptableError, iteration)
 
-        # test car made it to goal
-        carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
-        distanceToGoal = abs(np.linalg.norm(carFinalPosition[:2] - target[:2]))
-        assert distanceToGoal < acceptableError, 'Car did not reach goal'
+    # test car made it to goal
+    carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
+    distanceToGoal = abs(np.linalg.norm(carFinalPosition[:2] - target[:2]))
+    assert distanceToGoal < acceptableError, 'Car did not reach goal'
 
 def train(animate=True):
 
