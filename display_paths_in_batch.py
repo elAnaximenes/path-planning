@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import json
-import RRT
+import argparse
+import dubins_path_planner.RRT as RRT
 
 def draw_scene(scene, path, sampleNum):
 
@@ -37,18 +38,27 @@ def load_paths(sceneName, batchNum):
     print('paths loaded')
     return path
 
-sceneName = 'simple_room'
-scene = RRT.Scene(sceneName)
-print('scene loaded')
+if __name__ == '__main__':
 
-batchNum = 1
-numSamples = 100
-paths = load_paths(sceneName, batchNum)
-for i in range(100):
-    print('drawing path {}'.format(i))
-    path = paths['{}'.format(i)]['path']
+    parser = argparse.ArgumentParser(description='Display batches of training data from RRT dubins planner.')
 
-    draw_scene(scene, path, i)
+    parser.add_argument('--scene', type=str, help='Batch Numbber to display.', default='simple_room')
+    parser.add_argument('--batch', type=int, help='Batch Numbber to display.', default=1)
+    parser.add_argument('--samples', type=int, help='Numbber of samples in batch to display.', default=1)
+    args = parser.parse_args()
+
+    sceneName = args.scene
+    scene = RRT.Scene(sceneName)
+    print('scene loaded')
+
+    batchNum = args.batch 
+    numSamples = args.samples 
+    paths = load_paths(sceneName, batchNum)
+    for i in range(numSamples):
+        print('drawing path {}'.format(i))
+        path = paths['{}'.format(i)]['path']
+
+        draw_scene(scene, path, i)
 
 
 
