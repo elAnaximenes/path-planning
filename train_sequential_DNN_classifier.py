@@ -28,7 +28,7 @@ def plot_performance(history):
     valAcc = history.history['val_accuracy']
 
     epochs = range(1, len(acc) + 1)
-    
+
     plt.plot(epochs, valAcc, 'bo', label = 'Validation acc')
     plt.plot(epochs, acc, 'b', label = 'Training acc')
     plt.title('Validation and training accuracy')
@@ -45,7 +45,7 @@ def build_model(inputShape):
     model.add(layers.Dense(256, activation='relu'))
     model.add(layers.Dense(128, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
-    model.add(layers.Dense(4, activation='softmax'))
+    model.add(layers.Dense(5, activation='softmax'))
 
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -77,42 +77,90 @@ def combine_training_batches(trainingBatches):
 
     return x_train, y_train
 
+def histogram_path_lengths(pathLengths):
+
+    plt.hist(pathLengths, bins=50) 
+    plt.xlabel('Path Lengths')
+    plt.ylabel('Number of Paths')
+    plt.title('Distribution of path lengths')
+
+    plt.show()
+
+def get_length_of_shortest_and_longest_paths(data):
+
+    shortestPathLength = None
+    longestPathLength = None
+    for sampleNumber in range(len(data)):
+        
+        x = data[str(sampleNumber)]['path']['x']
+        if shortestPathLength == None or shortestPathLength > len(x):
+            shortestPathLength = len(x)
+        if longestPathLength == None or longestPathLength < len(x):
+            longestPathLength = len(x)
+
+    print('shortest path: {}, longest Path: {}'.format(shortestPathLength, longestPathLength))
+
+    return shortestPathLength, longestPathLength
+
 def load_training_batch(sceneName, batchNumber, batchSize, truncatedPathLength):
 
     # load raw json dict
     rawData = {}
     batchFileName = './batches/{}_batch_{}.json'.format(sceneName, batchNumber)
+    
     with open(batchFileName, 'r') as f:
         rawData = json.load(f)
+
+    get_length_of_shortest_and_longest_paths(rawData)
 
     instances = []
     labels = [] 
 
     minLength = None
 
+    batchPathLengths = []
+
     for sampleNumber in range(batchSize):
 
         sample = rawData[str(sampleNumber)]
-             
-        instances.append([sample['path']['x'][2:truncatedPathLength+2], sample['path']['y'][2:truncatedPathLength+2], sample['path']['theta'][2:truncatedPathLength+2]])
+
+        samplePathLength = len(sample['path']['x'])
+        batchPathLengths.append(round(float(samplePathLength)/10.0) * 10)
+
+        instance = np.zeros((3,truncatedPathLength), dtype = np.float64)
+        for i in range(samplePathLength):
+
+            if i == truncatedPathLength:
+                break
+
+            instance[0,i] = sample['path']['x'][i] 
+            instance[1,i] = sample['path']['y'][i] 
+            instance[2,i] = sample['path']['theta'][i] 
+
+        #instances.append([sample['path']['x'][:truncatedPathLength], sample['path']['y'][:truncatedPathLength], sample['path']['theta'][:truncatedPathLength]])
+        instances.append(instance)
         labels.append(sample['target']['index'])
         
     x_batch = np.array(instances)
     y_batch = to_categorical(np.array(labels))
 
-    return x_batch, y_batch 
+    return (x_batch, y_batch), batchPathLengths
 
 def train_DNN(sceneName, numBatches, batchSize):
 
     # load training data
-    truncatedPathLength = 512 
+    truncatedPathLength = 256 
     batches = []
+    pathLengths = []
 
     for batchNumber in range(numBatches):
 
-        data = load_training_batch(sceneName, batchNumber, batchSize, truncatedPathLength)
+        data, batchPathLengths = load_training_batch(sceneName, batchNumber, batchSize, truncatedPathLength)
+        pathLengths += batchPathLengths
         x_batch, y_batch = data
         batches.append((x_batch, y_batch))
+
+    #histogram_path_lengths(pathLengths)
 
     # split batches into training and validate sets
     trainingBatches = batches[:-1]
@@ -125,7 +173,7 @@ def train_DNN(sceneName, numBatches, batchSize):
     inputShape = x_train[0].shape
     model = build_model(inputShape)
     
-    history = model.fit(x_train, y_train, epochs=20, batch_size=512, validation_data=(x_val, y_val))
+    history = model.fit(x_train, y_train, epochs=30, batch_size=512, validation_data=(x_val, y_val))
 
     plot_performance(history)
 
