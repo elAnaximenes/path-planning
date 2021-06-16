@@ -38,7 +38,7 @@ class DubinsCarRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 100
+        self.maxIter = 50 
         self.pathFromStartToTarget = None 
         if self.animate:
             self._setup_animation()
@@ -83,7 +83,7 @@ class DubinsCarRRT:
         for x,y in zip(path['x'], path['y']):
             point = np.array([x,y])
 
-            if i % 100 == 0:
+            if i % 10 == 0:
 
                 if self._is_path_out_of_bounds(x, y):
                     return False
@@ -212,10 +212,12 @@ class DubinsCarRRT:
         self.ax.plot(self.root.x, self.root.y, 'x')
 
         for obstacle in self.scene.obstacles:
+
             self._draw_obstacle(obstacle)
             plt.pause(0.0001)
 
         for target in self.scene.targets:
+
             self._draw_target(target)
             plt.pause(0.0001)
     
@@ -283,16 +285,17 @@ class DubinsCarRRT:
             isTargetReachable = self._extend(target)
             iteration += 1
 
+        sample = None
         # finally, connect last node to target and add target to nodelist
         if iteration < self.maxIter:
             self._set_final_path_from_start_to_target(target)
+            sample = {}
+            sample['target'] = {'coordinates': target, 'index': targetIdx }
+            sample['path'] = self.pathFromStartToTarget['path']
 
         if self.animate:
             plt.show()
 
-        sample = {}
-        sample['target'] = {'coordinates': target, 'index': targetIdx }
-        sample['path'] = self.pathFromStartToTarget['path']
 
         return sample
 

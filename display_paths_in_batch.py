@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Display batches of training data from RRT dubins planner.')
 
-    parser.add_argument('--scene', type=str, help='Batch Numbber to display.', default='simple_room')
-    parser.add_argument('--batch', type=int, help='Batch Numbber to display.', default=1)
-    parser.add_argument('--samples', type=int, help='Numbber of samples in batch to display.', default=1)
+    parser.add_argument('--scene', type=str, help='Scene to display.', default='test_room')
+    parser.add_argument('--batch', type=int, help='Batch Number to display.', default=1)
+    parser.add_argument('--samples', type=int, help='Number of samples in batch to display.', default=1)
     args = parser.parse_args()
 
     sceneName = args.scene

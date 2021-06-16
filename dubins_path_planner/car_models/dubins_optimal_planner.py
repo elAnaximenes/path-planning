@@ -51,7 +51,6 @@ class DubinsOptimalPlanner:
         # drive straight first
         elif word == 'SR':
             pass
-
         
         return alpha, distance
 

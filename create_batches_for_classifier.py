@@ -2,10 +2,10 @@ import json
 import sys
 import argparse
 import dubins_path_planner.RRT
+from run_RRT import run_RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName):
-    with open('./paths/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
-        print('saving samples')
+    with open('./batches/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
         json.dump(samplesInBatch, outFile)
         
 def save_batch(samplesInBatch, batchNum, sceneName, saveFormat):
@@ -28,14 +28,11 @@ for batchNum in range(args.batches):
     samplesInBatch = {}
     for sampleNum in range(args.samples):
 
-        path = None
-        sample = {}
-        while path is None:
+        sample = None 
+        while sample is None:
 
-            sample = RRT.test_dubins_car_RRT(animate=False, sceneName=args.scene)
-            path = sample['path']
+            sample = run_RRT(animate=False, sceneName=args.scene)
 
-        print('finished sample {}'.format(sampleNum))
         samplesInBatch['{}'.format(sampleNum)] = sample
 
     save_batch(samplesInBatch, batchNum, args.scene, args.format)
