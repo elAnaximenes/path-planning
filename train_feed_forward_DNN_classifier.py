@@ -6,6 +6,7 @@ import argparse
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def plot_performance(history):
 
@@ -173,11 +174,10 @@ def get_mean_and_std(data):
 
     return mean, std
 
-def load_training_batch(sceneName, batchNumber):
+def load_training_batch(batchFileName):
 
     # load raw json dict
     rawData = {}
-    batchFileName = './batches/{}_batch_{}.json'.format(sceneName, batchNumber)
     with open(batchFileName, 'r') as f:
         rawData = json.load(f)
 
@@ -202,15 +202,17 @@ def load_training_batch(sceneName, batchNumber):
 
     return (x_batch, y_batch), batchPathLengths
 
-def train_DNN(sceneName, numBatches):
+def train_DNN(epochs, split):
 
     batches = []
     pathLengths = []
 
-    # load raw data
-    for batchNumber in range(numBatches):
+    batchFileNames = os.listdir('./batches-train/')
 
-        data, batchPathLengths = load_training_batch(sceneName, batchNumber)
+    # load raw data
+    for batchFileName in batchFileNames:
+
+        data, batchPathLengths = load_training_batch('./batches-train/{}'.format(batchFileName))
         pathLengths += batchPathLengths
         x_batch, y_batch = data
         batches.append((x_batch, y_batch))
@@ -237,14 +239,17 @@ def train_DNN(sceneName, numBatches):
 if __name__ == '__main__':
 
     # parse command line args
-    parser = argparse.ArgumentParser(description='sequential deep neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
-    parser.add_argument('--scene', type=str, help='specify scene', default='simple_room')
-    parser.add_argument('--batches', type=int, help='specify number of batches in dataset', default=10)
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Feed forward neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
+    parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = '10')
+    parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
 
-    # unpack args
-    sceneName = args.scene
-    numBatches = args.batches
+    args = parser.parse_args()
+    epochs = args.epochs
+    split = args.split
+
+    if split > 1.0 or split < 0.0:
+        print('split must be a real number between 0.0 and 1.0')
+        exit(2)
 
     # train
-    train_DNN(sceneName, numBatches)
+    train_DNN(epochs, split)
