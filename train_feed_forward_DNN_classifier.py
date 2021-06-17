@@ -174,11 +174,11 @@ def get_mean_and_std(data):
 
     return mean, std
 
-def load_training_batch(batchFileName):
+def load_batch(batchFileName):
 
     # load raw json dict
     rawData = {}
-    with open(batchFileName, 'r') as f:
+    with open('./batches-train/{}'.format(batchFileName), 'r') as f:
         rawData = json.load(f)
 
     # build a list of instances and labels
@@ -212,7 +212,7 @@ def train_DNN(epochs, split):
     # load raw data
     for batchFileName in batchFileNames:
 
-        data, batchPathLengths = load_training_batch('./batches-train/{}'.format(batchFileName))
+        data, batchPathLengths = load_batch(batchFileName)
         pathLengths += batchPathLengths
         x_batch, y_batch = data
         batches.append((x_batch, y_batch))
@@ -224,9 +224,8 @@ def train_DNN(epochs, split):
     minPathLength = int(mean - std)
     maxPathLength = int(mean + (2*std))
 
-    trainValSplit = 0.95
     # drop paths that are extremely long or short and transform labels to categorical
-    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, trainValSplit, minPathLength, maxPathLength)
+    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, split, minPathLength, maxPathLength)
 
     # build classifier
     inputShape = x_train[0].shape
@@ -234,13 +233,15 @@ def train_DNN(epochs, split):
     
     history = model.fit(x_train, y_train, epochs=1, batch_size=512, validation_data=(x_val, y_val))
 
+    print('input shape:', inputShape)
+    print('number of paths in training set:', len(x_train))
     summary(history, pathLengths)
 
 if __name__ == '__main__':
 
     # parse command line args
     parser = argparse.ArgumentParser(description='Feed forward neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
-    parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = '10')
+    parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = 30)
     parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
 
     args = parser.parse_args()
