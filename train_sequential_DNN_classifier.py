@@ -35,21 +35,55 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
+ 
+def histogram_path_lengths(pathLengths):
+     
+    plt.hist(pathLengths, bins=50) 
+
+    mean, std = get_mean_and_std(pathLengths)
+
+    plt.axvline(mean, ls="--", color='red')
+    plt.axvline(mean+std, ls="--", color='yellow')
+    plt.axvline(mean-std, ls="--", color='yellow')
+    
+    plt.xlabel('Path Lengths')
+    plt.ylabel('Number of Paths')
+    plt.title('Distribution of path lengths')
+
     plt.show()
+
+    return mean, std
+
+def summary(history, pathLengths):
+
+    plot_performance(history)
+    mean, std = histogram_path_lengths(pathLengths)
+
+    print("minimum path length:", np.min(pathLengths))
+    print("maximum path length:", np.max(pathLengths))
+    print("mean path length:", mean)
+    print("std path length:", std) 
+    print(history.model.summary())
+    print(history.params)
 
 def build_model(inputShape):
 
     model = keras.Sequential()
     model.add(layers.InputLayer(input_shape=(inputShape)))
     model.add(layers.Flatten())
+    model.add(layers.Dense(8192, activation='relu'))
+    model.add(layers.Dense(4096, activation='relu'))
+    model.add(layers.Dense(2048, activation='relu'))
+    model.add(layers.Dense(1024, activation='relu'))
+    model.add(layers.Dense(512, activation='relu'))
     model.add(layers.Dense(256, activation='relu'))
     model.add(layers.Dense(128, activation='relu'))
     model.add(layers.Dense(64, activation='relu'))
+    model.add(layers.Dense(32, activation='relu'))
+    model.add(layers.Dense(16, activation='relu'))
     model.add(layers.Dense(5, activation='softmax'))
 
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
-    model.summary()
 
     return model
 
@@ -66,134 +100,142 @@ def normalize_instances(x_train, x_val):
 
     return x_train, x_val
 
-def combine_training_batches(trainingBatches):
+def combine_batches(batches):
 
-    x_train = trainingBatches[0][0]
-    y_train = trainingBatches[0][1]
-    for x_batch, y_batch in trainingBatches[1:]:
+    x = batches[0][0]
+    y = batches[0][1]
 
-        x_train = np.concatenate((x_train, x_batch), axis=0)
-        y_train = np.concatenate((y_train, y_batch))
+    for x_batch, y_batch in batches[1:]:
 
-    return x_train, y_train
+        x = np.concatenate((x, x_batch), axis=0)
+        y = np.concatenate((y, y_batch))
 
-def histogram_path_lengths(pathLengths):
+    return x, y
 
-    plt.hist(pathLengths, bins=50) 
-    plt.xlabel('Path Lengths')
-    plt.ylabel('Number of Paths')
-    plt.title('Distribution of path lengths')
+def split_data(x, y, trainValSplit):
 
-    plt.show()
+    splitIndex = int(x.shape[0] * trainValSplit)
+    x_train = x[:splitIndex]
+    y_train = y[:splitIndex]
+    x_val = x[splitIndex:]
+    y_val = y[splitIndex:]
 
-def get_length_of_shortest_and_longest_paths(data):
+    return (x_train, y_train), (x_val, y_val)
 
-    shortestPathLength = None
-    longestPathLength = None
-    for sampleNumber in range(len(data)):
-        
-        x = data[str(sampleNumber)]['path']['x']
-        if shortestPathLength == None or shortestPathLength > len(x):
-            shortestPathLength = len(x)
-        if longestPathLength == None or longestPathLength < len(x):
-            longestPathLength = len(x)
+def pre_process_data(batches, trainValSplit, minPathLength, maxPathLength):
 
-    print('shortest path: {}, longest Path: {}'.format(shortestPathLength, longestPathLength))
+    #
+    x = [] 
+    y = []
 
-    return shortestPathLength, longestPathLength
+    for x_batch, y_batch in batches:
 
-def load_training_batch(sceneName, batchNumber, batchSize, truncatedPathLength):
+        validX = []
+        validY = []
+        for instance, label in zip(x_batch, y_batch): 
+            
+            pathLength = len(instance[0])
+            if pathLength < minPathLength or pathLength > maxPathLength:
+                continue
+
+            instance[0] = instance[0][:minPathLength]
+            instance[1] = instance[1][:minPathLength]
+            instance[2] = instance[2][:minPathLength]
+            validX.append(instance)
+            validY.append(label)
+
+        x += validX
+        y += validY 
+
+    x = np.array(x)
+    y = to_categorical(np.array(y))
+
+    (x_train, y_train), (x_val, y_val) = split_data(x, y, trainValSplit)
+
+    x_train, x_val = normalize_instances(x_train, x_val)
+
+    return (x_train, y_train), (x_val, y_val)
+
+def get_mean_and_std(data):
+
+    data = np.array(data)
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+
+    return mean, std
+
+def load_training_batch(sceneName, batchNumber):
 
     # load raw json dict
     rawData = {}
     batchFileName = './batches/{}_batch_{}.json'.format(sceneName, batchNumber)
-    
     with open(batchFileName, 'r') as f:
         rawData = json.load(f)
 
-    get_length_of_shortest_and_longest_paths(rawData)
-
+    # build a list of instances and labels
     instances = []
     labels = [] 
-
-    minLength = None
-
     batchPathLengths = []
 
-    for sampleNumber in range(batchSize):
+    for sampleNumber in range(len(rawData)):
 
         sample = rawData[str(sampleNumber)]
 
         samplePathLength = len(sample['path']['x'])
         batchPathLengths.append(round(float(samplePathLength)/10.0) * 10)
 
-        instance = np.zeros((3,truncatedPathLength), dtype = np.float64)
-        for i in range(samplePathLength):
-
-            if i == truncatedPathLength:
-                break
-
-            instance[0,i] = sample['path']['x'][i] 
-            instance[1,i] = sample['path']['y'][i] 
-            instance[2,i] = sample['path']['theta'][i] 
-
-        #instances.append([sample['path']['x'][:truncatedPathLength], sample['path']['y'][:truncatedPathLength], sample['path']['theta'][:truncatedPathLength]])
+        instance = [sample['path']['x'], sample['path']['y'], sample['path']['x']]
         instances.append(instance)
         labels.append(sample['target']['index'])
         
-    x_batch = np.array(instances)
-    y_batch = to_categorical(np.array(labels))
+    x_batch = instances
+    y_batch = labels
 
     return (x_batch, y_batch), batchPathLengths
 
-def train_DNN(sceneName, numBatches, batchSize):
+def train_DNN(sceneName, numBatches):
 
-    # load training data
-    truncatedPathLength = 256 
     batches = []
     pathLengths = []
 
+    # load raw data
     for batchNumber in range(numBatches):
 
-        data, batchPathLengths = load_training_batch(sceneName, batchNumber, batchSize, truncatedPathLength)
+        data, batchPathLengths = load_training_batch(sceneName, batchNumber)
         pathLengths += batchPathLengths
         x_batch, y_batch = data
         batches.append((x_batch, y_batch))
 
-    #histogram_path_lengths(pathLengths)
+    # draw histogram of path length distributions
+    mean, std = get_mean_and_std(pathLengths)
+ 
+    # set params for longest and shortest path
+    minPathLength = int(mean - std)
+    maxPathLength = int(mean + (2*std))
 
-    # split batches into training and validate sets
-    trainingBatches = batches[:-1]
-    x_val, y_val = batches[-1]
+    trainValSplit = 0.95
+    # drop paths that are extremely long or short and transform labels to categorical
+    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, trainValSplit, minPathLength, maxPathLength)
 
-    x_train, y_train = combine_training_batches(trainingBatches)
-
-    x_train, x_val = normalize_instances(x_train, x_val)
-
+    # build classifier
     inputShape = x_train[0].shape
     model = build_model(inputShape)
     
-    history = model.fit(x_train, y_train, epochs=30, batch_size=512, validation_data=(x_val, y_val))
+    history = model.fit(x_train, y_train, epochs=1, batch_size=512, validation_data=(x_val, y_val))
 
-    plot_performance(history)
+    summary(history, pathLengths)
 
 if __name__ == '__main__':
 
     # parse command line args
     parser = argparse.ArgumentParser(description='sequential deep neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
     parser.add_argument('--scene', type=str, help='specify scene', default='simple_room')
-    parser.add_argument('--batches', type=int, help='specify number of batches in dataset(one batch will be used for validation)', default=10)
-    parser.add_argument('--batchsize', type=int, help='specify number of samples in each batch', default=100)
+    parser.add_argument('--batches', type=int, help='specify number of batches in dataset', default=10)
     args = parser.parse_args()
 
     # unpack args
     sceneName = args.scene
     numBatches = args.batches
-    batchSize = args.batchsize
-
-    if numBatches < 2:
-        print("must specify more than one batch(one batch will be used for validation)")
-        exit(2)
 
     # train
-    train_DNN(sceneName, numBatches, batchSize)
+    train_DNN(sceneName, numBatches)

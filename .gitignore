@@ -9,5 +9,5 @@ __pycache__
 *.snm
 *.gif
 car_models/saved_paths/
-batches/
+batches*/
 
