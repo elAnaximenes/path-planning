@@ -1,13 +1,7 @@
 saved-paths/*
 __pycache__
-*.pdf
+*.png
 *.out
-*.log
-*.aux
-*.toc
-*.nav
-*.snm
-*.gif
 car_models/saved_paths/
 batches*/
 

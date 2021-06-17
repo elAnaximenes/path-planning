@@ -20,6 +20,7 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
+    plt.savefig('loss')
     plt.show()
 
     plt.clf()
@@ -35,6 +36,8 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
+    plt.savefig('loss')
+    plt.show()
  
 def histogram_path_lengths(pathLengths):
      
@@ -124,7 +127,6 @@ def split_data(x, y, trainValSplit):
 
 def pre_process_data(batches, trainValSplit, minPathLength, maxPathLength):
 
-    #
     x = [] 
     y = []
 
@@ -134,24 +136,31 @@ def pre_process_data(batches, trainValSplit, minPathLength, maxPathLength):
         validY = []
         for instance, label in zip(x_batch, y_batch): 
             
+            # throw out paths that are too long or too short
             pathLength = len(instance[0])
             if pathLength < minPathLength or pathLength > maxPathLength:
                 continue
 
+            # truncate paths so that we have a fixed length input 
             instance[0] = instance[0][:minPathLength]
             instance[1] = instance[1][:minPathLength]
             instance[2] = instance[2][:minPathLength]
+
+            # these are the paths we are going to use
             validX.append(instance)
             validY.append(label)
 
         x += validX
         y += validY 
 
+    # transform labels to one hot
     x = np.array(x)
     y = to_categorical(np.array(y))
 
+    # split into train and test sets
     (x_train, y_train), (x_val, y_val) = split_data(x, y, trainValSplit)
 
+    # normalize to center mean at zero
     x_train, x_val = normalize_instances(x_train, x_val)
 
     return (x_train, y_train), (x_val, y_val)
