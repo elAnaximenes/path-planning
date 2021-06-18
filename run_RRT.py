@@ -13,8 +13,6 @@ def check_valid_start(scene, startPosition):
 
     return True
 
-
-
 def run_RRT(animate=False, sceneName='test_scene'):
 
     # load scene information

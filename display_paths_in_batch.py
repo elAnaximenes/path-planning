@@ -33,7 +33,7 @@ def draw_scene(scene, path, sampleNum):
 
 def load_paths(sceneName, batchNum):
     print('loading paths')
-    with open('./batches/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
+    with open('./batches-train/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
         path = json.load(f)
     print('paths loaded')
     return path
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Display batches of training data from RRT dubins planner.')
 
     parser.add_argument('--scene', type=str, help='Scene to display.', default='test_room')
-    parser.add_argument('--batch', type=int, help='Batch Number to display.', default=1)
+    parser.add_argument('--batch', type=int, help='Batch Number to display.', default=0)
     parser.add_argument('--samples', type=int, help='Number of samples in batch to display.', default=1)
     args = parser.parse_args()
 
@@ -59,6 +59,3 @@ if __name__ == '__main__':
         path = paths['{}'.format(i)]['path']
 
         draw_scene(scene, path, i)
-
-
-

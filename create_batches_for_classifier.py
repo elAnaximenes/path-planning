@@ -5,7 +5,7 @@ import dubins_path_planner.RRT
 from run_RRT import run_RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName):
-    with open('./batches/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
+    with open('./batches-new/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
         json.dump(samplesInBatch, outFile)
         
 def save_batch(samplesInBatch, batchNum, sceneName, saveFormat):
@@ -17,7 +17,7 @@ def save_batch(samplesInBatch, batchNum, sceneName, saveFormat):
 parser = argparse.ArgumentParser(description='Create batches of training data from RRT dubins planner.')
 
 parser.add_argument('--batches', type=int, help='Number of batches to create.', default=1)
-parser.add_argument('--samples', type=int, help='Number of paths generated per batch.', default=10)
+parser.add_argument('--batchsize', type=int, help='Number of paths generated per batch.', default=10)
 parser.add_argument('--scene', type=str, help='Name of scene.', default='simple_room')
 parser.add_argument('--format', type=str, help='Format of save file..', default='json')
 
