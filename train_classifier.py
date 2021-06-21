@@ -9,31 +9,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from classifiers.feed_forward import FeedForward, FeedForwardTrainer
+from classifiers.lstm import LSTM, LSTMTrainer
 
 def build_model(modelSelection, inputShape):
 
     if modelSelection == 'FeedForward':
 
         model = FeedForward(inputShape)
-        
-        """
-        model = keras.Sequential()
-        model.add(layers.InputLayer(input_shape=(inputShape)))
-        model.add(layers.Flatten())
-        model.add(layers.Dense(8192, activation='relu'))
-        model.add(layers.Dense(4096, activation='relu'))
-        model.add(layers.Dense(2048, activation='relu'))
-        model.add(layers.Dense(1024, activation='relu'))
-        model.add(layers.Dense(512, activation='relu'))
-        model.add(layers.Dense(256, activation='relu'))
-        model.add(layers.Dense(128, activation='relu'))
-        model.add(layers.Dense(64, activation='relu'))
-        model.add(layers.Dense(32, activation='relu'))
-        model.add(layers.Dense(16, activation='relu'))
-        model.add(layers.Dense(5, activation='softmax'))
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-        """
 
+    elif modelSelection == 'LSTM':
+
+        model = LSTM(inputShape)
+        
     return model
 
 def get_trainer(modelSelection, model):
@@ -41,6 +28,10 @@ def get_trainer(modelSelection, model):
     if modelSelection == 'FeedForward':
 
         trainer = FeedForwardTrainer(model)
+
+    elif modelSelection == 'LSTM':
+
+        trainer = LSTMTrainer(model)
 
     return trainer
 
@@ -71,7 +62,7 @@ def plot_performance(history):
     plt.plot(epochs, acc, 'b', label = 'Training acc')
     plt.title('Validation and training accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+    plt.ylabel('Accuracy')
     plt.legend()
     plt.savefig('loss')
     plt.show()
@@ -141,7 +132,7 @@ def split_data(x, y, trainValSplit):
 
     return (x_train, y_train), (x_val, y_val)
 
-def pre_process_data(batches, trainValSplit):
+def pre_process_data(batches, trainValSplit, modelSelection):
 
     x, y = combine_batches(batches)
 
@@ -155,7 +146,10 @@ def pre_process_data(batches, trainValSplit):
     # normalize to center mean at zero
     x_train, x_val = normalize_instances(x_train, x_val)
 
-    return (x_train, y_train), (x_val, y_val)
+    trainData = (x_train, y_train)
+    valData = (x_val, y_val)
+
+    return trainData, valData
 
 def get_mean_and_std(data):
 
@@ -203,9 +197,6 @@ def load_batch_json(batchFileName, truncatedPathLength):
     x_batch = np.array(instances)
     y_batch = np.array(labels)
 
-    print(x_batch.shape)
-    print(y_batch.shape)
-
     return (x_batch, y_batch)
 
 def load_batch_csv(batchFileName, batchSize):
@@ -233,14 +224,14 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
     print('finished loading data')
 
     # transform labels to categorical
-    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, split)
+    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, split, modelSelection)
 
     # build classifier
     inputShape = x_train[0].shape
     model = build_model(modelSelection, inputShape)
     trainer = get_trainer(modelSelection, model)
 
-    # fit model to train data
+    # fit model to training data
     history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize)
 
     print('input shape:', inputShape)
@@ -250,7 +241,7 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 if __name__ == '__main__':
 
     # parse command line args
-    parser = argparse.ArgumentParser(description='Feed forward neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
+    parser = argparse.ArgumentParser(description='Deep neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = 30)
     parser.add_argument('--batchsize', type=float, help='Size of batch in each epoch.', default = 512)

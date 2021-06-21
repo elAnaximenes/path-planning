@@ -3,6 +3,9 @@ import json
 
 class DataLoader:
 
+    def __init__(self):
+        pass
+
     def _normalize_instances(self, x_train, x_val):
 
         mean = x_train.mean(axis=0, dtype=np.float64)
