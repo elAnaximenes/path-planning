@@ -14,6 +14,7 @@ def load_batch_json(batchFileName):
     labels = [] 
     pathLengths = []
 
+    print('sample length:', len(rawData))
     for sampleNumber in range(len(rawData)):
 
         sample = rawData[str(sampleNumber)]
@@ -26,19 +27,20 @@ def load_batch_json(batchFileName):
 
     return pathLengths, labels
 
-
 pathLengths = []
 labels = []
-batchFileNames = os.listdir('./batches-train')
+batchFileNames = os.listdir('./batches-train/')
 
 for batchFileName in batchFileNames:
+    print(batchFileName)
 
-    lengths, labels = load_batch_json(batchFileName)
+    lengths, targets = load_batch_json(batchFileName)
 
-    labels += labels
+    labels += targets 
     pathLengths += lengths
 
-
+print('label length', len(labels))
+print('lengths length', len(pathLengths))
 mean, std = histogram_path_lengths(pathLengths)
 
 print('Path length mean:', mean)
@@ -52,14 +54,7 @@ for label in labels:
     counts[label] += 1
 
 plt.bar(targets,counts)
-
-
-
-
-    
-
-
-
-
-
-
+plt.title('Distribution of target classes')
+plt.xlabel('Target Index')
+plt.ylabel('Count in training set')
+plt.show()

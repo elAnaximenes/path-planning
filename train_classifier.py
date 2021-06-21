@@ -207,7 +207,7 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
     batches = []
     batchFileNames = os.listdir('./batches-train')
-    truncatedPathLength = 1000 
+    truncatedPathLength = 760 
 
     print('started loading data')
     

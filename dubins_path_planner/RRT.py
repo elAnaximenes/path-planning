@@ -8,6 +8,7 @@ import json
 import csv
 from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from .car_models.dubins_model import DubinsCar
+from matplotlib.lines import Line2D
 
 """
 USAGE: python RRT.py [animate] [scene_selection]
@@ -40,12 +41,18 @@ class DubinsCarRRT:
         self.ax = None
         self.maxIter = 50 
         self.pathFromStartToTarget = None 
+        self.leg=None
         if self.animate:
             self._setup_animation()
+        self.text = None
+        self.imgcount = 0
+
+
 
     def _select_random_target(self):
 
-        targetIdx = random.randint(0, len(self.scene.targets) - 1)
+        #targetIdx = random.randint(0, len(self.scene.targets) - 1)
+        targetIdx = 1
         target = self.scene.targets[targetIdx]
 
         return target, targetIdx
@@ -193,9 +200,9 @@ class DubinsCarRRT:
         self.ax.add_patch(obs)
         self.fig.canvas.draw()
 
-    def _draw_target(self, target):
+    def _draw_target(self, target, colorSelection='blue'):
 
-        tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
+        tar = plt.Circle((target[0], target[1]), target[2], color=colorSelection, fill=False)
         self.ax.add_patch(tar)
         self.fig.canvas.draw()
 
@@ -204,22 +211,45 @@ class DubinsCarRRT:
         self.fig = plt.figure()
         self.ax = self.fig.gca()
         self.ax.set_title('Dubins Car RRT - {}'.format(self.scene.name))
-        plt.xlim(self.scene.dimensions['xmin'] - 1.0, self.scene.dimensions['xmax'] + 1.0)
-        plt.ylim(self.scene.dimensions['ymin'] - 1.0, self.scene.dimensions['ymax'] + 1.0)
+        plt.xlim(self.scene.dimensions['xmin'] , self.scene.dimensions['xmax'] )
+        plt.ylim(self.scene.dimensions['ymin'] , self.scene.dimensions['ymax'] )
         self.ax.set_aspect('equal')
         self.ax.set_ylabel('Y-distance(M)')
         self.ax.set_xlabel('X-distance(M)')
         self.ax.plot(self.root.x, self.root.y, 'x')
 
+        legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
+                            markeredgecolor='blue', markersize=15),
+                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Selected Target',
+                            markeredgecolor='green', markersize=15),
+                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Obstacle',
+                            markeredgecolor='red', markersize=15)]
+
         for obstacle in self.scene.obstacles:
 
             self._draw_obstacle(obstacle)
-            plt.pause(0.0001)
+            #plt.pause(0.0001)
 
         for target in self.scene.targets:
 
             self._draw_target(target)
-            plt.pause(0.0001)
+            #plt.pause(0.0001)
+
+        self.leg = self.ax.legend(handles=legend_elements, loc='best')
+
+
+    def _write_caption(self, event):
+
+        x = self.scene.dimensions['xmin'] + 0.5
+        y = self.scene.dimensions['ymin'] + 0.5
+        if event == 'candidate':
+            self.text = plt.text(x, y, 'Calculating shortest path from tree to new point')
+        elif event == 'valid path':
+            self.text = plt.text(x, y, 'Path is possible without collisions')
+        elif event == 'invalid path':
+            self.text = plt.text(x, y, 'Path causes collision')
+        elif event == 'reached target':
+            self.text = plt.text(x, y, 'Path connects tree root to target')
     
     def _update_animation(self, point, path, event):
  
@@ -241,7 +271,16 @@ class DubinsCarRRT:
             i += 1       
 
         plottedPoint, plottedPath = self._draw_point_and_path(point, path, eventToColorDict[event])
-        plt.pause(0.1)
+        
+        self._write_caption(event)
+
+        plt.pause(0.5)
+
+        plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
+        self.imgcount += 1
+
+        if event != 'reached target':
+            self.text.remove()
 
         if event == 'invalid path' or event == 'candidate':
             plottedPoint.remove()
@@ -274,6 +313,9 @@ class DubinsCarRRT:
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
+        self._draw_target(target, 'lime')
+        plt.pause(5.0)
+        self.leg.remove()
         
         # check for valid path from root to target
         isTargetReachable = self._is_point_reachable(self.root, target)
@@ -294,6 +336,18 @@ class DubinsCarRRT:
             sample['path'] = self.pathFromStartToTarget['path']
 
         if self.animate:
+            legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
+                            markeredgecolor='blue', markersize=15),
+                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Selected Target',
+                            markeredgecolor='green', markersize=15),
+                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Obstacle',
+                            markeredgecolor='red', markersize=15),
+                            Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='RRT Tree Branches',
+                            markeredgecolor='green', markersize=15),
+                            Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='Final Path',
+                            markeredgecolor='blue', markersize=15)
+                            ]
+            leg = self.ax.legend(handles=legend_elements, loc='best')
             plt.show()
 
 

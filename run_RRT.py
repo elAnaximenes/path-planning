@@ -21,6 +21,7 @@ def run_RRT(animate=False, sceneName='test_scene'):
     validStartPosition = False
 
     # set car original position
+    """
     while not validStartPosition:
 
         startPosition = np.zeros(3,)
@@ -29,6 +30,9 @@ def run_RRT(animate=False, sceneName='test_scene'):
         startPosition[2] = np.random.uniform(0.0, math.pi)
 
         validStartPosition = check_valid_start(scene, startPosition)
+    """
+
+    startPosition = np.array([0.0,0.0, math.pi/4.0 ])
 
     scene.carStart = startPosition
 

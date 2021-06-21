@@ -7,7 +7,7 @@ def draw_scene(scene, path, sampleNum):
 
     fig = plt.figure()
     ax = fig.gca()
-    ax.set_title('Simple Room Path - {}'.format(sampleNum))
+    ax.set_title('Test Room Path - {}'.format(sampleNum))
     plt.xlim(scene.dimensions['xmin'] - 1.0, scene.dimensions['xmax'] + 1.0)
     plt.ylim(scene.dimensions['ymin'] - 1.0, scene.dimensions['ymax'] + 1.0)
 
@@ -17,6 +17,7 @@ def draw_scene(scene, path, sampleNum):
     ax.plot(path['x'][0], path['y'][0], 'x')
 
     for obstacle in scene.obstacles:
+
         obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
         ax.add_patch(obs)
         fig.canvas.draw()
@@ -29,7 +30,8 @@ def draw_scene(scene, path, sampleNum):
     
     ax.plot(path['x'], path['y'], color='blue', linestyle='-', markersize=2)
         
-    plt.show()
+    plt.savefig('./path-figures/path-{}.png'.format(sampleNum))
+    plt.clf()
 
 def load_paths(sceneName, batchNum):
     print('loading paths')
