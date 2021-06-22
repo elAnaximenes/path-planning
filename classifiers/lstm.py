@@ -74,13 +74,11 @@ class LSTMTrainer():
         x_train, y_train = trainData
         x_val, y_val = valData
 
-
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-        trainDataset = trainDataset.batch(batchSize)
-
+        trainDataset = trainDataset.batch(1)
 
         valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
-        valDataset = valDataset.batch(batchSize)
+        valDataset = valDataset.batch(1)
 
         for epoch in range(epochs):
             
@@ -95,6 +93,5 @@ class LSTMTrainer():
                     print("Seen so far: {} samples".format((step + 1) * batchSize))
 
             self._save_metrics(lossValue, valDataset)
-
             
         return self.history

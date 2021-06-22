@@ -9,7 +9,18 @@ class LstmDataLoader(DataLoader):
     def __init__(self, split, numBatches):
 
         super().__init__(split, numBatches)
-        
+    
+    def _combine_batches(self):
+
+        print('batches:',len(self.batches))
+        print('batch size:',len(self.batches[0][0]))
+        print('features:',len(self.batches[0][0][0]))
+        exit(1)
+
+    def _pre_process_data(self):
+
+        self._combine_batches()
+
     def _load_batch_json(self, batchFileName):
 
         # load raw json dict
@@ -29,6 +40,7 @@ class LstmDataLoader(DataLoader):
             y = sample['path']['y']
             theta = sample['path']['theta']
 
+            """
             if len(x) < self.truncatedPathLength:
                 instance = np.zeros((3, self.truncatedPathLength))
                 x = np.array(x)
@@ -43,13 +55,15 @@ class LstmDataLoader(DataLoader):
                                     y[:self.truncatedPathLength],\
                                     theta[:self.truncatedPathLength]\
                                     ])
+            """
 
+            instance = np.array([x,y,theta])
             label = sample['target']['index']
 
             instances.append(instance)
             labels.append(label)
 
-        x_batch = np.array(instances)
+        x_batch = instances
         y_batch = np.array(labels)
 
         return (x_batch, y_batch)

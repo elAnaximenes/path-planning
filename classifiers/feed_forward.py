@@ -91,6 +91,5 @@ class FeedForwardTrainer():
                     print("Seen so far: {} samples".format((step + 1) * batchSize))
 
             self._save_metrics(lossValue, valDataset)
-
             
         return self.history
