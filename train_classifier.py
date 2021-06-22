@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import os
 from classifiers.feed_forward import FeedForward, FeedForwardTrainer
 from classifiers.lstm import LSTM, LSTMTrainer
+from data.feed_forward_loader import FeedForwardDataLoader
+from data.lstm_loader import LstmDataLoader
 
 def build_model(modelSelection, inputShape):
 
@@ -201,9 +203,10 @@ def load_batch_json(batchFileName, truncatedPathLength):
 
 def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
+    """
     batches = []
     batchFileNames = os.listdir('./data/batches-train')
-    truncatedPathLength = 760 
+    truncatedPathLength = 5000 
 
     print('started loading data')
     
@@ -221,6 +224,13 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
     # transform labels to categorical
     (x_train, y_train), (x_val, y_val) = pre_process_data(batches, split, modelSelection)
+    """
+    if modelSelection == 'FeedForward':
+        dataLoader = FeedForwardDataLoader(split, numBatches)
+    elif modelSelection == 'LSTM':
+        dataLoader = LstmDataLoader(split, numBatches)
+
+    (x_train, y_train), (x_val, y_val) = dataLoader.load() 
 
     # build classifier
     inputShape = x_train[0].shape
