@@ -25,10 +25,12 @@ class LstmDataLoader(DataLoader):
         self.x = self.batches[0][0]
         self.y = self.batches[0][1]
 
+        print(self.y)
+
         for i in range(1, len(self.batches)):
 
-            self.x += self.batches[i][0]
-            self.y += self.batches[i][1]
+            self.x.extend(self.batches[i][0])
+            self.y.extend(self.batches[i][1])
 
     def _split_data(self):
 
@@ -42,10 +44,8 @@ class LstmDataLoader(DataLoader):
 
         self._combine_batches()
 
-        print('self y shape', self.y.shape)
         # transform labels to one hot
         self.y = to_categorical(np.array(self.y))
-
 
         self._normalize_instances()
 
@@ -73,24 +73,6 @@ class LstmDataLoader(DataLoader):
             x = sample['path']['x']
             y = sample['path']['y']
             theta = sample['path']['theta']
-
-            """
-            if len(x) < self.truncatedPathLength:
-                instance = np.zeros((3, self.truncatedPathLength))
-                x = np.array(x)
-                y = np.array(y)
-                theta = np.array(theta)
-                instance[0, :x.shape[0]] = x
-                instance[0, :y.shape[0]] = y
-                instance[0, :theta.shape[0]] = theta
-            else:
-                instance = np.array([\
-                                    x[:self.truncatedPathLength],\
-                                    y[:self.truncatedPathLength],\
-                                    theta[:self.truncatedPathLength]\
-                                    ])
-            """
-
             instance = np.array([x,y,theta])
             label = sample['target']['index']
 
@@ -98,7 +80,7 @@ class LstmDataLoader(DataLoader):
             labels.append(label)
 
         x_batch = instances
-        y_batch = np.array(labels)
+        y_batch = labels
 
         return (x_batch, y_batch)
    

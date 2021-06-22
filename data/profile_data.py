@@ -72,14 +72,17 @@ mean, std = histogram_path_lengths(pathLengths)
 print('Path length mean:', mean)
 print('Path length std:', std)
 
-targets = [0,1,2,3,4]
-counts = [0,0,0,0,0]
+targetCounts = {}
 
 for label in labels:
 
-    counts[label] += 1
+    if label not in targetCounts:
+        targetCounts[label] = 0
 
-plt.bar(targets,counts)
+    targetCounts[label] += 1
+
+plt.bar(targetCounts.keys(), targetCounts.values())
+
 plt.title('Distribution of target classes')
 plt.xlabel('Target Index')
 plt.ylabel('Count in training set')

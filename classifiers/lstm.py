@@ -10,10 +10,8 @@ class LSTM(tf.keras.Model):
         self.H1 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
-    def call(self, x, training=False):
+    def call(self, x):
         
-
-
         x = self.lstmcell(x)
         x = self.H1(x)
 
@@ -33,13 +31,14 @@ class LSTMTrainer():
     def _train_step(self, xBatchTrain, yBatchTrain):
 
         xBatchTrain = tf.constant(xBatchTrain, shape = (1, len(xBatchTrain[0]), 3))
+        yBatchTrain = tf.constant(yBatchTrain, shape = (1, 5))
 
         with tf.GradientTape() as tape:
 
             tape.watch(xBatchTrain)
             logits = self.model(xBatchTrain, training=True)
             print(logits)
-            print(yBatchTrain.shape)
+            print(yBatchTrain)
             lossValue = self.loss_fn(yBatchTrain, logits)
 
         grads = tape.gradient(lossValue, self.model.trainable_variables)
@@ -58,7 +57,7 @@ class LSTMTrainer():
 
         for xBatchVal, yBatchVal in valDataset:
 
-            valLogits = self.model(xBatchVal, training=False)
+            valLogits = self.model(xBatchVal)
             self.valAccMetric.update_state(yBatchVal, valLogits)
             lossValue = self.loss_fn(yBatchVal, valLogits)
 
