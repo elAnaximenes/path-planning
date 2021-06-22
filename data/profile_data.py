@@ -1,7 +1,33 @@
 import os
 import json
-from train_classifier import histogram_path_lengths
+import numpy as np
 import matplotlib.pyplot as plt
+ 
+def histogram_path_lengths(pathLengths):
+     
+    plt.hist(pathLengths, bins=50) 
+
+    mean, std = get_mean_and_std(pathLengths)
+
+    plt.axvline(mean, ls="--", color='red')
+    plt.axvline(mean+std, ls="--", color='yellow')
+    plt.axvline(mean-std, ls="--", color='yellow')
+    
+    plt.xlabel('Path Lengths')
+    plt.ylabel('Number of Paths')
+    plt.title('Distribution of path lengths')
+
+    plt.show()
+
+    return mean, std
+
+def get_mean_and_std(data):
+
+    data = np.array(data)
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+
+    return mean, std
 
 def load_batch_json(batchFileName):
 

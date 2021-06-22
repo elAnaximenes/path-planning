@@ -6,21 +6,15 @@ class LSTM(tf.keras.Model):
     def __init__(self, inputShape):
         
         super(LSTM, self).__init__()
-        self.lstmcell = layers.LSTMCell(1)
+        self.lstmcell = layers.RNN(layers.LSTMCell(4))
         self.H1 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x, training=False):
         
-        print(x.shape)
-        exit(1)
-        c = self.lstmcell.get_initial_state()
-        numTimeSteps = x.shape[-1]
 
-        for i in range(numTimeSteps):
 
-            x, [x,c] = self.lstmcell(x, [x,c], training=training)
-
+        x = self.lstmcell(x)
         x = self.H1(x)
 
         return self.outputLayer(x)
@@ -38,10 +32,14 @@ class LSTMTrainer():
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
+        xBatchTrain = tf.constant(xBatchTrain, shape = (1, len(xBatchTrain[0]), 3))
+
         with tf.GradientTape() as tape:
 
             tape.watch(xBatchTrain)
             logits = self.model(xBatchTrain, training=True)
+            print(logits)
+            print(yBatchTrain.shape)
             lossValue = self.loss_fn(yBatchTrain, logits)
 
         grads = tape.gradient(lossValue, self.model.trainable_variables)
@@ -72,13 +70,16 @@ class LSTMTrainer():
     def train(self, trainData, valData, epochs, batchSize):
 
         x_train, y_train = trainData
+        print('y train shape', y_train.shape)
         x_val, y_val = valData
 
-        trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-        trainDataset = trainDataset.batch(1)
+        #trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        #trainDataset = trainDataset.batch(1)
+        trainDataset = zip(x_train, y_train)
 
-        valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
-        valDataset = valDataset.batch(1)
+        #valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
+        #valDataset = valDataset.batch(1)
+        valDataset = zip(x_val, y_val)
 
         for epoch in range(epochs):
             

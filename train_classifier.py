@@ -68,24 +68,6 @@ def plot_performance(history):
     plt.legend()
     plt.savefig('loss')
     plt.show()
- 
-def histogram_path_lengths(pathLengths):
-     
-    plt.hist(pathLengths, bins=50) 
-
-    mean, std = get_mean_and_std(pathLengths)
-
-    plt.axvline(mean, ls="--", color='red')
-    plt.axvline(mean+std, ls="--", color='yellow')
-    plt.axvline(mean-std, ls="--", color='yellow')
-    
-    plt.xlabel('Path Lengths')
-    plt.ylabel('Number of Paths')
-    plt.title('Distribution of path lengths')
-
-    plt.show()
-
-    return mean, std
 
 def summary(history):
 

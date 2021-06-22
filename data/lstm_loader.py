@@ -10,17 +10,51 @@ class LstmDataLoader(DataLoader):
 
         super().__init__(split, numBatches)
     
+    def _normalize_instances(self):
+        
+        for i in range(len(self.x)):
+            for j in range(len(self.x[i])):
+                self.x[i][j] /= 10
+
     def _combine_batches(self):
 
         print('batches:',len(self.batches))
         print('batch size:',len(self.batches[0][0]))
         print('features:',len(self.batches[0][0][0]))
-        exit(1)
+
+        self.x = self.batches[0][0]
+        self.y = self.batches[0][1]
+
+        for i in range(1, len(self.batches)):
+
+            self.x += self.batches[i][0]
+            self.y += self.batches[i][1]
+
+    def _split_data(self):
+
+        splitIndex = int(len(self.x) * self.split)
+        self.x_train = self.x[:splitIndex]
+        self.y_train = self.y[:splitIndex]
+        self.x_val = self.x[splitIndex:]
+        self.y_val = self.y[splitIndex:]
 
     def _pre_process_data(self):
 
         self._combine_batches()
 
+        print('self y shape', self.y.shape)
+        # transform labels to one hot
+        self.y = to_categorical(np.array(self.y))
+
+
+        self._normalize_instances()
+
+        # split into train and test sets
+        self._split_data()
+
+        self.trainData = (self.x_train, self.y_train)
+        self.valData = (self.x_val, self.y_val)
+        
     def _load_batch_json(self, batchFileName):
 
         # load raw json dict
@@ -83,6 +117,7 @@ class LstmDataLoader(DataLoader):
                 break
 
         self._pre_process_data()
+
         
         return (self.x_train, self.y_train), (self.x_val, self.y_val)
 
