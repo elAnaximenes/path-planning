@@ -30,23 +30,41 @@ def draw_scene(scene, path, sampleNum):
     
     ax.plot(path['x'], path['y'], color='blue', linestyle='-', markersize=2)
         
-    plt.savefig('./path-figures/path-{}.png'.format(sampleNum))
-    plt.clf()
+    #plt.savefig('./path-figures/path-{}.png'.format(sampleNum))
+    plt.show()
 
-def load_paths(sceneName, batchNum):
+def load_json(sceneName, batchNum):
+
     print('loading paths')
-    with open('./batches-train/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
-        path = json.load(f)
+    with open('./data/batches-new/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
+        paths = json.load(f)
     print('paths loaded')
-    return path
 
+    return paths
+
+def load_csv(sceneName, batchNum, numSamples):
+
+    pass
+            
+def load_paths(sceneName, batchNum, numSamples, saveFormat):
+
+    if saveFormat == 'csv':
+        paths = load_csv(sceneName, batchNum, numSamples)
+
+    elif saveFormat == 'json':
+        paths = load_json(sceneName, batchNum)
+
+    return paths
+    
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Display batches of training data from RRT dubins planner.')
 
     parser.add_argument('--scene', type=str, help='Scene to display.', default='test_room')
     parser.add_argument('--batch', type=int, help='Batch Number to display.', default=0)
-    parser.add_argument('--samples', type=int, help='Number of samples in batch to display.', default=1)
+    parser.add_argument('--batchsize', type=int, help='Number of samples in batch to display.', default=1)
+    parser.add_argument('--format', type=str, help='Batch file format.', default='json')
+    parser.add_argument('--start_index', type=int, help='What index to begin saving batches at', default=0)
     args = parser.parse_args()
 
     sceneName = args.scene
@@ -54,10 +72,12 @@ if __name__ == '__main__':
     print('scene loaded')
 
     batchNum = args.batch 
-    numSamples = args.samples 
-    paths = load_paths(sceneName, batchNum)
+    numSamples = args.batchsize
+    saveFormat = args.format 
+    startIndex = args.start_index
+
+    paths = load_paths(sceneName, batchNum, numSamples, saveFormat)
     for i in range(numSamples):
         print('drawing path {}'.format(i))
         path = paths['{}'.format(i)]['path']
-
         draw_scene(scene, path, i)

@@ -163,7 +163,7 @@ def load_batch_json(batchFileName, truncatedPathLength):
 
     # load raw json dict
     rawData = {}
-    with open('./batches-train/{}'.format(batchFileName), 'r') as f:
+    with open('./data/batches-train/{}'.format(batchFileName), 'r') as f:
         rawData = json.load(f)
 
     # build a list of instances and labels
@@ -199,14 +199,10 @@ def load_batch_json(batchFileName, truncatedPathLength):
 
     return (x_batch, y_batch)
 
-def load_batch_csv(batchFileName, batchSize):
-
-    pass
-
 def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
     batches = []
-    batchFileNames = os.listdir('./batches-train')
+    batchFileNames = os.listdir('./data/batches-train')
     truncatedPathLength = 760 
 
     print('started loading data')

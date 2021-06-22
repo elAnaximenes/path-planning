@@ -39,7 +39,7 @@ class DubinsCarRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 50 
+        self.maxIter = 100
         self.pathFromStartToTarget = None 
         self.leg=None
         if self.animate:
@@ -47,12 +47,9 @@ class DubinsCarRRT:
         self.text = None
         self.imgcount = 0
 
-
-
     def _select_random_target(self):
 
-        #targetIdx = random.randint(0, len(self.scene.targets) - 1)
-        targetIdx = 1
+        targetIdx = random.randint(0, len(self.scene.targets) - 1)
         target = self.scene.targets[targetIdx]
 
         return target, targetIdx
@@ -241,7 +238,7 @@ class DubinsCarRRT:
     def _write_caption(self, event):
 
         x = self.scene.dimensions['xmin'] + 0.5
-        y = self.scene.dimensions['ymin'] + 0.5
+        y = self.scene.dimensions['ymax'] - 1.0
         if event == 'candidate':
             self.text = plt.text(x, y, 'Calculating shortest path from tree to new point')
         elif event == 'valid path':
@@ -274,7 +271,7 @@ class DubinsCarRRT:
         
         self._write_caption(event)
 
-        plt.pause(0.5)
+        plt.pause(0.00001)
 
         plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
         self.imgcount += 1
@@ -313,9 +310,11 @@ class DubinsCarRRT:
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
-        self._draw_target(target, 'lime')
-        plt.pause(5.0)
-        self.leg.remove()
+
+        if self.animate:
+            self._draw_target(target, 'lime')
+            plt.pause(2.0)
+            self.leg.remove()
         
         # check for valid path from root to target
         isTargetReachable = self._is_point_reachable(self.root, target)
