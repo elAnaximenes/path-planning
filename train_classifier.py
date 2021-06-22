@@ -90,146 +90,15 @@ def histogram_path_lengths(pathLengths):
 def summary(history):
 
     plot_performance(history)
-    """
-    mean, std = histogram_path_lengths(pathLengths)
-
-    print("minimum path length:", np.min(pathLengths))
-    print("maximum path length:", np.max(pathLengths))
-    print("mean path length:", mean)
-    print("std path length:", std) 
-    """
-
-def normalize_instances(x_train, x_val):
-
-    mean = x_train.mean(axis=0, dtype=np.float64)
-    x_train -= mean
-    std = x_train.std(axis=0, dtype=np.float64)
-
-    x_train /= std
-
-    x_val -= mean
-    x_val /= std
-
-    return x_train, x_val
-
-def combine_batches(batches):
-
-    x = batches[0][0]
-    y = batches[0][1]
-
-    for x_batch, y_batch in batches[1:]:
-
-        x = np.concatenate((x, x_batch), axis=0)
-        y = np.concatenate((y, y_batch))
-
-    return x, y
-
-def split_data(x, y, trainValSplit):
-
-    splitIndex = int(x.shape[0] * trainValSplit)
-    x_train = x[:splitIndex]
-    y_train = y[:splitIndex]
-    x_val = x[splitIndex:]
-    y_val = y[splitIndex:]
-
-    return (x_train, y_train), (x_val, y_val)
-
-def pre_process_data(batches, trainValSplit, modelSelection):
-
-    x, y = combine_batches(batches)
-
-    # transform labels to one hot
-    x = np.array(x)
-    y = to_categorical(np.array(y))
-
-    # split into train and test sets
-    (x_train, y_train), (x_val, y_val) = split_data(x, y, trainValSplit)
-
-    # normalize to center mean at zero
-    x_train, x_val = normalize_instances(x_train, x_val)
-
-    trainData = (x_train, y_train)
-    valData = (x_val, y_val)
-
-    return trainData, valData
-
-def get_mean_and_std(data):
-
-    data = np.array(data)
-    mean = np.mean(data, axis=0)
-    std = np.std(data, axis=0)
-
-    return mean, std
-
-def load_batch_json(batchFileName, truncatedPathLength):
-
-    # load raw json dict
-    rawData = {}
-    with open('./data/batches-train/{}'.format(batchFileName), 'r') as f:
-        rawData = json.load(f)
-
-    # build a list of instances and labels
-    instances = [] 
-    labels = [] 
-
-    for sampleNumber in range(len(rawData)):
-
-        sample = rawData[str(sampleNumber)]
-        
-        x = sample['path']['x']
-        y = sample['path']['y']
-        theta = sample['path']['theta']
-
-        if len(x) < truncatedPathLength:
-            instance = np.zeros((3,truncatedPathLength))
-            x = np.array(x)
-            y = np.array(y)
-            theta = np.array(theta)
-            instance[0, :x.shape[0]] = x
-            instance[0, :y.shape[0]] = y
-            instance[0, :theta.shape[0]] = theta
-        else:
-            instance = np.array([x[:truncatedPathLength],y[:truncatedPathLength],theta[:truncatedPathLength]])
-
-        label = sample['target']['index']
-
-        instances.append(instance)
-        labels.append(label)
-
-    x_batch = np.array(instances)
-    y_batch = np.array(labels)
-
-    return (x_batch, y_batch)
 
 def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
-    """
-    batches = []
-    batchFileNames = os.listdir('./data/batches-train')
-    truncatedPathLength = 5000 
-
-    print('started loading data')
-    
-    # load raw data
-    for batchFileName in batchFileNames:
-
-        x_batch, y_batch = load_batch_json(batchFileName, truncatedPathLength)
-        batches.append((x_batch, y_batch))
-
-        numBatches -= 1
-        if numBatches == 0:
-            break
-
-    print('finished loading data')
-
-    # transform labels to categorical
-    (x_train, y_train), (x_val, y_val) = pre_process_data(batches, split, modelSelection)
-    """
     if modelSelection == 'FeedForward':
         dataLoader = FeedForwardDataLoader(split, numBatches)
     elif modelSelection == 'LSTM':
         dataLoader = LstmDataLoader(split, numBatches)
 
+    # load training and validation data
     (x_train, y_train), (x_val, y_val) = dataLoader.load() 
 
     # build classifier
