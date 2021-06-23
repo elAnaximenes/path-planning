@@ -18,6 +18,14 @@ class DataLoader:
         self.trainData = None
         self.valData = None
 
+    def get_mean_and_std(self, data):
+
+        data = np.array(data)
+        mean = np.mean(data, axis=0)
+        std = np.std(data, axis=0)
+
+        return mean, std
+
     def _normalize_instances(self):
 
         mean = self.x_train.mean(axis=0, dtype=np.float64)
@@ -64,16 +72,10 @@ class DataLoader:
         self.trainData = (self.x_train, self.y_train)
         self.valData = (self.x_val, self.y_val)
 
-    def get_mean_and_std(self, data):
-
-        data = np.array(data)
-        mean = np.mean(data, axis=0)
-        std = np.std(data, axis=0)
-
-        return mean, std
-
     def _load_batch_json(self, batchFileName):
 
+        # template for subclasses
+        print('Load batch from json is not implemented in subclass')
         pass
 
     def load(self):

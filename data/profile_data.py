@@ -65,6 +65,14 @@ for batchFileName in batchFileNames:
     labels += targets 
     pathLengths += lengths
 
+longestPath = 0
+for pathL in pathLengths:
+    if pathL > longestPath:
+        longestPath = pathL
+
+print('longestPath:', longestPath)
+exit(0)
+
 print('label length', len(labels))
 print('lengths length', len(pathLengths))
 mean, std = histogram_path_lengths(pathLengths)

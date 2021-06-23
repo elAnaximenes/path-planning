@@ -1,20 +1,33 @@
 import numpy as np
 import json
 import os
+import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-from .loader.loader import DataLoader
+from .base_loader.loader import DataLoader
 
 class LstmDataLoader(DataLoader):
 
     def __init__(self, split, numBatches):
 
         super().__init__(split, numBatches)
-    
-    def _normalize_instances(self):
+        self.numSamples = 0
         
-        for i in range(len(self.x)):
-            for j in range(len(self.x[i])):
-                self.x[i][j] /= 10
+    def _pad_instances(self):
+
+        maxLen = 0
+        for sample in self.x:
+            if maxLen < len(sample[0]):
+                maxLen = len(sample[0])
+
+        padded_samples = np.zeros(shape = (self.numSamples, 3, maxLen))
+        
+        for i in range(self.numSamples):
+
+            padded_samples[i][0][:len(self.x[i][0])] = self.x[i][0]
+            padded_samples[i][1][:len(self.x[i][1])] = self.x[i][1]
+            padded_samples[i][2][:len(self.x[i][2])] = self.x[i][2]
+
+        self.x = padded_samples
 
     def _combine_batches(self):
 
@@ -25,32 +38,27 @@ class LstmDataLoader(DataLoader):
         self.x = self.batches[0][0]
         self.y = self.batches[0][1]
 
-        print(self.y)
-
         for i in range(1, len(self.batches)):
 
             self.x.extend(self.batches[i][0])
             self.y.extend(self.batches[i][1])
 
-    def _split_data(self):
-
-        splitIndex = int(len(self.x) * self.split)
-        self.x_train = self.x[:splitIndex]
-        self.y_train = self.y[:splitIndex]
-        self.x_val = self.x[splitIndex:]
-        self.y_val = self.y[splitIndex:]
+        self.numSamples = len(self.x)
 
     def _pre_process_data(self):
 
+        # combine batches into a rectangular tensor
         self._combine_batches()
+        self._pad_instances()
 
         # transform labels to one hot
         self.y = to_categorical(np.array(self.y))
 
-        self._normalize_instances()
-
         # split into train and test sets
         self._split_data()
+
+        # center mean at zero
+        self._normalize_instances()
 
         self.trainData = (self.x_train, self.y_train)
         self.valData = (self.x_val, self.y_val)
@@ -100,6 +108,8 @@ class LstmDataLoader(DataLoader):
 
         self._pre_process_data()
 
+        print(self.x_train.shape, self.y_train.shape)
+        print(self.x_val.shape, self.y_val.shape)
         
         return (self.x_train, self.y_train), (self.x_val, self.y_val)
 

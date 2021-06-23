@@ -36,7 +36,7 @@ def draw_scene(scene, path, sampleNum):
 def load_json(sceneName, batchNum):
 
     print('loading paths')
-    with open('./data/batches-new/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
+    with open('./data/batches-train/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
         paths = json.load(f)
     print('paths loaded')
 

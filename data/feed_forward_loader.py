@@ -2,7 +2,7 @@ import numpy as np
 import json
 import os
 from tensorflow.keras.utils import to_categorical
-from .loader.loader import DataLoader
+from .base_loader.loader import DataLoader
 
 class FeedForwardDataLoader(DataLoader):
 

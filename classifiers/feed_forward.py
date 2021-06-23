@@ -8,6 +8,7 @@ class FeedForward(tf.keras.Model):
         super(FeedForward, self).__init__()
         self.inputLayer = layers.InputLayer(input_shape=(inputShape))
         self.flattenLayer = (layers.Flatten())
+        self.mask = layers.Masking()
         self.H1 = layers.Dense(1028, activation='relu')
         self.H2 = layers.Dense(256, activation='relu')
         self.H3 = layers.Dense(64, activation='relu')
@@ -17,6 +18,7 @@ class FeedForward(tf.keras.Model):
         
         x = self.inputLayer(x)
         x = self.flattenLayer(x)
+        x = self.mask(x)
         x = self.H1(x)
         x = self.H2(x)
         x = self.H3(x)

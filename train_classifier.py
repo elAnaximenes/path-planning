@@ -15,6 +15,8 @@ from data.lstm_loader import LstmDataLoader
 
 def build_model(modelSelection, inputShape):
 
+    print('input shape:', inputShape)
+
     if modelSelection == 'FeedForward':
 
         model = FeedForward(inputShape)
@@ -36,6 +38,15 @@ def get_trainer(modelSelection, model):
         trainer = LSTMTrainer(model)
 
     return trainer
+
+def get_data_loader(modelSelection):
+
+    if modelSelection == 'FeedForward':
+        dataLoader = FeedForwardDataLoader(split, numBatches)
+    elif modelSelection == 'LSTM':
+        dataLoader = LstmDataLoader(split, numBatches)
+
+    return dataLoader
 
 def plot_performance(history):
 
@@ -75,13 +86,10 @@ def summary(history):
 
 def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
 
-    if modelSelection == 'FeedForward':
-        dataLoader = FeedForwardDataLoader(split, numBatches)
-    elif modelSelection == 'LSTM':
-        dataLoader = LstmDataLoader(split, numBatches)
-
     # load training and validation data
+    dataLoader = get_data_loader(modelSelection)
     (x_train, y_train), (x_val, y_val) = dataLoader.load() 
+    print('number of paths in training set:', len(x_train))
 
     # build classifier
     inputShape = x_train[0].shape
@@ -91,8 +99,7 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
     # fit model to training data
     history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize)
 
-    print('input shape:', inputShape)
-    print('number of paths in training set:', len(x_train))
+    # summarize training results
     summary(history)
 
 if __name__ == '__main__':

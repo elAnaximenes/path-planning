@@ -30,15 +30,10 @@ class LSTMTrainer():
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
-        xBatchTrain = tf.constant(xBatchTrain, shape = (1, len(xBatchTrain[0]), 3))
-        yBatchTrain = tf.constant(yBatchTrain, shape = (1, 5))
-
         with tf.GradientTape() as tape:
 
             tape.watch(xBatchTrain)
             logits = self.model(xBatchTrain, training=True)
-            print(logits)
-            print(yBatchTrain)
             lossValue = self.loss_fn(yBatchTrain, logits)
 
         grads = tape.gradient(lossValue, self.model.trainable_variables)
@@ -69,16 +64,13 @@ class LSTMTrainer():
     def train(self, trainData, valData, epochs, batchSize):
 
         x_train, y_train = trainData
-        print('y train shape', y_train.shape)
         x_val, y_val = valData
 
-        #trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-        #trainDataset = trainDataset.batch(1)
-        trainDataset = zip(x_train, y_train)
+        trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+        trainDataset = trainDataset.batch(batchSize)
 
-        #valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
-        #valDataset = valDataset.batch(1)
-        valDataset = zip(x_val, y_val)
+        valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
+        valDataset = valDataset.batch(batchSize)
 
         for epoch in range(epochs):
             
@@ -90,8 +82,19 @@ class LSTMTrainer():
 
                 if step % 2 == 0:
                     print("Training loss at step {}: {:.4f}".format(step, float(lossValue)))
-                    print("Seen so far: {} samples".format((step + 1) * batchSize))
+                    print("Seen so far: {} samples".format((step + 1)))
 
             self._save_metrics(lossValue, valDataset)
             
         return self.history
+
+class tester:
+
+    def __init__(self, dataset, model):
+
+        self.dataset = dataset
+        self.model = 
+
+    def test(self):
+
+        pass
