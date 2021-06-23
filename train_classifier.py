@@ -84,20 +84,21 @@ def summary(history):
 
     plot_performance(history)
 
-def train_DNN(modelSelection, epochs, batchSize, split, numBatches):
+def train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch):
 
     # load training and validation data
     dataLoader = get_data_loader(modelSelection)
-    (x_train, y_train), (x_val, y_val) = dataLoader.load() 
+    (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
 
     # build classifier
-    inputShape = x_train[0].shape
+    #inputShape = x_train[0].shape[1]
+    inputShape = (3,)
     model = build_model(modelSelection, inputShape)
     trainer = get_trainer(modelSelection, model)
 
     # fit model to training data
-    history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize)
+    history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize, resume)
 
     # summarize training results
     summary(history)
@@ -111,6 +112,9 @@ if __name__ == '__main__':
     parser.add_argument('--batchsize', type=float, help='Size of batch in each epoch.', default = 512)
     parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
     parser.add_argument('--batches', type=float, help='How many batches to train on.', default = 10)
+    parser.add_argument('--resume',  dest='resume', action = 'store_true')
+    parser.set_defaults(resume=False)
+    parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)
 
     args = parser.parse_args()
     modelSelection=args.model
@@ -118,10 +122,12 @@ if __name__ == '__main__':
     batchSize = args.batchsize
     split = args.split
     numBatches = args.batches
+    resume = args.resume
+    startBatch = args.startbatch
 
     if split > 1.0 or split < 0.0:
         print('split must be a real number between 0.0 and 1.0')
         exit(2)
 
     # train
-    train_DNN(modelSelection, epochs, batchSize, split, numBatches)
+    train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch)

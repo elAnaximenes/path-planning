@@ -55,19 +55,15 @@ class FeedForwardDataLoader(DataLoader):
 
         return (x_batch, y_batch)
    
-    def load(self):
+    def load(self, startBatach):
 
         self.batches = []
-        self.batchFileNames = os.listdir('./data/batches-train')
+        self.batchFileNames = os.listdir('./data/batches-train')[startBatch:startBatch + self.numBatchesToLoad]
 
         for batchFileName in self.batchFileNames:
 
             x_batch, y_batch = self._load_batch_json(batchFileName)
             self.batches.append((x_batch, y_batch))
-
-            self.numBatchesToLoad -= 1
-            if self.numBatchesToLoad == 0:
-                break
 
         self._pre_process_data()
         

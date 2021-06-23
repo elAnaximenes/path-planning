@@ -69,7 +69,9 @@ class FeedForwardTrainer():
         self.history['valLoss'].append(float(lossValue))
         self.valAccMetric.reset_states()
 
-    def train(self, trainData, valData, epochs, batchSize):
+    def train(self, trainData, valData, epochs, batchSize, resume):
+        if resume:
+            self.model.loade_weights('./lstm_final_weights')
 
         x_train, y_train = trainData
         x_val, y_val = valData
@@ -93,5 +95,7 @@ class FeedForwardTrainer():
                     print("Seen so far: {} samples".format((step + 1) * batchSize))
 
             self._save_metrics(lossValue, valDataset)
-            
+
+        self.model.save_weights('./data/weights/lstm_final_weights')
+
         return self.history

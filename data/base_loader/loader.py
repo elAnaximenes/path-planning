@@ -8,7 +8,7 @@ class DataLoader:
     def __init__(self, split, numBatches, truncatedPathLength=1000):
 
         self.split = split
-        self.numBatchesToLoad = numBatches
+        self.numBatchesToLoad = int(numBatches)
         self.truncatedPathLength = truncatedPathLength 
         self.batches = None
         self.x_train = None
@@ -32,10 +32,24 @@ class DataLoader:
         self.x_train -= mean
         std = self.x_train.std(axis=0, dtype=np.float64)
 
-        self.x_train /= std
+        samples, features, timesteps = self.x_train.shape
+        print(samples, features, timesteps)
+        for i in range(samples):
+            for j in range(features):
+                for k in range(timesteps):
+                    if std[j,k] > 0:
+                        self.x_train[i,j,k] /= std[j,k]
+        #self.x_train /= std
 
         self.x_val -= mean
-        self.x_val /= std
+        samples, features, timesteps = self.x_val.shape
+        print(samples, features, timesteps)
+        for i in range(samples):
+            for j in range(features):
+                for k in range(timesteps):
+                    if std[j,k] > 0:
+                        self.x_val[i,j,k] /= std[j,k]
+        #self.x_val /= std
 
     def _combine_batches(self):
 

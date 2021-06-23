@@ -14,11 +14,15 @@ class LstmDataLoader(DataLoader):
         
     def _pad_instances(self):
 
+        """
         maxLen = 0
-        for sample in self.x:
-            if maxLen < len(sample[0]):
-                maxLen = len(sample[0])
+        for i in range(self.numSamples):
+            if len(self.x[i][0]) > maxLen:
+                maxLen = len(self.x[i][0])
+        """
+        maxLen = 9000
 
+        print('longest path:', maxLen)
         padded_samples = np.zeros(shape = (self.numSamples, 3, maxLen))
         
         for i in range(self.numSamples):
@@ -92,19 +96,15 @@ class LstmDataLoader(DataLoader):
 
         return (x_batch, y_batch)
    
-    def load(self):
+    def load(self, startBatch):
 
         self.batches = []
-        self.batchFileNames = os.listdir('./data/batches-train')
+        self.batchFileNames = os.listdir('./data/batches-train')[startBatch: startBatch+self.numBatchesToLoad]
 
         for batchFileName in self.batchFileNames:
 
             x_batch, y_batch = self._load_batch_json(batchFileName)
             self.batches.append((x_batch, y_batch))
-
-            self.numBatchesToLoad -= 1
-            if self.numBatchesToLoad == 0:
-                break
 
         self._pre_process_data()
 

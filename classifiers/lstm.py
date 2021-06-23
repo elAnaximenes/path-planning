@@ -3,15 +3,18 @@ from tensorflow.keras import layers
 
 class LSTM(tf.keras.Model):
 
-    def __init__(self, inputShape):
+    def __init__(self, inputShape=(3,)):
         
         super(LSTM, self).__init__()
+        
+        self.inputLayer = layers.InputLayer(input_shape=(inputShape))
         self.lstmcell = layers.RNN(layers.LSTMCell(4))
-        self.H1 = layers.Dense(64, activation='relu')
+        self.H1 = layers.Dense(16, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
         
+        x = self.inputLayer(x)
         x = self.lstmcell(x)
         x = self.H1(x)
 
@@ -61,10 +64,15 @@ class LSTMTrainer():
         self.history['valLoss'].append(float(lossValue))
         self.valAccMetric.reset_states()
 
-    def train(self, trainData, valData, epochs, batchSize):
+    def train(self, trainData, valData, epochs, batchSize, resume = False):
+
+        if resume:
+            self.model.load_weights('./data/weights/lstm_final_weights')
+            #self.model = tf.keras.models.load_model('./data/weights/lstm_final_model')
 
         x_train, y_train = trainData
         x_val, y_val = valData
+        print(x_train.shape)
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         trainDataset = trainDataset.batch(batchSize)
@@ -85,6 +93,8 @@ class LSTMTrainer():
                     print("Seen so far: {} samples".format((step + 1)))
 
             self._save_metrics(lossValue, valDataset)
+
+        self.model.save_weights('./data/weights/lstm_final_weights')
             
         return self.history
 
@@ -93,7 +103,7 @@ class tester:
     def __init__(self, dataset, model):
 
         self.dataset = dataset
-        self.model = 
+        self.model = model
 
     def test(self):
 
