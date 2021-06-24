@@ -104,7 +104,14 @@ class tester:
 
         self.dataset = dataset
         self.model = model
+        self.numSamples = len(dataset[1])
+        accuracyInfo = {'true positives': [0]*numSamples, 'label counts': [0]*self.numSamples}
 
     def test(self):
+
+        self.model.load_weights('./data/lstm_weights/lstm_final_weights')
+
+        for instance, label in dataset:
+            for timeStep in range(len(instance)):
 
         pass
