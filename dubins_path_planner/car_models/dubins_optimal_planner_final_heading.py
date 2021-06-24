@@ -25,10 +25,11 @@ class DubinsOptimalPlannerFinalHeading:
     def _calculate_alpha_and_beta(self):
 
         xGoal = self.target[0]
+        yGoal = self.target[1]
         self.psi = math.acos(xGoal / self.euclideanDistanceStartToFinish)
 
-        #if self.psi < 0:
-        #    self.psi = (2.0*math.pi) - self.psi
+        if yGoal < 0:
+            self.psi = (2.0*math.pi) - self.psi
 
         theta = self.startPosition[-1]
         if self.psi > theta:

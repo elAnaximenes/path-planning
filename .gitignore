@@ -4,6 +4,6 @@ __pycache__
 *.out
 car_models/saved_paths/
 batches*/
-weights/
+*weights/
 saved_plots/
 saved_images/

@@ -67,7 +67,7 @@ class LSTMTrainer():
     def train(self, trainData, valData, epochs, batchSize, resume = False):
 
         if resume:
-            self.model.load_weights('./data/weights/lstm_final_weights')
+            self.model.load_weights('./data/lstm_weights/lstm_final_weights')
             #self.model = tf.keras.models.load_model('./data/weights/lstm_final_model')
 
         x_train, y_train = trainData
@@ -94,7 +94,7 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('./data/weights/lstm_final_weights')
+        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
             
         return self.history
 
