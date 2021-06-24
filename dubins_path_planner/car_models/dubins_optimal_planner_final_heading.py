@@ -1,4 +1,5 @@
 import math
+from math import sin, cos
 import numpy as np
 from .dubins_model import DubinsCar
 
@@ -10,13 +11,32 @@ class DubinsOptimalPlannerFinalHeading:
         self.minTurningRadius = dubinsCar.velocity / dubinsCar.umax
         self.startPosition = startPosition 
         self.target = target
-        self.euclideanDistanceStartToFinish = self._calculate_euclidean_distance(startPosition, target)
+        self._center_car_at_origin()
+        self.d = self._calculate_euclidean_distance(startPosition, target)
         self.angularDistanceTraveled = 0.0
         self.linearDistanceTraveled = 0.0
         self.psi = None
         self.alpha = None
         self.beta = None
         self._calculate_alpha_and_beta()
+
+    def _center_car_at_origin(self):
+
+        deltaX = self.target[0] - self.startPosition[0]
+        deltaY = self.target[1] - self.startPosition[1]
+        theta = self.startPosition[2] 
+        phi = self.target[2]
+
+        targetXRelativeToStart = (deltaX * cos(theta)) + (deltaY * sin(theta))
+        targetYRelativeToStart = (-1.0 * deltaX * sin(theta)) + (deltaY * cos(theta))
+        if phi > theta:
+            targetHeadingRelativeToStart = phi - theta
+        else:
+            targetHeadingRelativeToStart = (2.0 * math.pi) - theta + phi
+
+        self.startPosition = np.array([0.0, 0.0, 0.0])
+
+        self.target = np.array([targetXRelativeToStart, targetYRelativeToStart, targetHeadingRelativeToStart])
 
     def _calculate_euclidean_distance(self, start, end):
 
@@ -26,7 +46,7 @@ class DubinsOptimalPlannerFinalHeading:
 
         xGoal = self.target[0]
         yGoal = self.target[1]
-        self.psi = math.acos(xGoal / self.euclideanDistanceStartToFinish)
+        self.psi = math.acos(xGoal / self.d)
 
         if yGoal < 0:
             self.psi = (2.0*math.pi) - self.psi
@@ -42,132 +62,34 @@ class DubinsOptimalPlannerFinalHeading:
             self.beta = self.psi - phi 
         else:
             self.beta = (2.0 * math.pi) - phi + self.psi
-        print(self.psi, self.alpha, self.beta)
-        exit(1)
 
-    def get_path_parameters(self):
+    def _calculate_LSL_params(self):
 
-        r = self.minTurningRadius
+        t = (-1.0 * self.alpha) + (math.atan2((cos(self.beta) - cos(self.alpha)), (d + sin(self.alpha) - sin(self.beta))) % (2.0 * math.pi))
+        p = math.sqrt(2.0 + (self.d**2) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha - self.beta))))
+        q = self.beta - (math.atan2((cos(self.beta) - cos(self.alpha)), (d + sin(self.alpha) - sin(self.beta))) % (2.0 * math.pi))
 
-        deltaX = self.target[0] - self.startPosition[0]
-        deltaY = self.target[1] - self.startPosition[1]
-        theta = self.startPosition[2] 
+        return t, p, q
 
-        targetXRelativeToStart = (deltaX * math.cos(theta)) + (deltaY * math.sin(theta))
-        targetYRelativeToStart = (-1.0 * deltaX * math.sin(theta)) + (deltaY * math.cos(theta))
+    def _calculate_RSR_params(self):
 
-        return targetXRelativeToStart, targetYRelativeToStart, r
+        t = self.alpha - (math.atan2((cos(self.alpha) - cos(self.beta)), (self.d - sin(self.alpha) + sin(self.beta))) % (2.0 * math.pi))
+        p = math.sqrt(2.0 + (self.d**2) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.beta - self.alpha))))
+        t = (-1.0 * self.beta % (2.0 * math.pi)) + (math.atan2((cos(self.alpha) - cos(self.beta)), (self.d - sin(self.alpha) + sin(self.beta))) % (2.0 * math.pi))
 
-    def calculate_dubins_parameters(self, word):
+        return t, p, q
 
-        # distance from car to target, minimum turning radius of car
-        deltaX, deltaY, r = self.get_path_parameters()
-        alpha = 0.0
-        distance = 0.0
+    def _calculate_RSL_params(self):
 
-        deltaX = abs(deltaX)
-        deltaY = abs(deltaY)
+        p = math.sqrt( (-1.0 * self.alpha) + (self.d ** 2) + (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha) + sin(self.beta))))
+        t = ((-1.0 * self.alpha) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p)) % (2.0 * math.pi)
+        q = (-1.0 * (self.beta % (2.0 * math.pi))) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - (math.atan2(-2.0, p) % (2.0 * math.pi))
 
-        # turn first
-        if word == 'LS' or word == 'RS':
-            if self._target_in_front_of_car():
-                alpha = -2.0 * math.atan((deltaX - math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))) / (deltaY - (2 * r)))
-            else:
-                alpha = -2.0 * math.atan2((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))), (deltaY - (2 * r)))
-            distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
-            
-        # drive straight first
-        elif word == 'SR':
-            pass
-        
-        return alpha, distance
-
-    def _target_in_front_of_car(self):
-
-        deltaX, deltaY, minTurningRadius = self.get_path_parameters()
-
-        # dot product car direction and distance vector to target to determine
-        # if target is initially in front of or behind car
-        targetVector = np.array([deltaX, deltaY])
-        carDirectionVector = np.array([1.0, 0.0])
-        targetInFrontOfCar = (np.dot(carDirectionVector, targetVector) > 0)
-
-        return targetInFrontOfCar
-
-    def _target_left_of_car(self):
-        
-        deltaX, deltaY, r = self.get_path_parameters()
-
-        # cross product direction vector of car and vector from car to target
-        # to determine which side of car target is on
-        targetVector = np.array([deltaX, deltaY, 0.0])
-        carDirectionVector = np.array([1.0, 0.0, 0.0])
-        targetLeftOfCar = np.cross(carDirectionVector, targetVector)[2] > 0
-
-        return targetLeftOfCar 
-
-    def _turn_straight(self, alpha, distance, angularVelocity):
-        
-        arcLength = abs(self.minTurningRadius * alpha)
-        path = {'x': [], 'y': [], 'theta': []}
-
-        # turn car
-        while self.angularDistanceTraveled < arcLength:
-
-            self.angularDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
-            state = self.dubinsCar.step(angularVelocity)
-
-            path['x'].append(self.dubinsCar.state['x'])
-            path['y'].append(self.dubinsCar.state['y'])
-            path['theta'].append(self.dubinsCar.state['theta'])
-
-        # drive car straight to goal
-        while self.linearDistanceTraveled < distance:
-
-            self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
-            state = self.dubinsCar.step(0.0)
-
-            path['x'].append(self.dubinsCar.state['x'])
-            path['y'].append(self.dubinsCar.state['y'])
-            path['theta'].append(self.dubinsCar.state['theta'])
-
-        return path
-
-    def calculate_word(self):
-
-        deltaX, deltaY, r = self.get_path_parameters()
-
-        # is target left or right of car
-        if self._target_left_of_car():
-            word = 'L'
-        else:
-            word = 'R'
-
-        rho = np.linalg.norm(self.target[:2] - self.startPosition[:2])
-
-        # is target within the car's maximum turning radius
-        if rho > r:
-            word += 'S'
-        else:
-            word = 'S' + word
-
-        return word 
+        return t, p, q
 
     # plan path and steer car to target
     def run(self):
 
-        # get correct dubins primitive(RS, LS, SR, SL)
-        word = self.calculate_word()
         
-        # based on word, get angle of turning arc and straight distance
-        alpha, distance = self.calculate_dubins_parameters(word)
-
-        # steer car to target
-        if word == 'LS':
-            path = self._turn_straight(alpha, distance, self.dubinsCar.umax)
-        elif word == 'RS':
-            path = self._turn_straight(alpha, distance, self.dubinsCar.umin)
-
-        # history of car coordinates and orientations
-        return path
+        pass
 
