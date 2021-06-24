@@ -11,10 +11,10 @@ def plot_path(path, origin, target, acceptableError, iteration):
 
     # draw car path as arrows on plot 
     i = 0
-    rho = np.linalg.norm(target[:2] - origin[:2])
+    rho = abs(np.linalg.norm(target[:2] - origin[:2]))
 
     for x,y,theta in zip(path['x'], path['y'], path['theta']):
-        if i % (500 * int(rho)) == 0:
+        if i % (5 * int(rho)) == 0:
             plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
         i += 1
 
@@ -41,10 +41,11 @@ def plot_path(path, origin, target, acceptableError, iteration):
 def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, iteration=0):
 
     # configure and create dubins car
-    velocity = 0.5
+    velocity = 1.0 
     maxSteeringAngle = (math.pi / 4.0) 
     U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
-    dubinsCar = DubinsCar(startPosition, velocity, U)
+    dt = 0.001
+    dubinsCar = DubinsCar(startPosition, velocity, U, dt)
 
     # create planner
     planner = DubinsOptimalPlannerFinalHeading(dubinsCar, startPosition, target)
@@ -59,23 +60,23 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
     path = planner.run()
 
     # graph path
-    acceptableError = 0.1
+    acceptableError = 0.5
     if animate:
         plot_path(path, startPosition, target, acceptableError, iteration)
 
     # test car made it to goal
     carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
-    distanceToGoal = abs(np.linalg.norm(carFinalPosition[:2] - target[:2]))
+    print(carFinalPosition)
+    print(target)
+    distanceToGoal = abs(np.linalg.norm(carFinalPosition - target[:2]))
+    print(distanceToGoal)
     assert distanceToGoal < acceptableError, 'Car did not reach goal'
 
 def train(animate=True):
 
     # set starting position and target
-    startPosition = np.array([0.0, 0.0, math.pi/6.0])
-    target = np.array([10.0, -17.32050808, 0.75*math.pi])
-    simulate_dubins_optimal_path_planner(startPosition, target, animate)
-    startPosition = np.array([0.18, 1.55, 1.05*math.pi])
-    target = np.array([1.89, 1.34, 0.0])
+    startPosition = np.array([-5.0, 5.0, 1.5*math.pi])
+    target = np.array([1.0, -2.0, 1.65*math.pi])
     simulate_dubins_optimal_path_planner(startPosition, target, animate)
 
 def test(animate=True):

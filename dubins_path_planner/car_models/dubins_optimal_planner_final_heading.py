@@ -14,7 +14,8 @@ class DubinsOptimalPlannerFinalHeading:
         self._center_car_at_origin()
         self.d = self._calculate_euclidean_distance(startPosition, target)
         self.firstCurveDistanceTraveled = 0.0
-        self.firstCurveDistanceTraveled = 0.0
+        self.linearDistanceTraveled = 0.0
+        self.secondCurveDistanceTraveled = 0.0
         self.psi = None
         self.alpha = None
         self.beta = None
@@ -87,7 +88,7 @@ class DubinsOptimalPlannerFinalHeading:
 
         return t, p, q
 
-    def _calcuate_LSR_params(self):
+    def _calculate_LSR_params(self):
 
         p = math.sqrt((self.d**2) - 2.0 + (2.0 * cos(self.alpha - self.beta)) - (2.0 * self.d * (sin(self.alpha) + sin(self.beta))))
         t = self.alpha - math.atan2((cos(self.alpha) + cos(self.beta)), (self.d - sin(self.alpha) - sin(self.beta))) + (math.atan2(2.0, p) % (2.0 * math.pi))
@@ -119,6 +120,7 @@ class DubinsOptimalPlannerFinalHeading:
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
+        print(self.dubinsCar.state)
         while self.linearDistanceTraveled < p:
 
             self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
@@ -128,29 +130,31 @@ class DubinsOptimalPlannerFinalHeading:
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
-        angularVelocity = self.get_angular_velocity(word[-1])
+        print(self.dubinsCar.state)
+        angularVelocity = self._get_angular_velocity(word[-1])
 
         while self.secondCurveDistanceTraveled < q:
 
-            self.firstCurveDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+            self.secondCurveDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
             state = self.dubinsCar.step(angularVelocity)
 
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
+        print(self.dubinsCar.state)
         return path
 
     def _calculate_path_params(self, word):
 
-        if word = 'LSL':
-            return self._claculate_LSL_params()
-        elif word = 'RSR':
-            return self._claculate_RSR_params()
-        elif word = 'RSL':
-            return self._claculate_RSL_params()
-        elif word = 'LSR':
-            return self._claculate_LSR_params()
+        if word == 'LSL':
+            return self._calculate_LSL_params()
+        elif word == 'RSR':
+            return self._calculate_RSR_params()
+        elif word == 'RSL':
+            return self._calculate_RSL_params()
+        elif word == 'LSR':
+            return self._calculate_LSR_params()
 
     def _get_quadrant(self, angle):
     
@@ -165,18 +169,86 @@ class DubinsOptimalPlannerFinalHeading:
         else:
             return 4
 
+    def _switch_1_2(self):
+
+        t_rsr, p_rsr, q_rsr = self._calculate_path_params('RSR')
+        t_rsl, p_rsl, q_rsl = self._calculate_path_params('RSL')
+
+        s_12 = p_rsr - p_rsl - (2.0 * (q_rsl - math.pi))
+
+        if s_12 < 0:
+            return 'RSR'
+        else:
+            return 'RSL'
+
+    def _switch_1_3(self):
+
+        t_rsr, p_rsr, q_rsr = self._calculate_path_params('RSR')
+        
+        s_13 = t_rsr - math.pi
+
+        if s_13 < 0:
+            return 'RSR'
+        else:
+            return 'LSR'
+
     def _get_word(self):
 
         alpha_quadrant = self._get_quadrant(self.alpha)
         beta_quadrant = self._get_quadrant(self.beta)
 
-        return 'LSR'
+        if True:
+            return 'LSR'
+
+        word = None
+        if alpha_quadrant == 1:
+            if beta_quadrant == 1:
+                word == 'RSL'
+            elif beta_quadrant == 2:
+                word = self._switch_1_2()
+            elif beta_quadrant == 3:
+                word = self._switch_1_3()
+            elif beta_quadrant == 4:
+                word = self._switch_1_4()
+
+        elif alpha_quadrant == 2:
+            if beta_quadrant == 1:
+                word = self._switch_2_1()
+            elif beta_quadrant == 2:
+                word = self._switch_2_2()
+            elif beta_quadrant == 3:
+                word = 'RSR' 
+            elif beta_quadrant == 4:
+                word = self._switch_2_4()
+
+        elif alpha_quadrant == 3:
+            if beta_quadrant == 1:
+                word = self._switch_3_1()
+            elif beta_quadrant == 2:
+                word = 'LSL' 
+            elif beta_quadrant == 3:
+                word = self._switch_3_3() 
+            elif beta_quadrant == 4:
+                word = self._switch_3_4()
+
+        elif alpha_quadrant == 4:
+            if beta_quadrant == 1:
+                word = self._switch_4_1()
+            elif beta_quadrant == 2:
+                word = self._switch_4_2()
+            elif beta_quadrant == 3:
+                word = self._switch_4_3() 
+            elif beta_quadrant == 4:
+                word = 'LSR' 
+
+        return word
 
     # plan path and steer car to target
     def run(self):
 
         word = self._get_word()
         t, p, q = self._calculate_path_params(word)
+        print(t, p, q)
         path = self._steer_car_to_target(t,p,q,word)
         
         return path
