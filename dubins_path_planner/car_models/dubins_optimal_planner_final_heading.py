@@ -2,7 +2,7 @@ import math
 import numpy as np
 from .dubins_model import DubinsCar
 
-class DubinsOptimalPlanner:
+class DubinsOptimalPlannerFinalHeading:
 
     def __init__(self, dubinsCar, startPosition, target):
 
@@ -10,8 +10,39 @@ class DubinsOptimalPlanner:
         self.minTurningRadius = dubinsCar.velocity / dubinsCar.umax
         self.startPosition = startPosition 
         self.target = target
+        self.euclideanDistanceStartToFinish = self._calculate_euclidean_distance(startPosition, target)
         self.angularDistanceTraveled = 0.0
         self.linearDistanceTraveled = 0.0
+        self.psi = None
+        self.alpha = None
+        self.beta = None
+        self._calculate_alpha_and_beta()
+
+    def _calculate_euclidean_distance(self, start, end):
+
+        return abs(np.linalg.norm(start[:2] - end[:2]))
+
+    def _calculate_alpha_and_beta(self):
+
+        xGoal = self.target[0]
+        self.psi = math.acos(xGoal / self.euclideanDistanceStartToFinish)
+
+        #if self.psi < 0:
+        #    self.psi = (2.0*math.pi) - self.psi
+
+        theta = self.startPosition[-1]
+        if self.psi > theta:
+            self.alpha = self.psi - theta
+        else:
+            self.alpha = (2.0 * math.pi) - theta + self.psi
+
+        phi = self.target[-1]
+        if self.psi > phi:
+            self.beta = self.psi - phi 
+        else:
+            self.beta = (2.0 * math.pi) - phi + self.psi
+        print(self.psi, self.alpha, self.beta)
+        exit(1)
 
     def get_path_parameters(self):
 
@@ -52,13 +83,13 @@ class DubinsOptimalPlanner:
 
     def _target_in_front_of_car(self):
 
-        deltaX, deltaY, r = self.get_path_parameters()
+        deltaX, deltaY, minTurningRadius = self.get_path_parameters()
 
         # dot product car direction and distance vector to target to determine
         # if target is initially in front of or behind car
         targetVector = np.array([deltaX, deltaY])
         carDirectionVector = np.array([1.0, 0.0])
-        targetInFrontOfCar = np.dot(carDirectionVector, targetVector) > 0
+        targetInFrontOfCar = (np.dot(carDirectionVector, targetVector) > 0)
 
         return targetInFrontOfCar
 
@@ -101,10 +132,6 @@ class DubinsOptimalPlanner:
 
         return path
 
-    def _straight_turn(self):
-        
-        pass
-
     def calculate_word(self):
 
         deltaX, deltaY, r = self.get_path_parameters()
@@ -131,7 +158,7 @@ class DubinsOptimalPlanner:
         # get correct dubins primitive(RS, LS, SR, SL)
         word = self.calculate_word()
         
-        # based on primitive, get angle of turning arc and straight distance
+        # based on word, get angle of turning arc and straight distance
         alpha, distance = self.calculate_dubins_parameters(word)
 
         # steer car to target

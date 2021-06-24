@@ -1,8 +1,9 @@
-saved-paths/*
+saved_paths/*
 __pycache__
 *.png
 *.out
 car_models/saved_paths/
 batches*/
 weights/
-
+saved_plots/
+saved_images/
