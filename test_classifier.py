@@ -62,6 +62,7 @@ def get_tester(modelSelection, dataset, model):
 def test_model(modelSelection, dataDirectory, numBatches):
 
     loader = None
+
     loader =ValidateDataLoader(numBatches, dataDirectory)
     dataset = loader.load()
     print('dataset loaded')
@@ -88,6 +89,9 @@ if __name__ == '__main__':
 
     modelSelection = args.model
     dataDirectory = args.directory
+
+    if dataDirectory == 'tower':
+        dataDirectory = 'D:\\path_planning_data\\batches-validate'
     numBatches = args.batches
 
     test_model(modelSelection, dataDirectory, numBatches)

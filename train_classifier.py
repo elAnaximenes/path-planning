@@ -41,9 +41,9 @@ def get_trainer(modelSelection, model):
 
     return trainer
 
-def get_data_loader(modelSelection, numBatches):
+def get_data_loader(modelSelection, numBatches, dataDirectory):
 
-    dataDirectory = './data/batches-train'
+
     if modelSelection == 'FeedForward':
         dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
     elif modelSelection == 'LSTM':
@@ -133,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
     parser.set_defaults(resume=False)
     parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)
+    parser.add_argument('--directory', type = str, default = './data/batches-train')
 
     args = parser.parse_args()
     modelSelection=args.model
@@ -142,10 +143,13 @@ if __name__ == '__main__':
     numBatches = args.batches
     resume = args.resume
     startBatch = args.startbatch
+    dataDirectory = args.directory
 
     if split > 1.0 or split < 0.0:
         print('split must be a real number between 0.0 and 1.0')
         exit(2)
+    if dataDirectory == 'tower':
+        dataDirectory = 'D:\\path_planning_data\\batches-train'
 
     # train
     train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch)
