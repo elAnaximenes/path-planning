@@ -9,23 +9,21 @@ class LSTM(tf.keras.Model):
         super(LSTM, self).__init__()
         
         self.inputLayer = layers.InputLayer(input_shape=(inputShape))
-        #self.mask = layers.Masking(mask_value = 0.0)
-        self.lstmcell = layers.RNN(layers.LSTMCell(4))
-        self.H1 = layers.Dense(16, activation='relu')
+        self.mask = layers.Masking(mask_value = 0.0)
+        #self.lstm = layers.LSTM(return_sequences=True)
+        self.lstm = layers.LSTM(16, return_sequences=False)
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
         
         #print('shape of network input:', x.shape)
         x = self.inputLayer(x)
-        #x = self.mask(x)
+        x = self.mask(x)
         #print('input to LSTM layer')
         #print(x.shape)
-        x = self.lstmcell(x)
+        x = self.lstm(x)
         #print('output of LSTM layer')
         #print(x.shape)
-        x = self.H1(x)
-
         return self.outputLayer(x)
 		
 class LSTMTrainer():
@@ -104,8 +102,8 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        #self.model.save_weights('./data/lstm_weights/lstm_final_weights')
-        #self.model.save('./data/lstm_weights/lstm_model')
+        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
+        self.model.save('./data/lstm_weights/lstm_model')
             
         return self.history
 
