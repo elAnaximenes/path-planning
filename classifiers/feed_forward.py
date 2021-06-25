@@ -70,6 +70,7 @@ class FeedForwardTrainer():
         self.valAccMetric.reset_states()
 
     def train(self, trainData, valData, epochs, batchSize, resume):
+
         if resume:
             self.model.load_weights('./data/feed_forward_weights/feed_forward_final_weights')
 
@@ -100,3 +101,7 @@ class FeedForwardTrainer():
         self.model.save('./data/feed_forward_weights/feed_forward_model')
 
         return self.trainingHistory
+    
+class FeedForwardTester():
+
+    pass

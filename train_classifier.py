@@ -13,6 +13,7 @@ from classifiers.feed_forward import FeedForward, FeedForwardTrainer
 from classifiers.lstm import LSTM, LSTMTrainer
 from data.feed_forward_train_loader import FeedForwardTrainDataLoader
 from data.lstm_train_loader import LstmTrainDataLoader
+from training_history.plot_training_history import plot_training_history
 
 def build_model(modelSelection, inputShape):
 
@@ -85,7 +86,8 @@ def plot_performance(history):
 
 def summary(history, modelSelection, numBatches, startBatch):
 
-    plot_performance(history)
+    #plot_performance(history)
+    plot_training_history(history, modelSelection)
     historyFileName = './training_history/{}_{}_batches_starting_at_{}.json'.format(modelSelection, numBatches, startBatch)
     trainingHistory = {'trainLoss': history['trainLoss'],\
                      'valLoss': history['valLoss'],\
@@ -95,7 +97,7 @@ def summary(history, modelSelection, numBatches, startBatch):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch):
 
     # load training and validation data
     dataLoader = get_data_loader(modelSelection, numBatches)
@@ -146,4 +148,4 @@ if __name__ == '__main__':
         exit(2)
 
     # train
-    train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch)

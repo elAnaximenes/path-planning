@@ -89,14 +89,6 @@ class DataLoader:
             self.x = np.concatenate((self.x, x_batch), axis=0)
             self.y = np.concatenate((self.y, y_batch))
 
-    def _split_data(self):
-
-        splitIndex = int(self.x.shape[0] * self.split)
-        self.x_train = self.x[:splitIndex]
-        self.y_train = self.y[:splitIndex]
-        self.x_val = self.x[splitIndex:]
-        self.y_val = self.y[splitIndex:]
-
     def _load_batch_json(self, batchFileName):
 
         # template for subclasses
@@ -115,6 +107,14 @@ class TrainLoader(DataLoader):
         self.trainData = None
         self.valData = None
         self.split = split
+
+    def _split_data(self):
+
+        splitIndex = int(self.x.shape[0] * self.split)
+        self.x_train = self.x[:splitIndex]
+        self.y_train = self.y[:splitIndex]
+        self.x_val = self.x[splitIndex:]
+        self.y_val = self.y[splitIndex:]
 
     def _pre_process_data(self):
 

@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras import layers 
 
 class LSTM(tf.keras.Model):
@@ -14,8 +15,13 @@ class LSTM(tf.keras.Model):
 		
     def call(self, x):
         
+        #print('shape of network input:', x.shape)
         x = self.inputLayer(x)
+        #print('input to LSTM layer')
+        #print(x.shape)
         x = self.lstmcell(x)
+        #print('output of LSTM layer')
+        #print(x.shape)
         x = self.H1(x)
 
         return self.outputLayer(x)
@@ -86,6 +92,8 @@ class LSTMTrainer():
 
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
+
+                print('shape of network input', xBatchTrain.shape)
                 lossValue = self._train_step(xBatchTrain, yBatchTrain)
 
                 if step % 2 == 0:
@@ -94,12 +102,12 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
-        self.model.save('./data/lstm_weights/lstm_model')
+        #self.model.save_weights('./data/lstm_weights/lstm_final_weights')
+        #self.model.save('./data/lstm_weights/lstm_model')
             
         return self.history
 
-class tester:
+class LSTMTester:
 
     def __init__(self, dataset, model):
 
@@ -112,19 +120,27 @@ class tester:
 
         self.model.load_weights('./data/lstm_weights/lstm_final_weights')
 
-        for instance, label in dataset:
+        print('model weights were loaded')
 
-            for timeStep in range(len(instance)):
+        for instance, label in self.dataset:
 
-                inputTensor = instance[:(timeStep + 1)]
-                logits = self.model(logits)
+            newInstance = np.zeros((1,3,9000))
+
+            for timeStep in range(instance.shape[1]):
+
+                newInstance[0,:, timeStep] += instance[:, timeStep]
+                inputTensor = newInstance 
+                
+                #inputTensor = tf.tensor(newInstance )
+                logits = self.model(inputTensor)
                 prediction = np.argmax(logits)
-                if len(accuracyInfo['tp']) < timeStep+1:
+
+                if len(self.accuracyInfo['tp']) < timeStep+1:
                     self.accuracyInfo['tp'].append(0)
                     self.accuracyInfo['label count'].append(0)
 
                 self.accuracyInfo['label count'][timeStep] += 1
-                if prediction == label:
+                if prediction == np.argmax(label):
                     self.accuracyInfo['tp'][timeStep] += 1
 
         return self.accuracyInfo
