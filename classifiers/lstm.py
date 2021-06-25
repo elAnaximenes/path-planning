@@ -114,19 +114,23 @@ class LSTMTester:
         self.dataset = dataset
         self.model = model
         self.numSamples = len(dataset[1])
-        self.accuracyInfo = {'tp': [0], 'label count': [0]}
+        self.accuracyInfo = {'tp': [], 'label count': []}
 
     def test(self):
 
         self.model.load_weights('./data/lstm_weights/lstm_final_weights')
 
         print('model weights were loaded')
+        self.dataset = self.dataset[:10]
 
         for instance, label in self.dataset:
 
             newInstance = np.zeros((1,3,9000))
 
             for timeStep in range(instance.shape[1]):
+
+                if timeStep >= 1000:
+                    break
 
                 newInstance[0,:, timeStep] += instance[:, timeStep]
                 inputTensor = newInstance 
