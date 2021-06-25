@@ -8,5 +8,5 @@ batches*/
 saved_plots/
 saved_images/
 logs/
-training_history/
+training_history/*.json
 *.out
