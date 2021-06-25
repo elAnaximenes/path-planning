@@ -8,7 +8,7 @@ class FeedForward(tf.keras.Model):
         super(FeedForward, self).__init__()
         self.inputLayer = layers.InputLayer(input_shape=(inputShape))
         self.flattenLayer = (layers.Flatten())
-        self.mask = layers.Masking()
+        #self.mask = layers.Masking()
         self.H1 = layers.Dense(1028, activation='relu')
         self.H2 = layers.Dense(256, activation='relu')
         self.H3 = layers.Dense(64, activation='relu')
@@ -18,7 +18,7 @@ class FeedForward(tf.keras.Model):
         
         x = self.inputLayer(x)
         x = self.flattenLayer(x)
-        x = self.mask(x)
+        #x = self.mask(x)
         x = self.H1(x)
         x = self.H2(x)
         x = self.H3(x)
@@ -34,7 +34,7 @@ class FeedForwardTrainer():
         self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
         self.trainAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.valAccMetric = tf.keras.metrics.CategoricalAccuracy()
-        self.history = {'trainAcc':[], 'valAcc':[], 'trainLoss':[], 'valLoss':[]}
+        self.trainingHistory = {'trainAcc':[], 'valAcc':[], 'trainLoss':[], 'valLoss':[]}
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
@@ -54,8 +54,8 @@ class FeedForwardTrainer():
     def _save_metrics(self, lossValue, valDataset):
 
         trainAcc = self.trainAccMetric.result()
-        self.history['trainAcc'].append(trainAcc)
-        self.history['trainLoss'].append(float(lossValue))
+        self.trainingHistory['trainAcc'].append(trainAcc)
+        self.trainingHistory['trainLoss'].append(float(lossValue))
         self.trainAccMetric.reset_states()
 
         for xBatchVal, yBatchVal in valDataset:
@@ -65,13 +65,13 @@ class FeedForwardTrainer():
             lossValue = self.loss_fn(yBatchVal, valLogits)
 
         valAcc = self.valAccMetric.result()
-        self.history['valAcc'].append(valAcc)
-        self.history['valLoss'].append(float(lossValue))
+        self.trainingHistory['valAcc'].append(valAcc)
+        self.trainingHistory['valLoss'].append(float(lossValue))
         self.valAccMetric.reset_states()
 
     def train(self, trainData, valData, epochs, batchSize, resume):
         if resume:
-            self.model.loade_weights('./data/feed_forward_weights/feed_forward_final_weights')
+            self.model.load_weights('./data/feed_forward_weights/feed_forward_final_weights')
 
         x_train, y_train = trainData
         x_val, y_val = valData
@@ -97,5 +97,6 @@ class FeedForwardTrainer():
             self._save_metrics(lossValue, valDataset)
 
         self.model.save_weights('./data/feed_forward_weights/feed_forward_final_weights')
+        self.model.save('./data/feed_forward_weights/feed_forward_model')
 
-        return self.history
+        return self.trainingHistory

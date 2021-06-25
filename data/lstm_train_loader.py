@@ -3,14 +3,13 @@ import json
 import os
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-from .base_loader.loader import DataLoader
+from .base_loaders.loaders import TrainLoader
 
-class LstmDataLoader(DataLoader):
+class LstmTrainDataLoader(TrainLoader):
 
-    def __init__(self, split, numBatches):
+    def __init__(self, split, numBatches, dataDirectory):
 
-        super().__init__(split, numBatches)
-        self.numSamples = 0
+        super().__init__(split, numBatches, dataDirectory=dataDirectory)
         
     def _pad_instances(self):
 
@@ -58,11 +57,11 @@ class LstmDataLoader(DataLoader):
         # transform labels to one hot
         self.y = to_categorical(np.array(self.y))
 
-        # split into train and test sets
-        self._split_data()
-
         # center mean at zero
         self._normalize_instances()
+
+        # split into train and test sets
+        self._split_data()
 
         self.trainData = (self.x_train, self.y_train)
         self.valData = (self.x_val, self.y_val)
@@ -71,7 +70,7 @@ class LstmDataLoader(DataLoader):
 
         # load raw json dict
         rawData = {}
-        with open('./data/batches-train/{}'.format(batchFileName), 'r') as f:
+        with open('{}/{}'.format(self.dataDirectory, batchFileName), 'r') as f:
             rawData = json.load(f)
 
         # build a list of instances and labels
@@ -95,24 +94,4 @@ class LstmDataLoader(DataLoader):
         y_batch = labels
 
         return (x_batch, y_batch)
-   
-    def load(self, startBatch):
-
-        self.batches = []
-        self.batchFileNames = os.listdir('./data/batches-train')[startBatch: startBatch+self.numBatchesToLoad]
-
-        for batchFileName in self.batchFileNames:
-
-            x_batch, y_batch = self._load_batch_json(batchFileName)
-            self.batches.append((x_batch, y_batch))
-
-        self._pre_process_data()
-
-        print(self.x_train.shape, self.y_train.shape)
-        print(self.x_val.shape, self.y_val.shape)
-        
-        return (self.x_train, self.y_train), (self.x_val, self.y_val)
-
-        
-
 

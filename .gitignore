@@ -7,3 +7,5 @@ batches*/
 *weights/
 saved_plots/
 saved_images/
+logs/
+training_history/

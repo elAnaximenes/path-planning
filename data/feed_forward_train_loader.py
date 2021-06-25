@@ -2,20 +2,30 @@ import numpy as np
 import json
 import os
 from tensorflow.keras.utils import to_categorical
-from .base_loader.loader import DataLoader
+from .base_loaders.loaders import TrainLoader
 
-class FeedForwardDataLoader(DataLoader):
+class FeedForwardTrainDataLoader(TrainLoader):
 
-    def __init__(self, split, numBatches, truncatedPathLength=1000):
+    def __init__(self, split, numBatches, truncatedPathLength=1000, dataDirectory='./data/batches-train/'):
 
-        super().__init__(split, numBatches)
+        super().__init__(split, numBatches, dataDirectory=dataDirectory)
         self.truncatedPathLength = truncatedPathLength 
+
+    def _combine_batches(self):
+
+        self.x = self.batches[0][0]
+        self.y = self.batches[0][1]
+
+        for x_batch, y_batch in self.batches[1:]:
+
+            self.x = np.concatenate((self.x, x_batch), axis=0)
+            self.y = np.concatenate((self.y, y_batch))
 
     def _load_batch_json(self, batchFileName):
 
         # load raw json dict
         rawData = {}
-        with open('./data/batches-train/{}'.format(batchFileName), 'r') as f:
+        with open('{}/{}'.format(self.dataDirectory, batchFileName), 'r') as f:
             rawData = json.load(f)
 
         # build a list of instances and labels
@@ -55,20 +65,3 @@ class FeedForwardDataLoader(DataLoader):
 
         return (x_batch, y_batch)
    
-    def load(self, startBatach):
-
-        self.batches = []
-        self.batchFileNames = os.listdir('./data/batches-train')[startBatch:startBatch + self.numBatchesToLoad]
-
-        for batchFileName in self.batchFileNames:
-
-            x_batch, y_batch = self._load_batch_json(batchFileName)
-            self.batches.append((x_batch, y_batch))
-
-        self._pre_process_data()
-        
-        return (self.x_train, self.y_train), (self.x_val, self.y_val)
-
-        
-
-

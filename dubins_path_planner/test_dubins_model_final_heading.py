@@ -75,8 +75,8 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 def train(animate=True):
 
     # set starting position and target
-    startPosition = np.array([-5.0, 5.0, 1.5*math.pi])
-    target = np.array([1.0, -2.0, 1.65*math.pi])
+    startPosition = np.array([-1.0, 0.0, 0.0])
+    target = np.array([5.0, 5.0, 5.5])
     simulate_dubins_optimal_path_planner(startPosition, target, animate)
 
 def test(animate=True):

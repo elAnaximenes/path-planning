@@ -8,10 +8,11 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 from classifiers.feed_forward import FeedForward, FeedForwardTrainer
 from classifiers.lstm import LSTM, LSTMTrainer
-from data.feed_forward_loader import FeedForwardDataLoader
-from data.lstm_loader import LstmDataLoader
+from data.feed_forward_train_loader import FeedForwardTrainDataLoader
+from data.lstm_train_loader import LstmTrainDataLoader
 
 def build_model(modelSelection, inputShape):
 
@@ -39,17 +40,19 @@ def get_trainer(modelSelection, model):
 
     return trainer
 
-def get_data_loader(modelSelection):
+def get_data_loader(modelSelection, numBatches):
 
+    dataDirectory = './data/batches-train'
     if modelSelection == 'FeedForward':
-        dataLoader = FeedForwardDataLoader(split, numBatches)
+        dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
     elif modelSelection == 'LSTM':
-        dataLoader = LstmDataLoader(split, numBatches)
+        dataLoader = LstmTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
 
     return dataLoader
 
 def plot_performance(history):
 
+    print('plotting performance')
     loss = history['trainLoss']
     valLoss = history['valLoss']
 
@@ -80,14 +83,22 @@ def plot_performance(history):
     plt.savefig('loss')
     plt.show()
 
-def summary(history):
+def summary(history, modelSelection, numBatches, startBatch):
 
     plot_performance(history)
+    historyFileName = './training_history/{}_{}_batches_starting_at_{}.json'.format(modelSelection, numBatches, startBatch)
+    trainingHistory = {'trainLoss': history['trainLoss'],\
+                     'valLoss': history['valLoss'],\
+                     'trainAcc': [acc.numpy().tolist() for acc in history['trainAcc']],\
+                     'valAcc': [acc.numpy().tolist() for acc in history['valAcc']]}
+
+    with open(historyFileName, 'w') as jsonFile:
+        json.dump(trainingHistory, jsonFile)
 
 def train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch):
 
     # load training and validation data
-    dataLoader = get_data_loader(modelSelection)
+    dataLoader = get_data_loader(modelSelection, numBatches)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
 
@@ -97,11 +108,16 @@ def train_DNN(modelSelection, epochs, batchSize, split, numBatches, resume, star
     model = build_model(modelSelection, inputShape)
     trainer = get_trainer(modelSelection, model)
 
+    print('successfully loaded data and built model')
     # fit model to training data
+    originalOut = sys.stdout
+    sys.stdout = open('./logs/{}-training.log'.format(modelSelection), 'w')
     history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize, resume)
+    sys.stdout = originalOut
+    print('successfully trained model')
 
     # summarize training results
-    summary(history)
+    summary(history, modelSelection, numBatches, startBatch)
 
 if __name__ == '__main__':
 
@@ -111,7 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = 30)
     parser.add_argument('--batchsize', type=float, help='Size of batch in each epoch.', default = 512)
     parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
-    parser.add_argument('--batches', type=float, help='How many batches to train on.', default = 10)
+    parser.add_argument('--batches', type=int, help='How many batches to train on.', default = 10)
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
     parser.set_defaults(resume=False)
     parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)

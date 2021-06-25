@@ -95,6 +95,7 @@ class LSTMTrainer():
             self._save_metrics(lossValue, valDataset)
 
         self.model.save_weights('./data/lstm_weights/lstm_final_weights')
+        self.model.save('./data/lstm_weights/lstm_model')
             
         return self.history
 
@@ -105,13 +106,28 @@ class tester:
         self.dataset = dataset
         self.model = model
         self.numSamples = len(dataset[1])
-        accuracyInfo = {'true positives': [0]*numSamples, 'label counts': [0]*self.numSamples}
+        self.accuracyInfo = {'tp': [0], 'label count': [0]}
 
     def test(self):
 
         self.model.load_weights('./data/lstm_weights/lstm_final_weights')
 
         for instance, label in dataset:
+
             for timeStep in range(len(instance)):
 
-        pass
+                inputTensor = instance[:(timeStep + 1)]
+                logits = self.model(logits)
+                prediction = np.argmax(logits)
+                if len(accuracyInfo['tp']) < timeStep+1:
+                    self.accuracyInfo['tp'].append(0)
+                    self.accuracyInfo['label count'].append(0)
+
+                self.accuracyInfo['label count'][timeStep] += 1
+                if prediction == label:
+                    self.accuracyInfo['tp'][timeStep] += 1
+
+        return self.accuracyInfo
+
+
+                
