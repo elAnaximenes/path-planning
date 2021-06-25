@@ -43,7 +43,6 @@ def get_trainer(modelSelection, model):
 
 def get_data_loader(modelSelection, numBatches, dataDirectory):
 
-
     if modelSelection == 'FeedForward':
         dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
     elif modelSelection == 'LSTM':
@@ -97,10 +96,10 @@ def summary(history, modelSelection, numBatches, startBatch):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory):
 
     # load training and validation data
-    dataLoader = get_data_loader(modelSelection, numBatches)
+    dataLoader = get_data_loader(modelSelection, numBatches, dataDirectory)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
 
@@ -152,4 +151,4 @@ if __name__ == '__main__':
         dataDirectory = 'D:\\path_planning_data\\batches-train'
 
     # train
-    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory)
