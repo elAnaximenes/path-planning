@@ -32,7 +32,6 @@ def plot_performance(performance):
     plt.legend()
     plt.show()
 
-
 def build_model(modelSelection, inputShape):
 
     print('input shape:', inputShape)
