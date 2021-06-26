@@ -10,6 +10,21 @@ class LstmTrainDataLoader(TrainLoader):
     def __init__(self, split, numBatches, dataDirectory):
 
         super().__init__(split, numBatches, dataDirectory=dataDirectory)
+
+    def _transform_timeseries(self):
+
+        X = self.x[:, 0, :]
+        Y = self.x[:, 1, :]
+        T = self.x[:, 2, :]
+
+        listX = []
+        for i in range(X.shape[0]):
+            timesteps = []
+            for j in range(X.shape[1]):
+                timesteps.append([X[i,j], Y[i,j], T[i,j]])
+
+            listX.append(timesteps)
+        self.x = np.array(listX) 
         
     def _pad_instances(self):
 
@@ -59,6 +74,8 @@ class LstmTrainDataLoader(TrainLoader):
 
         # center mean at zero
         self._normalize_instances()
+
+        self._transform_timeseries()
 
         # split into train and test sets
         self._split_data()

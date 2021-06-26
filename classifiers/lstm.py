@@ -92,10 +92,15 @@ class LSTMTrainer():
 
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
-                
+                windowSize = 100
+                print('Batch shape:', xBatchTrain.shape, yBatchTrain)
 
-                print('shape of network input', xBatchTrain.shape)
-                lossValue = self._train_step(xBatchTrain, yBatchTrain)
+                windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], windowSize)]
+
+                for windowStart, windowEnd in windows:
+                    batchWindow = xBatchTrain[:, windowStart:windowEnd, :]
+                    print('shape of network input', xBatchWindow.shape)
+                    lossValue = self._train_step(xBatchWindow, yBatchTrain)
 
                 if step % 2 == 0:
                     print("Training loss at step {}: {:.4f}".format(step, float(lossValue)))
