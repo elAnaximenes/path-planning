@@ -92,6 +92,7 @@ class LSTMTrainer():
 
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
+                
 
                 print('shape of network input', xBatchTrain.shape)
                 lossValue = self._train_step(xBatchTrain, yBatchTrain)
