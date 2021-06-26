@@ -23,7 +23,7 @@ def plot_performance(performance):
     for i in range(len(labelCount)):
         percent = float(tp[i])/float(labelCount[i])
         accuracyOverTime.append(percent)
-        timesteps.append(i)
+        timesteps.append(100*i)
 
     plt.title('Accuracy over time')
     plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')

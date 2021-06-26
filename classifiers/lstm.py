@@ -9,21 +9,21 @@ class LSTM(tf.keras.Model):
         super(LSTM, self).__init__()
         
         self.inputLayer = layers.InputLayer(input_shape=(inputShape))
-        self.lstmcell = layers.RNN(layers.LSTMCell(4))
-        self.H1 = layers.Dense(16, activation='relu')
+        self.mask = layers.Masking(mask_value = 0.0)
+        #self.lstm = layers.LSTM(return_sequences=True)
+        self.lstm = layers.LSTM(16, return_sequences=False)
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
         
         #print('shape of network input:', x.shape)
         x = self.inputLayer(x)
+        x = self.mask(x)
         #print('input to LSTM layer')
         #print(x.shape)
-        x = self.lstmcell(x)
+        x = self.lstm(x)
         #print('output of LSTM layer')
         #print(x.shape)
-        x = self.H1(x)
-
         return self.outputLayer(x)
 		
 class LSTMTrainer():
@@ -103,8 +103,8 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        #self.model.save_weights('./data/lstm_weights/lstm_final_weights')
-        #self.model.save('./data/lstm_weights/lstm_model')
+        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
+        self.model.save('./data/lstm_weights/lstm_model')
             
         return self.history
 
@@ -122,31 +122,33 @@ class LSTMTester:
         self.model.load_weights('./data/lstm_weights/lstm_final_weights')
 
         print('model weights were loaded')
-        self.dataset = self.dataset[:10]
+        self.dataset = self.dataset[:1000]
+        stepSize = 100
+        timeSteps = [x*stepSize for x in range(10)]
 
         for instance, label in self.dataset:
 
             newInstance = np.zeros((1,3,9000))
 
-            for timeStep in range(instance.shape[1]):
+            for i, timeStep in enumerate(timeSteps):
 
-                if timeStep >= 1000:
+                if timeStep+stepSize >= len(instance[0]):
                     break
 
-                newInstance[0,:, timeStep] += instance[:, timeStep]
+                newInstance[0,:,timeStep:timeStep + stepSize] += instance[:, timeStep:timeStep+stepSize]
                 inputTensor = newInstance 
                 
                 #inputTensor = tf.tensor(newInstance )
                 logits = self.model(inputTensor)
                 prediction = np.argmax(logits)
 
-                if len(self.accuracyInfo['tp']) < timeStep+1:
+                if len(self.accuracyInfo['tp']) < i+1:
                     self.accuracyInfo['tp'].append(0)
                     self.accuracyInfo['label count'].append(0)
 
-                self.accuracyInfo['label count'][timeStep] += 1
+                self.accuracyInfo['label count'][i] += 1
                 if prediction == np.argmax(label):
-                    self.accuracyInfo['tp'][timeStep] += 1
+                    self.accuracyInfo['tp'][i] += 1
 
         return self.accuracyInfo
 
