@@ -66,17 +66,66 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
     # test car made it to goal
     carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
-    print(carFinalPosition)
-    print(target)
     distanceToGoal = abs(np.linalg.norm(carFinalPosition - target[:2]))
-    print(distanceToGoal)
+    print('final distance to goal:', distanceToGoal)
     assert distanceToGoal < acceptableError, 'Car did not reach goal'
 
 def train(animate=True):
 
-    # set starting position and target
-    startPosition = np.array([-1.0, 0.0, 0.0])
-    target = np.array([5.0, 5.0, 5.5])
+    #RSR
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([-10.0, -10.0, 0.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 0.5*math.pi])
+    target = np.array([10.0, -10.0, math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, math.pi])
+    target = np.array([10.0, 10.0, 1.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 1.5*math.pi])
+    target = np.array([-10.0, 10.0, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+   
+    #LSL
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([-10.0, 10.0, 1.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 0.5*math.pi])
+    target = np.array([-10.0, -10.0, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, math.pi])
+    target = np.array([10.0, -10.0, 0.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 1.5*math.pi])
+    target = np.array([10.0, 10.0, 1.0*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+
+    # LSR
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([5.0, 5.0, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 0.5*math.pi])
+    target = np.array([-5.0, 5.0, 0.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, math.pi])
+    target = np.array([-5.0, -5.0, math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 1.5*math.pi])
+    target = np.array([5.0, -5.0, 1.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+
+    # RSL
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([5.0, -5.0, 0.0])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 0.5*math.pi])
+    target = np.array([5.0, 5.0, 0.5*math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, math.pi])
+    target = np.array([-5.0, 5.0, math.pi])
+    simulate_dubins_optimal_path_planner(startPosition, target, animate)
+    startPosition = np.array([0.0, 0.0, 1.5*math.pi])
+    target = np.array([-5.0, -5.0, 1.5*math.pi])
     simulate_dubins_optimal_path_planner(startPosition, target, animate)
 
 def test(animate=True):

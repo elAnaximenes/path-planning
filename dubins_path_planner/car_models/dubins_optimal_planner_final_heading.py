@@ -2,6 +2,7 @@ import math
 from math import sin, cos
 import numpy as np
 from .dubins_model import DubinsCar
+import copy
 
 class DubinsOptimalPlannerFinalHeading:
 
@@ -43,6 +44,9 @@ class DubinsOptimalPlannerFinalHeading:
 
         return abs(np.linalg.norm(start[:2] - end[:2]))
 
+    def _mod_2_pi(self, theta):
+        return theta - 2.0 * math.pi * math.floor(theta / 2.0 /math.pi)
+
     def _calculate_alpha_and_beta(self):
 
         xGoal = self.target[0]
@@ -52,58 +56,73 @@ class DubinsOptimalPlannerFinalHeading:
 
         self.psi = math.acos(xGoal / self.d)
 
-        self.alpha = (2.0 * math.pi) - self.psi
-
-
+        # Range of acos is from 0 to pi (account for third and fourth quadrant)
         if yGoal < 0:
             self.psi = (2.0*math.pi) - self.psi
 
-        """ 
+        self.alpha = (2.0 * math.pi) - self.psi
+
+        """
         theta = self.startPosition[-1]
         if self.psi > theta:
             self.alpha = self.psi - theta
         else:
             self.alpha = (2.0 * math.pi) - theta + self.psi
-
         """
-
         if phi > self.psi:
             self.beta = phi - self.psi
         else:
             self.beta = (2.0 * math.pi) - self.psi + phi
-        print(self.startPosition)
-        print(self.target)
-        print(self.psi, self.alpha, self.beta)
+
+        print('start position:', self.startPosition)
+        print('target position:', self.target)
+        print('psi, alpha, beta:', self.psi, self.alpha, self.beta)
 
     def _calculate_LSL_params(self):
 
-        t = (-1.0 * self.alpha) + (math.atan2((cos(self.beta) - cos(self.alpha)), (d + sin(self.alpha) - sin(self.beta))) % (2.0 * math.pi))
-        p = math.sqrt(2.0 + (self.d**2) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha - self.beta))))
-        q = self.beta - (math.atan2((cos(self.beta) - cos(self.alpha)), (d + sin(self.alpha) - sin(self.beta))) % (2.0 * math.pi))
+        t = self._mod_2_pi((-1.0 * self.alpha) + (math.atan2((cos(self.beta) - cos(self.alpha)), (self.d + sin(self.alpha) - sin(self.beta))))) 
+        pSquared = (2.0 + (self.d*self.d) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha) - sin(self.beta))))
+        if pSquared < 0:
+            return None, None, None
+        p = math.sqrt(pSquared)
+
+        q = self._mod_2_pi(self.beta - (math.atan2((cos(self.beta) - cos(self.alpha)), (self.d + sin(self.alpha) - sin(self.beta)))))
 
         return t, p, q
 
     def _calculate_RSR_params(self):
 
         t = self.alpha - (math.atan2((cos(self.alpha) - cos(self.beta)), (self.d - sin(self.alpha) + sin(self.beta))) % (2.0 * math.pi))
-        p = math.sqrt(2.0 + (self.d**2) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.beta - self.alpha))))
+        pSquared = (2.0 + (self.d**2) - (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.beta) - sin(self.alpha))))
+        if pSquared < 0:
+            return None, None, None
+        p = math.sqrt(pSquared)
+
         q = (-1.0 * self.beta % (2.0 * math.pi)) + (math.atan2((cos(self.alpha) - cos(self.beta)), (self.d - sin(self.alpha) + sin(self.beta))) % (2.0 * math.pi))
-
-        return t, p, q
-
-    def _calculate_RSL_params(self):
-
-        p = math.sqrt( (-1.0 * self.alpha) + (self.d ** 2) + (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha) + sin(self.beta))))
-        t = ((-1.0 * self.alpha) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p)) % (2.0 * math.pi)
-        q = (-1.0 * (self.beta % (2.0 * math.pi))) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - (math.atan2(-2.0, p) % (2.0 * math.pi))
 
         return t, p, q
 
     def _calculate_LSR_params(self):
 
-        p = math.sqrt((self.d*self.d) - 2.0 + (2.0 * cos(self.alpha - self.beta)) - (2.0 * self.d * (sin(self.alpha) + sin(self.beta))))
-        t = self.alpha - math.atan2((cos(self.alpha) + cos(self.beta)), (self.d - sin(self.alpha) - sin(self.beta))) + (math.atan2(2.0, p) % (2.0 * math.pi))
-        q = (self.beta % (2.0 * math.pi)) - math.atan2((cos(self.alpha) + cos(self.beta)), (self.d - sin(self.alpha) - sin(self.beta))) + (math.atan2(2.0, p) % (2.0 * math.pi))
+        pSquared = (self.d*self.d) - 2.0 + (2.0 * cos(self.alpha - self.beta)) + (2.0 * self.d * (sin(self.alpha) + sin(self.beta)))
+        if pSquared < 0:
+            return None, None, None
+        p = math.sqrt(pSquared)
+            
+        t = self._mod_2_pi((-1.0 * self.alpha) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
+        q = self._mod_2_pi(((-1.0 * self.beta) % (2.0 * math.pi)) + math.atan((-1.0 * (cos(self.alpha) + cos(self.beta)))/ (self.d + sin(self.alpha) + sin(self.beta))) - math.atan(-2.0/ p))
+
+        return t, p, q
+
+    def _calculate_RSL_params(self):
+
+        pSquared = (self.d*self.d) - 2.0 + (2.0 * cos(self.alpha - self.beta)) - (2.0 * self.d * (sin(self.alpha) + sin(self.beta)))
+        if pSquared < 0:
+            return None, None, None
+        p = math.sqrt(pSquared)
+
+        t = self._mod_2_pi(self.alpha - math.atan((cos(self.alpha) + cos(self.beta))/ (self.d - sin(self.alpha) - sin(self.beta))) + math.atan(2.0/ p))
+        q = self._mod_2_pi(self.beta - math.atan((cos(self.alpha) + cos(self.beta))/ (self.d - sin(self.alpha) - sin(self.beta))) + math.atan(2.0/ p))
 
         return t, p, q
 
@@ -131,7 +150,6 @@ class DubinsOptimalPlannerFinalHeading:
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
-        print(self.dubinsCar.state)
         while self.linearDistanceTraveled < p:
 
             self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
@@ -141,7 +159,6 @@ class DubinsOptimalPlannerFinalHeading:
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
-        print(self.dubinsCar.state)
         angularVelocity = self._get_angular_velocity(word[-1])
 
         while self.secondCurveDistanceTraveled < q:
@@ -153,7 +170,6 @@ class DubinsOptimalPlannerFinalHeading:
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
-        print(self.dubinsCar.state)
         return path
 
     def _calculate_path_params(self, word):
@@ -218,8 +234,8 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _switch_2_1(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
-        t_rsl, p_rsl, q_rsl = self.calculate_path_params('RSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
+        t_rsl, p_rsl, q_rsl = self._calculate_path_params('RSL')
 
         s_21 = p_lsl - p_rsl - (2.0 * (t_rsl - math.pi))
 
@@ -230,8 +246,8 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _switch_2_2(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
-        t_rsl, p_rsl, q_rsl = self.calculate_path_params('RSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
+        t_rsl, p_rsl, q_rsl = self._calculate_path_params('RSL')
         t_rsr, p_rsr, q_rsr = self._calculate_path_params('RSR')
 
         if self.alpha > self.beta:
@@ -260,7 +276,7 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _switch_3_1(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
         
         s_31 = q_lsl - math.pi
 
@@ -271,8 +287,8 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _switch_3_3(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
-        t_rsl, p_rsl, q_rsl = self.calculate_path_params('RSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
+        t_rsl, p_rsl, q_rsl = self._calculate_path_params('RSL')
         t_rsr, p_rsr, q_rsr = self._calculate_path_params('RSR')
 
         if self.alpha < self.beta:
@@ -291,7 +307,7 @@ class DubinsOptimalPlannerFinalHeading:
     def _switch_3_4(self):
 
         t_rsr, p_rsr, q_rsr = self._calculate_path_params('RSR')
-        t_lsr, p_lsr, q_lsr = self.calculate_path_params('LSR')
+        t_lsr, p_lsr, q_lsr = self._calculate_path_params('LSR')
 
         s_34 = p_rsr - p_lsr - (2.0 * (t_lsr - math.pi))
 
@@ -302,7 +318,7 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _switch_4_1(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
         
         s_1_41 = t_lsl - math.pi
         s_2_41 = q_lsl - math.pi
@@ -313,9 +329,9 @@ class DubinsOptimalPlannerFinalHeading:
         else:
             return 'LSL'
 
-    def switch_4_2(self):
+    def _switch_4_2(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
         s_42 = t_lsl - math.pi
 
         if s_42 < 0:
@@ -323,10 +339,10 @@ class DubinsOptimalPlannerFinalHeading:
         else:
             return 'RSL'
     
-    def switch_4_3(self):
+    def _switch_4_3(self):
 
-        t_lsl, p_lsl, q_lsl = self.calculate_path_params('LSL')
-        t_lsr, p_lsr, q_lsr = self.calculate_path_params('LSR')
+        t_lsl, p_lsl, q_lsl = self._calculate_path_params('LSL')
+        t_lsr, p_lsr, q_lsr = self._calculate_path_params('LSR')
 
         s_43 = p_lsl - p_lsr - (2.0 * (q_lsr - math.pi))
 
@@ -396,7 +412,7 @@ class DubinsOptimalPlannerFinalHeading:
 
         word = self._get_word()
         t, p, q = self._calculate_path_params(word)
-        print(t, p, q)
+        print('t,p,q:', t, p, q)
         path = self._steer_car_to_target(t,p,q,word)
         
         return path
