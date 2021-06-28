@@ -52,7 +52,7 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
     # don't simulate if target is within minimum turning radius
     distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
-    if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
+    if (4.0*planner.minTurningRadius) > distanceFromStartToTarget: 
         print('target within minimum turning radius')
         return
 
@@ -142,6 +142,8 @@ def test(animate=True):
 
         # set random target
         target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+        theta = random.uniform(0.0, 2.0 * math.pi)
+        target[2] = theta
 
         # run simulation
         try:
