@@ -8,10 +8,10 @@ class LSTM(tf.keras.Model):
         
         super(LSTM, self).__init__()
         
-        self.inputLayer = layers.InputLayer(input_shape=(inputShape))
-        self.mask = layers.Masking(mask_value = 0.0)
-        #self.lstm = layers.LSTM(return_sequences=True)
-        self.lstm = layers.LSTM(16, return_sequences=False)
+        self.inputLayer = layers.InputLayer(input_shape=(100,3))
+        self.mask = layers.Masking(mask_value = 0.0, input_shape=(100,3))
+        self.lstm = layers.LSTM(64, stateful=True, input_shape = (100,3))
+        self.h1 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
@@ -22,6 +22,7 @@ class LSTM(tf.keras.Model):
         #print('input to LSTM layer')
         #print(x.shape)
         x = self.lstm(x)
+        x = self.h1(x)
         #print('output of LSTM layer')
         #print(x.shape)
         return self.outputLayer(x)
@@ -93,19 +94,23 @@ class LSTMTrainer():
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
                 windowSize = 100
-                print('Batch shape:', xBatchTrain.shape, yBatchTrain)
+                #print('Batch shape:', xBatchTrain.shape, yBatchTrain)
 
                 windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], windowSize)]
 
                 for windowStart, windowEnd in windows:
                     xBatchWindow = xBatchTrain[:, windowStart:windowEnd, :]
-                    print('shape of network input', xBatchWindow.shape)
+                    if abs(np.sum(xBatchWindow[:, 0, :])) < 0.000001:
+                        print(xBatchWindow[:, 0, :])
+                        print('input fully masked')
+                        break
                     lossValue = self._train_step(xBatchWindow, yBatchTrain)
-                    exit(1)
 
                 if step % 2 == 0:
                     print("Training loss at step {}: {:.4f}".format(step, float(lossValue)))
-                    print("Seen so far: {} samples".format((step + 1)))
+                    print("Seen so far: {} samples".format((step * batchSize)))
+
+                self.model.reset_states()
 
             self._save_metrics(lossValue, valDataset)
 

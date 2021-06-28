@@ -28,22 +28,27 @@ class LstmTrainDataLoader(TrainLoader):
         
     def _pad_instances(self):
 
-        """
         maxLen = 0
         for i in range(self.numSamples):
             if len(self.x[i][0]) > maxLen:
                 maxLen = len(self.x[i][0])
-        """
-        maxLen = 9000
+        if maxLen > 3000:
+            maxLen = 3000
 
         print('longest path:', maxLen)
         padded_samples = np.zeros(shape = (self.numSamples, 3, maxLen))
         
         for i in range(self.numSamples):
 
-            padded_samples[i][0][:len(self.x[i][0])] = self.x[i][0]
-            padded_samples[i][1][:len(self.x[i][1])] = self.x[i][1]
-            padded_samples[i][2][:len(self.x[i][2])] = self.x[i][2]
+            broadcast = min(len(self.x[i][0]), maxLen)
+            if broadcast == maxLen:
+                padded_samples[i][0] = self.x[i][0][:maxLen]
+                padded_samples[i][1] = self.x[i][1][:maxLen]
+                padded_samples[i][2] = self.x[i][2][:maxLen]
+            else:
+                padded_samples[i][0][:broadcast] = self.x[i][0]
+                padded_samples[i][1][:broadcast] = self.x[i][1]
+                padded_samples[i][2][:broadcast] = self.x[i][2]
 
         self.x = padded_samples
 

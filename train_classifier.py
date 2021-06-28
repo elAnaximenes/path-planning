@@ -126,7 +126,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Deep neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = 30)
-    parser.add_argument('--batchsize', type=float, help='Size of batch in each epoch.', default = 512)
+    parser.add_argument('--batchsize', type=int, help='Size of batch in each epoch.', default = 512)
     parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
     parser.add_argument('--batches', type=int, help='How many batches to train on.', default = 10)
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
