@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers 
+import numpy as np
 
 class FeedForward(tf.keras.Model):
 
@@ -104,4 +105,49 @@ class FeedForwardTrainer():
     
 class FeedForwardTester():
 
-    pass
+    def __init__(self, dataset, model):
+
+        self.dataset = dataset
+        self.model = model
+        self.numSamples = len(dataset[1])
+        self.accuracyInfo = {'tp': [], 'label count': []}
+
+    def test(self):
+
+        self.model.load_weights('./data/feed_forward_weights/feed_forward_final_weights')
+        
+        print('model weights were loaded')
+        self.dataset = self.dataset[:1000]
+        stepSize = 1
+        timeSteps = [x*stepSize for x in range(1000)]
+
+        for instance, label in self.dataset:
+
+            for i, timeStep in enumerate(timeSteps):
+
+                if timeStep+stepSize >= instance.shape[1]:
+                    break
+                
+                inputTensor = np.zeros((1, 3, 1000))
+                inputTensor[0, :, timeStep:timeStep+stepSize] += instance[:, timeStep:timeStep + stepSize]
+
+                logits = self.model(inputTensor)
+                prediction = np.argmax(logits)
+                if len(self.accuracyInfo['tp']) < i+1:
+                    self.accuracyInfo['tp'].append(0)
+                    self.accuracyInfo['label count'].append(0)
+
+                self.accuracyInfo['label count'][i] += 1
+                if prediction == np.argmax(label):
+                    self.accuracyInfo['tp'][i] += 1
+    
+        return self.accuracyInfo
+
+
+
+
+
+            
+
+
+

@@ -18,7 +18,7 @@ def plot_training_history(history, modelSelection):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('loss')
+    plt.savefig('{}-loss'.format(modelSelection))
     plt.show()
 
     plt.clf()
@@ -34,7 +34,7 @@ def plot_training_history(history, modelSelection):
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig('accuracy')
+    plt.savefig('{}-accuracy'.format(modelSelection))
     plt.show()
 
 

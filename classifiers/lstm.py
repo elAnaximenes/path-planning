@@ -132,9 +132,9 @@ class LSTMTester:
 
         timeseries = []
         for i in range(len(instance[0])):
-            timeseries.append(instance[0][i], instance[1][i], instance[2][i])
+            timeseries.append([instance[0][i], instance[1][i], instance[2][i]])
 
-        return np.array(timeseries)
+        return np.array([timeseries])
 
 
     def test(self):
@@ -143,20 +143,19 @@ class LSTMTester:
 
         print('model weights were loaded')
         self.dataset = self.dataset[:1000]
-        stepSize = 100
-        timeSteps = [x*stepSize for x in range(10)]
+        stepSize = 1
+        timeSteps = [x*stepSize for x in range(10000)]
 
         for instance, label in self.dataset:
 
-            instance = self._trainsform_timeseries(instance)
+            instance = self._transform_timeseries(instance)
 
             for i, timeStep in enumerate(timeSteps):
 
                 if timeStep+stepSize >= instance.shape[1]:
                     break
 
-                testInstance = instance[:, timeStep:timeStep+stepSize]
-                inputTensor = newInstance 
+                inputTensor = instance[:, timeStep:timeStep+stepSize, :]
                 
                 #inputTensor = tf.tensor(newInstance )
                 logits = self.model(inputTensor)
@@ -169,6 +168,8 @@ class LSTMTester:
                 self.accuracyInfo['label count'][i] += 1
                 if prediction == np.argmax(label):
                     self.accuracyInfo['tp'][i] += 1
+
+            self.model.reset_states()
 
         return self.accuracyInfo
 
