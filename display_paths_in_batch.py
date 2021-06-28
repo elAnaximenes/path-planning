@@ -30,13 +30,14 @@ def draw_scene(scene, path, sampleNum):
     
     ax.plot(path['x'], path['y'], color='blue', linestyle='-', markersize=2)
         
-    #plt.savefig('./path-figures/path-{}.png'.format(sampleNum))
+    plt.savefig('./path_figures/path-{}.png'.format(sampleNum))
     plt.show()
 
-def load_json(sceneName, batchNum):
+def load_json(sceneName, batchNum, dataDirectory):
 
     print('loading paths')
-    with open('./data/batches-train/{}_batch_{}.json'.format(sceneName, batchNum), 'r') as f:
+    
+    with open('{}/{}_batch_{}.json'.format(dataDirectory,sceneName, batchNum), 'r') as f:
         paths = json.load(f)
     print('paths loaded')
 
@@ -46,13 +47,13 @@ def load_csv(sceneName, batchNum, numSamples):
 
     pass
             
-def load_paths(sceneName, batchNum, numSamples, saveFormat):
+def load_paths(sceneName, batchNum, numSamples, saveFormat, dataDirectory):
 
     if saveFormat == 'csv':
         paths = load_csv(sceneName, batchNum, numSamples)
 
     elif saveFormat == 'json':
-        paths = load_json(sceneName, batchNum)
+        paths = load_json(sceneName, batchNum, dataDirectory)
 
     return paths
     
@@ -65,6 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--batchsize', type=int, help='Number of samples in batch to display.', default=1)
     parser.add_argument('--format', type=str, help='Batch file format.', default='json')
     parser.add_argument('--start_index', type=int, help='What index to begin saving batches at', default=0)
+    parser.add_argument('--directory', type = str, default = './data/batches-train')
     args = parser.parse_args()
 
     sceneName = args.scene
@@ -75,8 +77,11 @@ if __name__ == '__main__':
     numSamples = args.batchsize
     saveFormat = args.format 
     startIndex = args.start_index
+    dataDirectory = args.directory
+    if dataDirectory == 'tower':
+        dataDirectory = 'D:\\path_planning_data\\batches-train'
 
-    paths = load_paths(sceneName, batchNum, numSamples, saveFormat)
+    paths = load_paths(sceneName, batchNum, numSamples, saveFormat, dataDirectory)
     for i in range(numSamples):
         print('drawing path {}'.format(i))
         path = paths['{}'.format(i)]['path']
