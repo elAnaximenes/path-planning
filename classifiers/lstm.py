@@ -10,7 +10,7 @@ class LSTM(tf.keras.Model):
         
         self.inputLayer = layers.InputLayer(input_shape=(100,3))
         self.mask = layers.Masking(mask_value = 0.0, input_shape=(100,3))
-        self.lstm = layers.LSTM(64, stateful=True, input_shape = (100,3))
+        self.lstm = layers.LSTM(128, stateful=True, input_shape = (100,3))
         self.h1 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
@@ -128,6 +128,15 @@ class LSTMTester:
         self.numSamples = len(dataset[1])
         self.accuracyInfo = {'tp': [], 'label count': []}
 
+    def _transform_timeseries(self, instance):
+
+        timeseries = []
+        for i in range(len(instance[0])):
+            timeseries.append(instance[0][i], instance[1][i], instance[2][i])
+
+        return np.array(timeseries)
+
+
     def test(self):
 
         self.model.load_weights('./data/lstm_weights/lstm_final_weights')
@@ -139,14 +148,14 @@ class LSTMTester:
 
         for instance, label in self.dataset:
 
-            newInstance = np.zeros((1,3,9000))
+            instance = self._trainsform_timeseries(instance)
 
             for i, timeStep in enumerate(timeSteps):
 
-                if timeStep+stepSize >= len(instance[0]):
+                if timeStep+stepSize >= instance.shape[1]:
                     break
 
-                newInstance[0,:,timeStep:timeStep + stepSize] += instance[:, timeStep:timeStep+stepSize]
+                testInstance = instance[:, timeStep:timeStep+stepSize]
                 inputTensor = newInstance 
                 
                 #inputTensor = tf.tensor(newInstance )

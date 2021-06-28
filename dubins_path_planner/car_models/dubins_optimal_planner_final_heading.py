@@ -21,6 +21,7 @@ class DubinsOptimalPlannerFinalHeading:
         self.alpha = None
         self.beta = None
         self._calculate_alpha_and_beta()
+        self.acceptableError = 0.01
 
     def _center_car_at_origin(self):
 
@@ -412,18 +413,20 @@ class DubinsOptimalPlannerFinalHeading:
             t, p, q = self._calculate_path_params(word)
 
             length = abs(t) + abs(p) + abs(q)
-            if shortestPath is None or shortestPath > length:
+            if (shortestPath is None or shortestPath > length):
+
                 shortestPath = length
                 bestWord = word
                 params = t, p, q
 
-        return  
+        return bestWord, params
 
     # plan path and steer car to target
     def run(self):
 
-        word = self._get_word()
-        t, p, q = self._calculate_path_params(word)
+        #word = self._get_word()
+        #t, p, q = self._calculate_path_params(word)
+        word, (t,p,q) = self._get_shortest_path()
         print('t,p,q:', t, p, q)
         path = self._steer_car_to_target(t,p,q,word)
         

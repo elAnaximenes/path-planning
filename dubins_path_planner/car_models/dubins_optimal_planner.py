@@ -16,6 +16,7 @@ class DubinsOptimalPlanner:
         self.target = target
         self.angularDistanceTraveled = 0.0
         self.linearDistanceTraveled = 0.0
+        self.acceptableError = 0.01
 
     def get_path_parameters(self):
 
