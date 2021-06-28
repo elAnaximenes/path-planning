@@ -12,9 +12,9 @@ def plot_training_history(history, modelSelection):
 
     epochs = range(1, len(loss) + 1)
     
-    plt.plot(epochs, valLoss, 'bo', label = 'Validation loss')
+    #plt.plot(epochs, valLoss, 'bo', label = 'Validation loss')
     plt.plot(epochs, loss, 'b', label = 'Training loss')
-    plt.title('{} Validation and training loss'.format(modelSelection))
+    plt.title('{} Training loss'.format(modelSelection))
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
@@ -28,13 +28,13 @@ def plot_training_history(history, modelSelection):
 
     epochs = range(1, len(acc) + 1)
 
-    plt.plot(epochs, valAcc, 'bo', label = 'Validation acc')
+    #plt.plot(epochs, valAcc, 'bo', label = 'Validation acc')
     plt.plot(epochs, acc, 'b', label = 'Training acc')
-    plt.title('{} Validation and training accuracy'.format(modelSelection))
+    plt.title('{} Training accuracy'.format(modelSelection))
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig('loss')
+    plt.savefig('accuracy')
     plt.show()
 
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description = 'Retrieves training history over separate training batches, aggregates results and displays on one graph')
     parser.add_argument('--model', type=str, default='FeedForward')
-    parser.add_argument('--histories', type=int, default = 5)
+    parser.add_argument('--histories', type=int, help='number of histories to aggregate (separate training jobs)', default = 5)
     parser.add_argument('--startbatch', type=int, default=0)
     parser.add_argument('--batches', type=int, help='Number of batches in each training history', default=40)
 
@@ -84,13 +84,4 @@ if __name__ == '__main__':
 
     history = load_all_history(modelSelection, batchesPerHistory, startBatch, numHistoriesToLoad)
     plot_training_history(history, modelSelection)
-
-
-
-
-
-        
-
-
-
 
