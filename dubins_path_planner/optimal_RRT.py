@@ -35,18 +35,21 @@ class DubinsCarOptimalRRT:
         self.car = dubinsCar
         self.root = self.NodeRRT(scene.carStart) 
         self.nodeList = [self.root]
+        self.pathToGoal = None
+        self.plottedPathToGoal = None
+        self.goal = None
         self.scene = scene
         self.animate = animate
         self.fig = None
         self.ax = None
         self.maxIter = 1000
-        self.pathFromStartToTarget = None 
         self.leg=None
         if self.animate:
             self._setup_animation()
         self.text = None
         self.imgcount = 0
         self.nearestNeighborRadius = 10.0
+
 
     def _select_random_target(self):
 
@@ -210,7 +213,7 @@ class DubinsCarOptimalRRT:
 
         self.fig = plt.figure()
         self.ax = self.fig.gca()
-        self.ax.set_title('Dubins Car RRT - {}'.format(self.scene.name))
+        self.ax.set_title('Dubins Car RRT* - {}'.format(self.scene.name))
         plt.xlim(self.scene.dimensions['xmin'] , self.scene.dimensions['xmax'] )
         plt.ylim(self.scene.dimensions['ymin'] , self.scene.dimensions['ymax'] )
         self.ax.set_aspect('equal')
@@ -251,6 +254,22 @@ class DubinsCarOptimalRRT:
             self.text = plt.text(x, y, 'Path connects tree root to target')
         elif event == 'rewire':
             self.text = plt.text(x, y, 'Rewiring tree...')
+
+    def _draw_final_path_to_goal(self):
+
+        if self.plottedPathToGoal is not None:
+
+            self.plottedPathToGoal.remove()
+
+        finalPath = {'x':[], 'y':[], 'theta':[]} 
+        for path in self.pathToGoal:
+
+            finalPath['x'].extend(path['x'])
+            finalPath['y'].extend(path['y'])
+            finalPath['theta'].extend(path['theta'])
+
+        plottedGoal, plottedPathToGoal= self._draw_point_and_path(self.goal, finalPath, 'pink')
+        self.plottedPathToGoal = plottedPathToGoal
     
     def _update_animation(self, point, path, event, node=None):
  
@@ -274,8 +293,6 @@ class DubinsCarOptimalRRT:
 
         plottedPoint, plottedPath = self._draw_point_and_path(point, path, eventToColorDict[event])
         
-
-
         self._write_caption(event)
 
         if event == 'rewire':
@@ -356,11 +373,38 @@ class DubinsCarOptimalRRT:
 
                 if self.animate:
                     self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
+
+    def _build_final_path_to_goal(self, node, target, lastPathToGoal=None):
+
+        if lastPathToGoal is not None:
+           self.pathToGoal = [lastPathToGoal]
+
+        while node.parent is not None:
+            self.pathToGoal.insert(0, node.path)
+            node = node.parent
+
+    def _sample_goal(self, newNode, target):
+
+        # no current path to goal
+        if self.pathToGoal is None:
+            lastPathToGoal, lastPathLength = self._calculate_dubins_path_length(newNode, target)
+
+            if self._is_point_reachable(newNode, target, lastPathToGoal):
+                self._build_final_path_to_goal(newNode, target, lastPathToGoal)
+            else:
+                return
+        # already a path to goal
+        else:
+            pass
+        pass
+        
+        self._draw_final_path_to_goal()
     
     # RRT* ALGORITHM
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
+        self.goal = target
 
         if self.animate:
             self._draw_target(target, 'lime')
@@ -377,6 +421,7 @@ class DubinsCarOptimalRRT:
             newNode, nearestNodes = self._extend(target)
             if newNode is not None:
                 self._rewire(newNode, nearestNodes)
+                self._sample_goal(newNode, target)
 
             iteration += 1
 
