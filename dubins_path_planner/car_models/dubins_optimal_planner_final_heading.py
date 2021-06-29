@@ -13,7 +13,7 @@ class DubinsOptimalPlannerFinalHeading:
         self.startPosition = startPosition 
         self.target = target
         self._center_car_at_origin()
-        self.d = self._calculate_euclidean_distance(startPosition, target)
+        self.d = self._calculate_euclidean_distance(startPosition, target) / self.minTurningRadius
         self.firstCurveDistanceTraveled = 0.0
         self.linearDistanceTraveled = 0.0
         self.secondCurveDistanceTraveled = 0.0
@@ -53,7 +53,7 @@ class DubinsOptimalPlannerFinalHeading:
         xGoal = self.target[0]
         yGoal = self.target[1]
         phi = self.target[2]
-        print('phi:', phi)
+        #print('phi:', phi)
 
         self.psi = math.acos(xGoal / self.d)
 
@@ -68,9 +68,9 @@ class DubinsOptimalPlannerFinalHeading:
         else:
             self.beta = (2.0 * math.pi) - self.psi + phi
 
-        print('start position:', self.startPosition)
-        print('target position:', self.target)
-        print('psi, alpha, beta:', self.psi, self.alpha, self.beta)
+        #print('start position:', self.startPosition)
+        #print('target position:', self.target)
+        #print('psi, alpha, beta:', self.psi, self.alpha, self.beta)
 
     def _calculate_LSL_params(self):
 
@@ -350,10 +350,10 @@ class DubinsOptimalPlannerFinalHeading:
 
         alpha_quadrant = self._get_quadrant(self.alpha)
         beta_quadrant = self._get_quadrant(self.beta)
-        print('alpha:', self.alpha)
-        print('a quad:', alpha_quadrant)
-        print('beta:', self.beta)
-        print('b quad:', beta_quadrant)
+        #print('alpha:', self.alpha)
+        #print('a quad:', alpha_quadrant)
+        #print('beta:', self.beta)
+        #print('b quad:', beta_quadrant)
 
         #if True:
             #return 'LSR'
@@ -399,7 +399,7 @@ class DubinsOptimalPlannerFinalHeading:
             elif beta_quadrant == 4:
                 word = 'LSR' 
 
-        print(word)
+        #print(word)
         return word
 
     def _get_shortest_path(self):
@@ -424,10 +424,13 @@ class DubinsOptimalPlannerFinalHeading:
     # plan path and steer car to target
     def run(self):
 
+        if self.d <= (4.0 * self.minTurningRadius):
+            return None
+
         #word = self._get_word()
         #t, p, q = self._calculate_path_params(word)
         word, (t,p,q) = self._get_shortest_path()
-        print('t,p,q:', t, p, q)
+        #print('t,p,q:', t, p, q)
         path = self._steer_car_to_target(t,p,q,word)
         
         return path
