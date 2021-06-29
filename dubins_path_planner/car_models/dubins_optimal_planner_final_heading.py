@@ -13,7 +13,9 @@ class DubinsOptimalPlannerFinalHeading:
         self.startPosition = startPosition 
         self.target = target
         self._center_car_at_origin()
-        self.d = self._calculate_euclidean_distance(startPosition, target) / self.minTurningRadius
+        self.euclideanDist = self._calculate_euclidean_distance(startPosition, target) 
+        self.d =  self.euclideanDist / self.minTurningRadius
+
         self.firstCurveDistanceTraveled = 0.0
         self.linearDistanceTraveled = 0.0
         self.secondCurveDistanceTraveled = 0.0
@@ -55,7 +57,7 @@ class DubinsOptimalPlannerFinalHeading:
         phi = self.target[2]
         #print('phi:', phi)
 
-        self.psi = math.acos(xGoal / self.d)
+        self.psi = math.acos(xGoal / self.euclideanDist)
 
         # Range of acos is from 0 to pi (account for third and fourth quadrant)
         if yGoal < 0:

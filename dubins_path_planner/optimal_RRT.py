@@ -249,6 +249,8 @@ class DubinsCarOptimalRRT:
             self.text = plt.text(x, y, 'Path causes collision')
         elif event == 'reached target':
             self.text = plt.text(x, y, 'Path connects tree root to target')
+        elif event == 'rewire':
+            self.text = plt.text(x, y, 'Rewiring tree...')
     
     def _update_animation(self, point, path, event, node=None):
  
@@ -272,13 +274,17 @@ class DubinsCarOptimalRRT:
 
         plottedPoint, plottedPath = self._draw_point_and_path(point, path, eventToColorDict[event])
         
-        if event == 'rewire':
-            node.plottedPath.remove()
-            node.plottedPath = plottedPath
+
 
         self._write_caption(event)
 
-        plt.pause(0.01)
+        if event == 'rewire':
+            plt.pause(1.0)
+            node.plottedPath.remove()
+            node.plottedPath = plottedPath
+            plt.pause(1.0)
+        else:
+            plt.pause(0.01)
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
         self.imgcount += 1
@@ -349,7 +355,7 @@ class DubinsCarOptimalRRT:
                 nearNode.pathLength = pathLengthToNear
 
                 if self.animate:
-                    self._update_animation(point=nearNode.position, path=pathToNear, event='valid path', node=nearNode)
+                    self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
     
     # RRT* ALGORITHM
     def simulate(self):
