@@ -32,13 +32,19 @@ class DubinsCarOptimalRRT:
 
     def __init__(self, dubinsCar, scene, animate = False):
 
+        # tree primitives
         self.car = dubinsCar
         self.root = self.NodeRRT(scene.carStart) 
         self.nodeList = [self.root]
-        self.pathToGoal = None
-        self.plottedPathToGoal = None
-        self.goal = None
+        self.goalNode = None
         self.scene = scene
+        self.nearestNeighborRadius = 10.0
+
+        # path to goal
+        self.pathToGoalNodes = None
+        self.plottedPathToGoal = None
+
+        # animation
         self.animate = animate
         self.fig = None
         self.ax = None
@@ -48,8 +54,6 @@ class DubinsCarOptimalRRT:
             self._setup_animation()
         self.text = None
         self.imgcount = 0
-        self.nearestNeighborRadius = 10.0
-
 
     def _select_random_target(self):
 
@@ -65,7 +69,6 @@ class DubinsCarOptimalRRT:
         randomPoint[1] = random.uniform(self.scene.dimensions['ymin'], self.scene.dimensions['ymax']) 
 
         return randomPoint
-
 
     def _is_path_out_of_bounds(self, x, y):
 
@@ -296,14 +299,11 @@ class DubinsCarOptimalRRT:
         self._write_caption(event)
 
         if event == 'rewire':
-            plt.pause(1.0)
             node.plottedPath.remove()
             node.plottedPath = plottedPath
-            plt.pause(1.0)
-        else:
-            plt.pause(0.01)
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
+        plt.pause(0.0001)
         self.imgcount += 1
 
         if event != 'reached target':
@@ -315,27 +315,58 @@ class DubinsCarOptimalRRT:
         else:
             node.plottedPath = plottedPath
 
-    def _extend(self, target):
+    def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
+
+        minPathStartNode = nearestNode 
+        minPath, minPathLength = self._calculate_dubins_path_length(nearestNode, point)
+        minCost = self._get_cost(nearestNode) + minPathLength 
+
+        for node in nearestNodes:
+
+            path, pathLength = self._calculate_dubins_path_length(node, point)
+
+            collisionFree = self._is_point_reachable(node, point, path)
+            if not collisionFree:
+                continue
+
+            costToNewPoint = self._get_cost(node) + pathLength
+
+            if minPath is None or costToNewPoint < minCost:
+                minPath = path
+                minPathLength = pathLength
+                minPathStartNode = node
+                minCost = costToNewPoint
+
+        return minPath, minPathLength, minPathStartNode
+
+    def _extend(self, point=None, goal=False):
  
-        isTargetReachable = False
+        if point is None:
+            point = self._sample_random_point()
 
-        randomPoint = self._sample_random_point()
-
-        shortestPath, shortestPathLength, startNode, nearestNodes = self._find_nearest_nodes_to_new_point(randomPoint)
+        shortestPath, shortestPathLength, startNode, nearestNodes = self._find_nearest_nodes_to_new_point(point)
 
         # check for viable path from parent node to new point
-        isPointReachable = self._is_point_reachable(startNode, randomPoint, shortestPath)
+        isPointReachable = self._is_point_reachable(startNode, point, shortestPath)
 
         newNode = None
 
+        # collision free
         if isPointReachable:
-            newNode = self._add_node(startNode, shortestPathLength, shortestPath)
+
+            # connect along a minimum-cost path
+            shortestPath, shortestPathLength, startNode = self._connect_along_min_cost_path(point, nearestNodes, startNode)
+
+            if not goal:
+                newNode = self._add_node(startNode, shortestPathLength, shortestPath)
+            else:
+                newNode = self.goalNode
 
             if self.animate:
-                self._update_animation(point=randomPoint, path=shortestPath, event='valid path', node=newNode)
+                self._update_animation(point=point, path=shortestPath, event='valid path', node=newNode)
 
         elif self.animate:
-            self._update_animation(point=randomPoint, path=shortestPath, event='invalid path')
+            self._update_animation(point=point, path=shortestPath, event='invalid path')
 
         return newNode, nearestNodes
 
@@ -352,6 +383,8 @@ class DubinsCarOptimalRRT:
 
     def _rewire(self, newNode, nearestNodes):
 
+        rewire = False
+
         for nearNode in nearestNodes:
 
             newNodeCost = self._get_cost(newNode)
@@ -367,6 +400,7 @@ class DubinsCarOptimalRRT:
 
             if (newNodeCost + pathLengthToNear) < nearNodeCost and collisionFree:
 
+                rewire = True
                 nearNode.parent = newNode
                 nearNode.path = pathToNear
                 nearNode.pathLength = pathLengthToNear
@@ -374,54 +408,44 @@ class DubinsCarOptimalRRT:
                 if self.animate:
                     self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
 
-    def _build_final_path_to_goal(self, node, target, lastPathToGoal=None):
+        return rewire
 
-        if lastPathToGoal is not None:
-           self.pathToGoal = [lastPathToGoal]
+    def _build_final_path_to_goal(self, rewire):
 
+        self.pathToGoalNodes= []
+        node = self.goalNode
+
+        # build new path list
         while node.parent is not None:
-            self.pathToGoal.insert(0, node.path)
+            self.pathToGoalNodes.insert(0, node)
             node = node.parent
 
-    def _sample_goal(self, newNode, target):
+    def _sample_goal(self):
 
-        # no current path to goal
-        if self.pathToGoal is None:
-            lastPathToGoal, lastPathLength = self._calculate_dubins_path_length(newNode, target)
+        self._extend(self.goalNode.position[:-1], goal=True)
 
-            if self._is_point_reachable(newNode, target, lastPathToGoal):
-                self._build_final_path_to_goal(newNode, target, lastPathToGoal)
-            else:
-                return
-        # already a path to goal
-        else:
-            pass
-        pass
-        
-        self._draw_final_path_to_goal()
-    
     # RRT* ALGORITHM
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
-        self.goal = target
+        self.goalNode = self.NodeRRT(target)
 
         if self.animate:
-            self._draw_target(target, 'lime')
+            self._draw_target(self.goalNode.position, 'lime')
             plt.pause(2.0)
             self.leg.remove()
         
         # check for valid path from root to target
-        isTargetReachable = self._is_point_reachable(self.root, target)
+        isTargetReachable = self._is_point_reachable(self.root, self.goalNode.position)
 
         iteration = 0
         while iteration < self.maxIter:
 
             # extend tree
-            newNode, nearestNodes = self._extend(target)
+            newNode, nearestNodes = self._extend()
             if newNode is not None:
-                self._rewire(newNode, nearestNodes)
-                self._sample_goal(newNode, target)
+                rewire = self._rewire(newNode, nearestNodes)
+                self._sample_goal()
 
             iteration += 1
 
