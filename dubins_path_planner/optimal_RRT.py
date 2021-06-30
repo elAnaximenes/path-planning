@@ -30,6 +30,9 @@ class DubinsCarOptimalRRT:
                 self.pathLength=pathLength
             self.plottedPath= None
 
+        def __eq__(self, otherNode):
+            return otherNode is not None and self.x - otherNode.x < 0.001 and self.y - otherNode.y < 0.001 and self.theta - otherNode.theta < 0.001
+
     def __init__(self, dubinsCar, scene, animate = False):
 
         # tree primitives
@@ -37,18 +40,20 @@ class DubinsCarOptimalRRT:
         self.root = self.NodeRRT(scene.carStart) 
         self.nodeList = [self.root]
         self.goalNode = None
+        self.goalNodeList = []
+        self.minCostGoalPath = []
         self.scene = scene
         self.nearestNeighborRadius = 10.0
 
         # path to goal
         self.pathToGoalNodes = None
-        self.plottedPathToGoal = None
+        self.plottedPathToGoal = [] 
 
         # animation
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 1000
+        self.maxIter = 1000 
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -183,13 +188,16 @@ class DubinsCarOptimalRRT:
 
         return path, pathLength
 
-    def _add_node(self, startNode, shortestPathLength, shortestPath):
+    def _add_node(self, startNode, shortestPathLength, shortestPath, goal=False):
 
         carStateAtPoint = np.array([shortestPath['x'][-1], shortestPath['y'][-1], shortestPath['theta'][-1]])
         nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath)
         nodeToAdd.parent = startNode
         nodeToAdd.path = shortestPath
-        self.nodeList.append(nodeToAdd)
+        if not goal:
+            self.nodeList.append(nodeToAdd)
+        else:
+            self.goalNodeList.append(nodeToAdd)
 
         return nodeToAdd
 
@@ -280,9 +288,9 @@ class DubinsCarOptimalRRT:
             return 
 
         eventToColorDict = {'candidate': 'orange',\
-                'valid path':'green',\
+                'valid path':'pink',\
                 'invalid path': 'red',\
-                'reached target': 'blue',\
+                'Goal': 'blue',\
                 'rewire': 'green'}
 
         pathToPlot = {'x': [], 'y':[]}
@@ -306,7 +314,7 @@ class DubinsCarOptimalRRT:
         plt.pause(0.0001)
         self.imgcount += 1
 
-        if event != 'reached target':
+        if event != 'Goal':
             self.text.remove()
 
         if event == 'invalid path' or event == 'candidate':
@@ -314,6 +322,8 @@ class DubinsCarOptimalRRT:
             plottedPath.remove()
         else:
             node.plottedPath = plottedPath
+
+        return plottedPath
 
     def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
 
@@ -357,10 +367,12 @@ class DubinsCarOptimalRRT:
             # connect along a minimum-cost path
             shortestPath, shortestPathLength, startNode = self._connect_along_min_cost_path(point, nearestNodes, startNode)
 
-            if not goal:
-                newNode = self._add_node(startNode, shortestPathLength, shortestPath)
-            else:
-                newNode = self.goalNode
+            if goal:
+                for node in self.goalNodeList:
+                    if node.parent == startNode:
+                        return None, None
+
+            newNode = self._add_node(startNode, shortestPathLength, shortestPath, goal)
 
             if self.animate:
                 self._update_animation(point=point, path=shortestPath, event='valid path', node=newNode)
@@ -410,19 +422,52 @@ class DubinsCarOptimalRRT:
 
         return rewire
 
-    def _build_final_path_to_goal(self, rewire):
+    def _get_list_of_parents(self, node):
 
-        self.pathToGoalNodes= []
-        node = self.goalNode
-
-        # build new path list
+        listOfParents = [node]
         while node.parent is not None:
-            self.pathToGoalNodes.insert(0, node)
+            listOfParents.append(node.parent)
             node = node.parent
+
+        return listOfParents
+
+    def _get_min_cost_path_to_goal(self):
+
+        minCostPath = None
+        minCostGoal = None
+        for node in self.goalNodeList:
+            cost = self._get_cost(node)
+            if minCostPath is None or cost < minCostPath:
+                minCostGoal = node
+                minCostPath = cost
+
+        self.minCostGoalPath = self._get_list_of_parents(minCostGoal)
+
+        if self.animate:
+            for plottedPath in self.plottedPathToGoal:
+                plottedPath.remove()
+
+            for node in self.minCostGoalPath:
+                self.plottedPathToGoal.append(self._update_animation(point=node.position, path=node.path, event='Goal', node=node))
 
     def _sample_goal(self):
 
-        self._extend(self.goalNode.position[:-1], goal=True)
+        newNode, _ =  self._extend(self.goalNode.position[:-1], goal=True)
+
+        if newNode is not None:
+            self._get_min_cost_path_to_goal()
+
+    def _get_final_path_start_to_goal(self):
+
+        finalPath = {'x': [], 'y': [], 'theta': []}
+
+        for node in self.minCostGoalPath:
+            if node.parent is not None:
+                finalPath['x'] = node.path['x'] + finalPath['x']
+                finalPath['y'] = node.path['y'] + finalPath['y']
+                finalPath['theta'] = node.path['theta'] + finalPath['theta']
+
+        return finalPath
 
     # RRT* ALGORITHM
     def simulate(self):
@@ -435,9 +480,6 @@ class DubinsCarOptimalRRT:
             plt.pause(2.0)
             self.leg.remove()
         
-        # check for valid path from root to target
-        isTargetReachable = self._is_point_reachable(self.root, self.goalNode.position)
-
         iteration = 0
         while iteration < self.maxIter:
 
@@ -449,7 +491,7 @@ class DubinsCarOptimalRRT:
 
             iteration += 1
 
-        sample = None
+
 
         if self.animate:
             legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
@@ -465,6 +507,12 @@ class DubinsCarOptimalRRT:
                             ]
             leg = self.ax.legend(handles=legend_elements, loc='best')
             plt.show()
+
+
+        sample = None
+        sample = {}
+        sample['target'] = {'coordinates': target, 'index': targetIdx }
+        sample['path'] = self._get_final_path_start_to_goal()
 
         return sample
 

@@ -14,7 +14,7 @@ def check_valid_start(scene, startPosition):
 
     return True
 
-def run_RRT(animate=False, sceneName='test_scene'):
+def run_optimal_RRT(animate=False, sceneName='test_scene'):
 
     # load scene information
     scene = Scene(sceneName)
@@ -64,4 +64,4 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    sample = run_RRT(animate, sceneName)
+    sample = run_optimal_RRT(animate, sceneName)

@@ -4,6 +4,7 @@ import csv
 import json
 import dubins_path_planner.RRT
 from run_RRT import run_RRT
+from run_optimal_RRT import run_optimal_RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName):
 
@@ -40,6 +41,7 @@ parser.add_argument('--batchsize', type=int, help='Number of paths generated per
 parser.add_argument('--scene', type=str, help='Name of scene.', default='simple_room')
 parser.add_argument('--format', type=str, help='Format of save file..', default='json')
 parser.add_argument('--start_index', type=int, help='Index to begin saving batches at', default=0)
+parser.add_argument('--algorithm', type=str, help='RRT or optimal', default = 'RRT')
 
 args = parser.parse_args()
 
@@ -51,7 +53,15 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
         sample = None 
         while sample is None:
 
-            sample = run_RRT(animate=False, sceneName=args.scene)
+            if args.algorithm == 'RRT':
+                sample = run_RRT(animate=False, sceneName=args.scene)
+            else:
+                try:
+                    sample = run_optimal_RRT(animate=False, sceneName=args.scene)
+                except:
+                    print('an exception occurred')
+                    sample = None
+                    continue
 
         samplesInBatch['{}'.format(sampleNum)] = sample
 

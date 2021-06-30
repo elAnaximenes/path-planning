@@ -85,4 +85,6 @@ if __name__ == '__main__':
     for i in range(numSamples):
         print('drawing path {}'.format(i))
         path = paths['{}'.format(i)]['path']
+        if len(path['x']) == 0:
+            continue
         draw_scene(scene, path, i)
