@@ -25,7 +25,7 @@ def save_csv_format(samplesInBatch, batchNum, sceneName):
             writer.writerow([samplesInBatch[sample]['target']['index']])
         
 def save_batch(samplesInBatch, batchNum, sceneName, saveFormat):
-    print('saving batch {}'.format(batchNum))
+    print('saving batch {}'.format(batchNum), flush=True)
     if saveFormat == 'json':
         print('saving json')
         save_json_format(samplesInBatch, batchNum, sceneName)

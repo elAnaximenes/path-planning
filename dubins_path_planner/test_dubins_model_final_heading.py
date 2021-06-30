@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 from tqdm import tqdm
-from car_models.dubins_optimal_planner_final_heading import DubinsOptimalPlannerFinalHeading
+from car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading
 from car_models.dubins_model import DubinsCar
 
 def plot_path(path, origin, target, acceptableError, iteration):
@@ -54,7 +54,7 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
     # don't simulate if target is within minimum turning radius
     distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
-    if (4.0*planner.minTurningRadius) > distanceFromStartToTarget: 
+    if (planner.minTurningRadius) > distanceFromStartToTarget: 
         print('target within minimum turning radius')
         return
 
@@ -75,6 +75,11 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 def train(animate=True):
 
 
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([-1.0, -1.0, 0.0])
+    iteration = 0
+    simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
+    """
     #RSR
     startPosition = np.array([0.0, 0.0, 0.0])
     target = np.array([-10.0, -10.0, 0.5*math.pi])
@@ -146,6 +151,7 @@ def train(animate=True):
     target = np.array([-5.0, -5.0, 1.5*math.pi])
     iteration += 1
     simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
+    """
 
 def test(animate=True):
 

@@ -16,7 +16,7 @@ class DubinsCarOptimalRRT:
 
     class NodeRRT:
 
-        def __init__(self, position, pathLength=None, path=None):
+        def __init__(self, position, pathLength=None, path=None, name=None):
 
             self.x = position[0] 
             self.y = position[1] 
@@ -29,21 +29,29 @@ class DubinsCarOptimalRRT:
                 self.path = path
                 self.pathLength=pathLength
             self.plottedPath= None
+            self.name=name
 
         def __eq__(self, otherNode):
             return otherNode is not None and self.x - otherNode.x < 0.001 and self.y - otherNode.y < 0.001 and self.theta - otherNode.theta < 0.001
+
+        def __str__(self):
+            rep = '\nNode name: ' + self.name
+            if self.parent is not None:
+                rep += '\nParent node is: ' + self.parent.__str__
+            return rep
+            
 
     def __init__(self, dubinsCar, scene, animate = False):
 
         # tree primitives
         self.car = dubinsCar
-        self.root = self.NodeRRT(scene.carStart) 
+        self.root = self.NodeRRT(scene.carStart, name='Root') 
         self.nodeList = [self.root]
         self.goalNode = None
         self.goalNodeList = []
         self.minCostGoalPath = []
         self.scene = scene
-        self.nearestNeighborRadius = 10.0
+        self.nearestNeighborRadius = 8.0
 
         # path to goal
         self.pathToGoalNodes = None
@@ -53,7 +61,7 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 1000 
+        self.maxIter = 300 
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -191,7 +199,7 @@ class DubinsCarOptimalRRT:
     def _add_node(self, startNode, shortestPathLength, shortestPath, goal=False):
 
         carStateAtPoint = np.array([shortestPath['x'][-1], shortestPath['y'][-1], shortestPath['theta'][-1]])
-        nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath)
+        nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath, name=len(self.nodeList))
         nodeToAdd.parent = startNode
         nodeToAdd.path = shortestPath
         if not goal:
@@ -242,12 +250,10 @@ class DubinsCarOptimalRRT:
         for obstacle in self.scene.obstacles:
 
             self._draw_obstacle(obstacle)
-            #plt.pause(0.0001)
 
         for target in self.scene.targets:
 
             self._draw_target(target)
-            #plt.pause(0.0001)
 
         self.leg = self.ax.legend(handles=legend_elements, loc='best')
 
@@ -307,11 +313,16 @@ class DubinsCarOptimalRRT:
         self._write_caption(event)
 
         if event == 'rewire':
-            node.plottedPath.remove()
-            node.plottedPath = plottedPath
+            try:
+                node.plottedPath.remove()
+                node.plottedPath = plottedPath
+            except Exception as e:
+                print(e)
+                print(node)
+                exit(1)
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
-        plt.pause(0.0001)
+        #plt.pause(0.0001)
         self.imgcount += 1
 
         if event != 'Goal':
@@ -399,6 +410,10 @@ class DubinsCarOptimalRRT:
 
         for nearNode in nearestNodes:
 
+            # cannot rewire root node
+            if nearNode.parent is None:
+                continue
+            
             newNodeCost = self._get_cost(newNode)
             nearNodeCost = self._get_cost(nearNode)
 
@@ -445,7 +460,13 @@ class DubinsCarOptimalRRT:
 
         if self.animate:
             for plottedPath in self.plottedPathToGoal:
-                plottedPath.remove()
+                try:
+                    plottedPath.remove()
+                except Exception as e:
+                    print(self.minCostGoalPath[-1])
+                    print(e)
+                    exit(2)
+
 
             for node in self.minCostGoalPath:
                 self.plottedPathToGoal.append(self._update_animation(point=node.position, path=node.path, event='Goal', node=node))
@@ -473,11 +494,11 @@ class DubinsCarOptimalRRT:
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
-        self.goalNode = self.NodeRRT(target)
+        self.goalNode = self.NodeRRT(target, name="Goal")
 
         if self.animate:
             self._draw_target(self.goalNode.position, 'lime')
-            plt.pause(2.0)
+            #plt.pause(2.0)
             self.leg.remove()
         
         iteration = 0
@@ -490,8 +511,6 @@ class DubinsCarOptimalRRT:
                 self._sample_goal()
 
             iteration += 1
-
-
 
         if self.animate:
             legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
