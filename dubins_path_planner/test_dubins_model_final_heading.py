@@ -15,9 +15,10 @@ def plot_path(path, origin, target, acceptableError, iteration):
     rho = abs(np.linalg.norm(target[:2] - origin[:2]))
 
     for x,y,theta in zip(path['x'], path['y'], path['theta']):
-        if i % (50 * int(rho)) == 0:
+        if i % (50 * int(rho)+1) == 0:
             plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
         i += 1
+    print('drawing path')
 
     # text coordinate label shifts
     xShift = 0.1
@@ -54,9 +55,10 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
     # don't simulate if target is within minimum turning radius
     distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
-    if (planner.minTurningRadius) > distanceFromStartToTarget: 
+    print('initial distance:', distanceFromStartToTarget)
+    if (2.0 * planner.minTurningRadius) > distanceFromStartToTarget: 
         print('target within minimum turning radius')
-        return
+        return None
 
     # get planner's path
     path = planner.run()
@@ -74,11 +76,14 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
 def train(animate=True):
 
+    start = np.array( [7.02415431, 9.63385093, 5.09467598] )
+    target = np.array( [4.06299528, 9.34515402, 3.50270656] )
 
-    startPosition = np.array([0.0, 0.0, 0.0])
-    target = np.array([-1.0, -1.0, 0.0])
+    print(start, target)
+
     iteration = 0
-    simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
+    simulate_dubins_optimal_path_planner(start, target, animate, iteration)
+
     """
     #RSR
     startPosition = np.array([0.0, 0.0, 0.0])
@@ -176,8 +181,8 @@ def test(animate=True):
         except Exception as e:
             print(e)
             print('planner failed on:')
-            print('start:', startPosition)
-            print('target:', target)
+            print('start = np.array(', startPosition, ')')
+            print('target = np.array(', target, ')')
             plt.plot(target[0], target[1], 'x', color='red', markersize=25)
             plt.quiver(startPosition[0], startPosition[1], math.cos(theta), math.sin(theta)) 
             plt.show()

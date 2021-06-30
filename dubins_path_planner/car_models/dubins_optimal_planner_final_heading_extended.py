@@ -23,7 +23,7 @@ class DubinsOptimalPlannerFinalHeading:
         self.alpha = None
         self.beta = None
         self._calculate_alpha_and_beta()
-        self.acceptableError = 0.01
+        self.acceptableError = 0.1
 
     def _center_car_at_origin(self):
 
@@ -46,6 +46,12 @@ class DubinsOptimalPlannerFinalHeading:
     def _calculate_euclidean_distance(self, start, end):
 
         return abs(np.linalg.norm(start[:2] - end[:2]))
+
+    def _long_path_case(self):
+
+        if self.euclideanDist < 4.0*self.minTurningRadius:
+            return False
+        return True
 
     def _mod_2_pi(self, theta):
 
@@ -95,7 +101,7 @@ class DubinsOptimalPlannerFinalHeading:
         p = math.sqrt(pSquared)
             
         t = self._mod_2_pi((-1.0 * self.alpha) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
-        q = self._mod_2_pi(((-1.0 * self.beta) % (2.0 * math.pi)) + math.atan((-1.0 * (cos(self.alpha) + cos(self.beta)))/ (self.d + sin(self.alpha) + sin(self.beta))) - math.atan(-2.0/ p))
+        q = self._mod_2_pi(((-1.0 * self.beta) % (2.0 * math.pi)) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
 
         return t, p, q
 
@@ -106,8 +112,8 @@ class DubinsOptimalPlannerFinalHeading:
             return None, None, None
         p = math.sqrt(pSquared)
 
-        t = self._mod_2_pi(self.alpha - math.atan((cos(self.alpha) + cos(self.beta))/ (self.d - sin(self.alpha) - sin(self.beta))) + math.atan(2.0/ p))
-        q = self._mod_2_pi(self.beta - math.atan((cos(self.alpha) + cos(self.beta))/ (self.d - sin(self.alpha) - sin(self.beta))) + math.atan(2.0/ p))
+        t = self._mod_2_pi(self.alpha - math.atan2((cos(self.alpha) + cos(self.beta)), (self.d - sin(self.alpha) - sin(self.beta))) + math.atan2(2.0, p))
+        q = self._mod_2_pi(self.beta - math.atan2((cos(self.alpha) + cos(self.beta)), (self.d - sin(self.alpha) - sin(self.beta))) + math.atan2(2.0, p))
 
         return t, p, q
 
@@ -162,6 +168,8 @@ class DubinsOptimalPlannerFinalHeading:
             return self.dubinsCar.umax
         elif letter == 'R':
             return self.dubinsCar.umin
+        elif letter == 'S':
+            return 0.0
         else:
             print('Unrecognized turning character:', letter)
             exit(-1)
@@ -169,27 +177,36 @@ class DubinsOptimalPlannerFinalHeading:
     def _steer_car_to_target(self, t, p, q, word):
 
         path = {'x': [], 'y': [], 'theta': []}
-        angularVelocity = self._get_angular_velocity(word[0])
 
-        while self.firstCurveDistanceTraveled < t:
+        distances = [t,p,q]
+        traveled = [self.firstCurveDistanceTraveled, self.linearDistanceTraveled, self.secondCurveDistanceTraveled]
 
-            self.firstCurveDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+        for letter, dist, trav in zip(word, distances, traveled):
+
+            angularVelocity = self._get_angular_velocity(letter)
+            trav = 0.0
+            while trav < dist:
+
+                trav += (self.dubinsCar.velocity * self.dubinsCar.dt)
+                state = self.dubinsCar.step(angularVelocity)
+
+                path['x'].append(self.dubinsCar.state['x'])
+                path['y'].append(self.dubinsCar.state['y'])
+                path['theta'].append(self.dubinsCar.state['theta'])
+
+        """
+        angularVelocity = self._get_angular_velocity(word[1])
+
+        while self.linearDistanceTraveled < p:
+
+            self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
             state = self.dubinsCar.step(angularVelocity)
 
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
 
-        while self.linearDistanceTraveled < p:
-
-            self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
-            state = self.dubinsCar.step(0.0)
-
-            path['x'].append(self.dubinsCar.state['x'])
-            path['y'].append(self.dubinsCar.state['y'])
-            path['theta'].append(self.dubinsCar.state['theta'])
-
-        angularVelocity = self._get_angular_velocity(word[-1])
+        angularVelocity = self._get_angular_velocity(word[2])
 
         while self.secondCurveDistanceTraveled < q:
 
@@ -199,6 +216,7 @@ class DubinsOptimalPlannerFinalHeading:
             path['x'].append(self.dubinsCar.state['x'])
             path['y'].append(self.dubinsCar.state['y'])
             path['theta'].append(self.dubinsCar.state['theta'])
+        """
 
         return path
 
@@ -219,9 +237,14 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _get_shortest_path(self):
 
-        options = ['LSL', 'LSR', 'RSR', 'RSL', 'LRL', 'RLR']
+        if self._long_path_case():
+            options = ['LSL', 'LSR', 'RSR', 'RSL']
+        else:
+            options = ['LSL', 'LSR', 'RSR', 'RSL', 'LRL', 'RLR']
+        print(options)
 
         shortestPath = None
+        shortestPathLength = None
         params = None
         bestWord = None
         for word in options:
@@ -230,12 +253,23 @@ class DubinsOptimalPlannerFinalHeading:
             if t is None or p is None or q is None:
                 continue
 
-            length = abs(t) + abs(p) + abs(q)
-            if (shortestPath is None or shortestPath > length):
+            t = abs(t)
+            p = abs(p)
+            q = abs(q)
+            length = t + p + q 
+            if (shortestPath is None or shortestPathLength > length):
 
-                shortestPath = length
+                #path = self._steer_car_to_target(t,p,q,word)
+                #carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
+                #print(carFinalPosition)
+                #distanceToGoal = abs(np.linalg.norm(carFinalPosition - self.target[:2]))
+                #print(distanceToGoal)
+
+                #if distanceToGoal < self.acceptableError:
+                shortestPathLength = length
+                #shortestPath = path
                 bestWord = word
-                params = abs(t), abs(p), abs(q)
+                params = t, p, q
 
         return bestWord, params
 
@@ -249,6 +283,7 @@ class DubinsOptimalPlannerFinalHeading:
         """
         
         word, (t,p,q) = self._get_shortest_path()
+        print(word, t, p, q)
         path = self._steer_car_to_target(t,p,q,word)
         
         return path
