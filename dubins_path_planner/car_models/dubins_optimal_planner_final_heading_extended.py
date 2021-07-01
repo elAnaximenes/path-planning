@@ -4,6 +4,9 @@ import numpy as np
 from .dubins_model import DubinsCar
 import copy
 
+class DubinsError(Exception):
+    pass
+
 class DubinsOptimalPlannerFinalHeading:
 
     def __init__(self, dubinsCar, startPosition, target):
@@ -285,6 +288,11 @@ class DubinsOptimalPlannerFinalHeading:
         
         word, (t,p,q) = self._get_shortest_path_params()
         path = self._steer_car_to_target(t,p,q,word)
+
+        carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
+        distanceToGoal = abs(np.linalg.norm(carFinalPosition - self.target[:2]))
+        if distanceToGoal < self.acceptableError:
+            raise DubinsError 
         
         return path
 

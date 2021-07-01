@@ -8,7 +8,7 @@ import sys
 import json
 import csv
 from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
-from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading
+from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
 from .car_models.dubins_model import DubinsCar
 from matplotlib.lines import Line2D
 from .RRT import Scene
@@ -145,7 +145,7 @@ class DubinsCarOptimalRRT:
             path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
 
             # only care about long path case
-            if pathLength < self.nearestNeighborRadius and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
+            if pathLength < self.nearestNeighborRadius:# and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
                 nearestNodes.append(node)
 
             # store shortest path
@@ -400,7 +400,7 @@ class DubinsCarOptimalRRT:
                 # check if the min cost path to goal has changed
                 for node in self.goalNodeList:
                     if node.parent == startNode:
-                        return node, None 
+                        return None, None 
 
             # add node to tree, add goal node to goal node list
             newNode = self._add_node(startNode, shortestPathLength, shortestPath, goal)
@@ -440,10 +440,11 @@ class DubinsCarOptimalRRT:
             newNodeCost = self._get_cost(newNode)
             nearNodeCost = self._get_cost(nearNode)
 
-            pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
-
+            try:
+                pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
             # don't care about short path case
-            if pathToNear is None:
+            except DubinsError:
+                print('short path case')
                 continue
 
             collisionFree = self._is_point_reachable(newNode, nearNode, pathToNear)
@@ -472,6 +473,19 @@ class DubinsCarOptimalRRT:
 
         return nodesLeafToRoot 
 
+    def _draw_min_cost_path_to_goal(self):
+        for plottedPath in self.plottedPathToGoal:
+            plottedPath.remove()
+
+        self.plottedPathToGoal = []
+
+        for node in self.minCostGoalPath:
+            if node.name != 'Root':
+                plottedPath = self._update_animation(point=node.position, path=node.path, event='Goal', node=node)
+                if plottedPath is not None:
+                    self.plottedPathToGoal.append(plottedPath)
+
+
     def _set_min_cost_path_to_goal(self):
 
         minCostPath = None
@@ -485,18 +499,6 @@ class DubinsCarOptimalRRT:
 
         self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
 
-        if self.animate:
-            for plottedPath in self.plottedPathToGoal:
-                plottedPath.remove()
-
-            self.plottedPathToGoal = []
-
-            for node in self.minCostGoalPath:
-                if node.name != 'Root':
-                    plottedPath = self._update_animation(point=node.position, path=node.path, event='Goal', node=node)
-                    if plottedPath is not None:
-                        self.plottedPathToGoal.append(plottedPath)
-
     def _sample_goal(self):
 
         # treat goal like a new node, try to reach from nearest neighbors
@@ -504,6 +506,10 @@ class DubinsCarOptimalRRT:
 
         if newGoalNode is not None:
             self._set_min_cost_path_to_goal()
+
+        if self.animate:
+            self._draw_min_cost_path_to_goal()
+
 
     def _get_final_path_start_to_goal(self):
 
