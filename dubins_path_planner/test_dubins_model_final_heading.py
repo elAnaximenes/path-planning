@@ -76,15 +76,13 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
 def train(animate=True):
 
-    start = np.array( [7.02415431, 9.63385093, 5.09467598] )
-    target = np.array( [4.06299528, 9.34515402, 3.50270656] )
-
-    print(start, target)
-
+    startPosition = np.array( [-0.54018144, 5.2931008, 3.13272286] )
+    target = np.array( [-2.55935147, 5.31896672, 1.10494954] )
     iteration = 0
-    simulate_dubins_optimal_path_planner(start, target, animate, iteration)
 
-    """
+    simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
+    exit(1)
+
     #RSR
     startPosition = np.array([0.0, 0.0, 0.0])
     target = np.array([-10.0, -10.0, 0.5*math.pi])
@@ -156,11 +154,11 @@ def train(animate=True):
     target = np.array([-5.0, -5.0, 1.5*math.pi])
     iteration += 1
     simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
-    """
+
 
 def test(animate=True):
 
-    numTestCases = 1000
+    numTestCases = 10000
     if animate:
         numTestCases = 20
 
@@ -181,7 +179,7 @@ def test(animate=True):
         except Exception as e:
             print(e)
             print('planner failed on:')
-            print('start = np.array(', startPosition, ')')
+            print('startPosition = np.array(', startPosition, ')')
             print('target = np.array(', target, ')')
             plt.plot(target[0], target[1], 'x', color='red', markersize=25)
             plt.quiver(startPosition[0], startPosition[1], math.cos(theta), math.sin(theta)) 

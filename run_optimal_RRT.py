@@ -52,7 +52,7 @@ def run_optimal_RRT(animate=False, sceneName='test_scene'):
 if __name__ == '__main__':
     
     sceneName= 'cluttered_room'
-    animate = False
+    animate = False 
 
     if len(sys.argv) > 1:
         for arg in sys.argv[1:]:

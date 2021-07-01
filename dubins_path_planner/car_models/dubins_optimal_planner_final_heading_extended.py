@@ -55,7 +55,7 @@ class DubinsOptimalPlannerFinalHeading:
 
     def _mod_2_pi(self, theta):
 
-        return theta - ((2.0 * math.pi) * math.floor(theta / (2.0 * math.pi)))
+        return theta - 2.0 * math.pi * math.floor(theta / 2.0 / math.pi)
 
     def _calculate_alpha_and_beta(self):
 
@@ -101,7 +101,7 @@ class DubinsOptimalPlannerFinalHeading:
         p = math.sqrt(pSquared)
             
         t = self._mod_2_pi((-1.0 * self.alpha) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
-        q = self._mod_2_pi(((-1.0 * self.beta) % (2.0 * math.pi)) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
+        q = self._mod_2_pi(self._mod_2_pi(-1.0 * self.beta) + math.atan2((-1.0 * (cos(self.alpha) + cos(self.beta))), (self.d + sin(self.alpha) + sin(self.beta))) - math.atan2(-2.0, p))
 
         return t, p, q
 
@@ -133,10 +133,13 @@ class DubinsOptimalPlannerFinalHeading:
         t2 = self._mod_2_pi(self.alpha - theta + self._mod_2_pi(p2/2.0))
         q2 = self._mod_2_pi(self.alpha - self.beta - t2 + self._mod_2_pi(p2))
 
+        return t2, p2, q2
+        """
         if p1 + t1 + q2 < p2 + t2 + q2:
             return t1, p1, q1
         else:
             return t2, p2, q2
+        """
 
     def _calculate_LRL_params(self):
 
@@ -144,7 +147,7 @@ class DubinsOptimalPlannerFinalHeading:
         if (self.d + sin(self.alpha) - sin(self.beta)) < 0.0:
             theta += math.pi
 
-        expr = (6.0 - (self.d*self.d) + (2.0 * cos(self.alpha - self.beta) + (2.0 * self.d * (sin(self.alpha) - sin(self.beta))))) / 8.0
+        expr = (6.0 - (self.d*self.d) + (2.0 * cos(self.alpha - self.beta) + (2.0 * self.d * (sin(self.beta) - sin(self.alpha))))) / 8.0
 
         if abs(expr) > 1.0:
             return None, None, None
@@ -157,10 +160,13 @@ class DubinsOptimalPlannerFinalHeading:
         t2 = self._mod_2_pi((-1.0 * self.alpha) - theta + (p2/2.0))
         q2 = self._mod_2_pi(self._mod_2_pi(self.beta) - self.alpha - t2 + self._mod_2_pi(p2))
 
+        return t2, p2, q2
+        """
         if p1 + t1 + q2 < p2 + t2 + q2:
             return t1, p1, q1
         else:
             return t2, p2, q2
+        """
 
     def _get_angular_velocity(self, letter):
 
@@ -235,15 +241,13 @@ class DubinsOptimalPlannerFinalHeading:
         elif word == 'RLR':
             return self._calculate_RLR_params()
 
-    def _get_shortest_path(self):
+    def _get_shortest_path_params(self):
 
         if self._long_path_case():
             options = ['LSL', 'LSR', 'RSR', 'RSL']
         else:
             options = ['LSL', 'LSR', 'RSR', 'RSL', 'LRL', 'RLR']
-        print(options)
 
-        shortestPath = None
         shortestPathLength = None
         params = None
         bestWord = None
@@ -257,17 +261,14 @@ class DubinsOptimalPlannerFinalHeading:
             p = abs(p)
             q = abs(q)
             length = t + p + q 
-            if (shortestPath is None or shortestPathLength > length):
+            if (shortestPathLength is None or shortestPathLength > length):
 
                 #path = self._steer_car_to_target(t,p,q,word)
                 #carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
-                #print(carFinalPosition)
                 #distanceToGoal = abs(np.linalg.norm(carFinalPosition - self.target[:2]))
-                #print(distanceToGoal)
 
                 #if distanceToGoal < self.acceptableError:
                 shortestPathLength = length
-                #shortestPath = path
                 bestWord = word
                 params = t, p, q
 
@@ -282,8 +283,7 @@ class DubinsOptimalPlannerFinalHeading:
             return None
         """
         
-        word, (t,p,q) = self._get_shortest_path()
-        print(word, t, p, q)
+        word, (t,p,q) = self._get_shortest_path_params()
         path = self._steer_car_to_target(t,p,q,word)
         
         return path
