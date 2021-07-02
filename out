@@ -1,0 +1,708 @@
+press escape
+number of goal nodes: 5
+Total cost = 13.619999999999834
+Node Goal 0 (cost=5.4)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 14.799999999999857
+Node Goal 1 (cost=2.7)
+Parent node is: Node 2 (cost=3.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 14.249999999999876
+Node Goal 2 (cost=3.1)
+Parent node is: Node 10 (cost=2.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.44999999999989
+Node Goal 3 (cost=4.2)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.019999999999888
+Node Goal 4 (cost=4.9)
+Parent node is: Node 87 (cost=3.6)
+Parent node is: Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 0.0
+Node Root (cost=0.0)
+
+Total cost = 8.199999999999875
+Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.119999999999855
+Node 2 (cost=3.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 5.439999999999936
+Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 21.57999999999973
+Node 4 (cost=9.5)
+Parent node is: Node 2 (cost=3.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.139999999999976
+Node 5 (cost=6.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 11.54999999999999
+Node 6 (cost=4.4)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 17.069999999999936
+Node 7 (cost=7.8)
+Parent node is: Node 49 (cost=2.6)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.649999999999974
+Node 8 (cost=4.1)
+Parent node is: Node 6 (cost=4.4)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.039999999999889
+Node 9 (cost=4.6)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 11.129999999999875
+Node 10 (cost=2.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.919999999999842
+Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 9.229999999999912
+Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 3.839999999999997
+Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.34999999999992
+Node 14 (cost=4.7)
+Parent node is: Node 8 (cost=4.1)
+Parent node is: Node 6 (cost=4.4)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 14.129999999999956
+Node 15 (cost=3.6)
+Parent node is: Node 97 (cost=3.8)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 9.649999999999926
+Node 16 (cost=4.2)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 7.169999999999993
+Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 3.2000000000000024
+Node 18 (cost=3.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 16.33999999999982
+Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 22.409999999999922
+Node 20 (cost=2.1)
+Parent node is: Node 14 (cost=4.7)
+Parent node is: Node 8 (cost=4.1)
+Parent node is: Node 6 (cost=4.4)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.959999999999823
+Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 9.479999999999926
+Node 22 (cost=4.0)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 19.73999999999992
+Node 23 (cost=5.6)
+Parent node is: Node 15 (cost=3.6)
+Parent node is: Node 97 (cost=3.8)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 22.679999999999787
+Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 29.399999999999725
+Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.949999999999903
+Node 26 (cost=3.3)
+Parent node is: Node 16 (cost=4.2)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 37.79999999999961
+Node 27 (cost=8.4)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 27.409999999999762
+Node 28 (cost=3.5)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 2.969999999999991
+Node 29 (cost=3.0)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.799999999999894
+Node 30 (cost=2.8)
+Parent node is: Node 26 (cost=3.3)
+Parent node is: Node 16 (cost=4.2)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.789999999999841
+Node 31 (cost=4.7)
+Parent node is: Node 10 (cost=2.9)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 27.349999999999763
+Node 32 (cost=3.4)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 32.44999999999972
+Node 33 (cost=3.0)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 19.079999999999806
+Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.419999999999888
+Node 35 (cost=3.9)
+Parent node is: Node 22 (cost=4.0)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.85999999999978
+Node 36 (cost=4.5)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 33.40999999999971
+Node 37 (cost=4.0)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 33.239999999999704
+Node 38 (cost=3.8)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.289999999999832
+Node 39 (cost=4.9)
+Parent node is: Node 35 (cost=3.9)
+Parent node is: Node 22 (cost=4.0)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 4.529999999999951
+Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 28.029999999999745
+Node 41 (cost=4.1)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 19.899999999999906
+Node 42 (cost=5.8)
+Parent node is: Node 15 (cost=3.6)
+Parent node is: Node 97 (cost=3.8)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.739999999999974
+Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 26.239999999999846
+Node 44 (cost=8.8)
+Parent node is: Node 78 (cost=2.9)
+Parent node is: Node 55 (cost=3.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 33.0799999999997
+Node 45 (cost=3.7)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 33.0799999999997
+Node 46 (cost=3.7)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.309999999999942
+Node 47 (cost=2.8)
+Parent node is: Node 70 (cost=4.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.34999999999978
+Node 48 (cost=4.0)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 9.249999999999993
+Node 49 (cost=2.6)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 6.66999999999999
+Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 23.91999999999976
+Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 35.379999999999704
+Node 52 (cost=2.3)
+Parent node is: Node 46 (cost=3.7)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.41999999999994
+Node 53 (cost=2.9)
+Parent node is: Node 70 (cost=4.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.98999999999977
+Node 54 (cost=4.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 14.559999999999942
+Node 55 (cost=3.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 37.34999999999967
+Node 56 (cost=4.1)
+Parent node is: Node 38 (cost=3.8)
+Parent node is: Node 25 (cost=6.7)
+Parent node is: Node 24 (cost=3.7)
+Parent node is: Node 21 (cost=2.6)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.809999999999881
+Node 57 (cost=4.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 7.599999999999939
+Node 58 (cost=3.1)
+Parent node is: Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 21.12999999999984
+Node 59 (cost=2.3)
+Parent node is: Node 68 (cost=5.0)
+Parent node is: Node 57 (cost=4.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.129999999999887
+Node 60 (cost=4.5)
+Parent node is: Node 58 (cost=3.1)
+Parent node is: Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.849999999999877
+Node 61 (cost=2.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.029999999999898
+Node 62 (cost=2.2)
+Parent node is: Node 30 (cost=2.8)
+Parent node is: Node 26 (cost=3.3)
+Parent node is: Node 16 (cost=4.2)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.289999999999871
+Node 63 (cost=3.2)
+Parent node is: Node 60 (cost=4.5)
+Parent node is: Node 58 (cost=3.1)
+Parent node is: Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 27.17999999999976
+Node 64 (cost=3.3)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.159999999999993
+Node 65 (cost=2.9)
+Parent node is: Node 49 (cost=2.6)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 19.12999999999981
+Node 66 (cost=2.8)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 24.74999999999981
+Node 67 (cost=3.6)
+Parent node is: Node 59 (cost=2.3)
+Parent node is: Node 68 (cost=5.0)
+Parent node is: Node 57 (cost=4.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.789999999999836
+Node 68 (cost=5.0)
+Parent node is: Node 57 (cost=4.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 18.33999999999983
+Node 69 (cost=4.9)
+Parent node is: Node 35 (cost=3.9)
+Parent node is: Node 22 (cost=4.0)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.52999999999994
+Node 70 (cost=4.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 9.559999999999896
+Node 71 (cost=4.1)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 4.209999999999958
+Node 72 (cost=4.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.259999999999852
+Node 73 (cost=4.5)
+Parent node is: Node 30 (cost=2.8)
+Parent node is: Node 26 (cost=3.3)
+Parent node is: Node 16 (cost=4.2)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 20.64999999999979
+Node 74 (cost=4.3)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.799999999999898
+Node 75 (cost=3.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 15.35999999999983
+Node 76 (cost=4.5)
+Parent node is: Node 61 (cost=2.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 28.879999999999715
+Node 77 (cost=5.0)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 17.439999999999934
+Node 78 (cost=2.9)
+Parent node is: Node 55 (cost=3.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 21.739999999999913
+Node 79 (cost=3.4)
+Parent node is: Node 47 (cost=2.8)
+Parent node is: Node 70 (cost=4.8)
+Parent node is: Node 43 (cost=3.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.469999999999981
+Node 80 (cost=4.2)
+Parent node is: Node 49 (cost=2.6)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.779999999999951
+Node 81 (cost=4.5)
+Parent node is: Node 49 (cost=2.6)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.319999999999878
+Node 82 (cost=4.9)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.879999999999903
+Node 83 (cost=3.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.319999999999979
+Node 84 (cost=3.1)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 11.289999999999969
+Node 85 (cost=4.1)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.47999999999989
+Node 86 (cost=4.2)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 8.149999999999919
+Node 87 (cost=3.6)
+Parent node is: Node 40 (cost=4.5)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 11.759999999999946
+Node 88 (cost=4.6)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 30.929999999999733
+Node 89 (cost=3.7)
+Parent node is: Node 64 (cost=3.3)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.779999999999852
+Node 90 (cost=3.5)
+Parent node is: Node 82 (cost=4.9)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 13.479999999999983
+Node 91 (cost=3.2)
+Parent node is: Node 84 (cost=3.1)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 19.859999999999932
+Node 92 (cost=4.2)
+Parent node is: Node 8 (cost=4.1)
+Parent node is: Node 6 (cost=4.4)
+Parent node is: Node 17 (cost=3.3)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 22.179999999999815
+Node 93 (cost=3.1)
+Parent node is: Node 66 (cost=2.8)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 12.669999999999876
+Node 94 (cost=2.3)
+Parent node is: Node 82 (cost=4.9)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 30.06999999999976
+Node 95 (cost=2.9)
+Parent node is: Node 64 (cost=3.3)
+Parent node is: Node 51 (cost=4.8)
+Parent node is: Node 34 (cost=2.7)
+Parent node is: Node 19 (cost=3.4)
+Parent node is: Node 11 (cost=4.7)
+Parent node is: Node 1 (cost=8.2)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 21.659999999999837
+Node 96 (cost=2.9)
+Parent node is: Node 68 (cost=5.0)
+Parent node is: Node 57 (cost=4.6)
+Parent node is: Node 12 (cost=3.8)
+Parent node is: Node 3 (cost=5.4)
+Parent node is: Node Root (cost=0.0)
+
+Total cost = 10.519999999999955
+Node 97 (cost=3.8)
+Parent node is: Node 50 (cost=2.8)
+Parent node is: Node 13 (cost=3.8)
+Parent node is: Node Root (cost=0.0)
+

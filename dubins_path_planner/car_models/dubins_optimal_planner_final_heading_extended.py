@@ -3,6 +3,7 @@ from math import sin, cos
 import numpy as np
 from .dubins_model import DubinsCar
 import copy
+import sys
 
 class DubinsError(Exception):
     pass
@@ -14,19 +15,18 @@ class DubinsOptimalPlannerFinalHeading:
         self.dubinsCar = dubinsCar
         self.minTurningRadius = dubinsCar.velocity / dubinsCar.umax
         self.startPosition = startPosition 
+        self.origTarget = target
         self.target = target
         self._center_car_at_origin()
         self.euclideanDist = self._calculate_euclidean_distance(startPosition, target) 
         self.d =  self.euclideanDist / self.minTurningRadius
 
-        self.firstCurveDistanceTraveled = 0.0
-        self.linearDistanceTraveled = 0.0
-        self.secondCurveDistanceTraveled = 0.0
+        self.totalDistanceTraveled = 0.0
         self.psi = None
         self.alpha = None
         self.beta = None
         self._calculate_alpha_and_beta()
-        self.acceptableError = 0.1
+        self.acceptableError = 0.5
 
     def _center_car_at_origin(self):
 
@@ -188,8 +188,12 @@ class DubinsOptimalPlannerFinalHeading:
         path = {'x': [], 'y': [], 'theta': []}
 
         distances = [t,p,q]
-        traveled = [self.firstCurveDistanceTraveled, self.linearDistanceTraveled, self.secondCurveDistanceTraveled]
+        firstMove = 0.0
+        secondMove = 0.0
+        thirdMove = 0.0
+        traveled = [firstMove, secondMove, thirdMove]
 
+        
         for letter, dist, trav in zip(word, distances, traveled):
 
             angularVelocity = self._get_angular_velocity(letter)
@@ -203,7 +207,23 @@ class DubinsOptimalPlannerFinalHeading:
                 path['y'].append(self.dubinsCar.state['y'])
                 path['theta'].append(self.dubinsCar.state['theta'])
 
+            self.totalDistanceTraveled += trav
+
         """
+        angularVelocity = self._get_angular_velocity(word[0])
+
+        while self.firstCurveDistanceTraveled < p:
+
+            self.firstCurveDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+            state = self.dubinsCar.step(angularVelocity)
+
+            path['x'].append(self.dubinsCar.state['x'])
+            path['y'].append(self.dubinsCar.state['y'])
+            path['theta'].append(self.dubinsCar.state['theta'])
+
+        angularVelocity = self._get_angular_velocity(word[2])
+
+
         angularVelocity = self._get_angular_velocity(word[1])
 
         while self.linearDistanceTraveled < p:
@@ -290,9 +310,12 @@ class DubinsOptimalPlannerFinalHeading:
         path = self._steer_car_to_target(t,p,q,word)
 
         carFinalPosition = np.array([path['x'][-1], path['y'][-1]])
-        distanceToGoal = abs(np.linalg.norm(carFinalPosition - self.target[:2]))
-        if distanceToGoal < self.acceptableError:
-            raise DubinsError 
+        distanceToGoal = abs(np.linalg.norm(carFinalPosition - self.origTarget[:2]))
+        if distanceToGoal > self.acceptableError:
+            
+            print('car could not reach intended target')
+            print('distance to goal', distanceToGoal)
+            return None
         
         return path
 

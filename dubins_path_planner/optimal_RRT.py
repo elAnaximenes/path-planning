@@ -38,9 +38,9 @@ class DubinsCarOptimalRRT:
             #return otherNode is not None and self.x - otherNode.x < 0.001 and self.y - otherNode.y < 0.001 and self.theta - otherNode.theta < 0.001
 
         def __str__(self):
-            rep = '\nNode name: ' + self.name
+            rep = 'Node {} (cost={:.1f})\n'.format(self.name, self.pathLength)
             if self.parent is not None:
-                rep += '\nParent node is: ' + self.parent.__str__
+                rep += 'Parent node is: ' + self.parent.__str__() 
             return rep
             
 
@@ -54,7 +54,7 @@ class DubinsCarOptimalRRT:
         self.goalNodeList = []
         self.minCostGoalPath = []
         self.scene = scene
-        self.nearestNeighborRadius = 8.0
+        self.nearestNeighborRadius = 5.0
 
         # path to goal
         self.pathToGoalNodes = None
@@ -64,7 +64,7 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 300 
+        self.maxIter = 200
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -124,41 +124,6 @@ class DubinsCarOptimalRRT:
 
         return True
 
-    def _find_nearest_nodes_to_new_point(self, randomPoint):
-
-        # setup to begin search 
-        shortestPath = None
-        shortestPathLength = None
-        startNode = None
-        nearestNodes = []
-        
-        # search tree for nearest neighbor to new point
-        for node in self.nodeList:
-
-            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint))
-
-            # ignore nodes that are too close to point 
-            if euclideanDistance < (2.0 * self.car.minTurningRadius):
-                continue
-
-            # get dubins optimal path and length
-            path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
-
-            # only care about long path case
-            if pathLength < self.nearestNeighborRadius:# and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
-                nearestNodes.append(node)
-
-            # store shortest path
-            if shortestPathLength is None or pathLength < shortestPathLength:
-                shortestPathLength = pathLength
-                shortestPath = path
-                startNode = node
-
-                if self.animate:
-                    self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
-
-        return shortestPath, shortestPathLength, startNode, nearestNodes
-
     def _get_path_from_node_to_point(self, startNode, destinationPoint):
 
         if abs(np.linalg.norm(startNode.position[:2] - destinationPoint[:2])) < (2.0 * self.car.minTurningRadius):
@@ -192,12 +157,21 @@ class DubinsCarOptimalRRT:
         self.car.set_state(dubinsState)
 
         planner = DubinsOptimalPlannerFinalHeading(self.car, dubinsState, destinationPoint)
+        
+        """
+        # don't care about short path case
+        except DubinsError:
+            print('short path case')
+            continue
+        """
 
         path = planner.run()
+        # planner will return None if a path cannot be calculated
         if path is None:
             return None, None
         
-        pathLength = planner.linearDistanceTraveled + planner.firstCurveDistanceTraveled +planner.secondCurveDistanceTraveled
+        pathLength = planner.totalDistanceTraveled
+        #pathLength = planner.linearDistanceTraveled + planner.firstCurveDistanceTraveled +planner.secondCurveDistanceTraveled
 
         return path, pathLength
 
@@ -205,20 +179,263 @@ class DubinsCarOptimalRRT:
 
         carStateAtPoint = np.array([shortestPath['x'][-1], shortestPath['y'][-1], shortestPath['theta'][-1]])
         
-        if goal:
-            nodeName = 'goal-{}'.format(len(self.goalNodeList)) 
-        else:
-            nodeName = '{}'.format(len(self.nodeList))
-        nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath, name=nodeName)
+        nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath)
         nodeToAdd.parent = startNode
         nodeToAdd.path = shortestPath
 
-        if not goal:
-            self.nodeList.append(nodeToAdd)
-        else:
+        if goal:
+            nodeToAdd.name = 'Goal {}'.format(len(self.goalNodeList)) 
             self.goalNodeList.append(nodeToAdd)
+        else:
+            nodeToAdd.name = '{}'.format(len(self.nodeList)) 
+            self.nodeList.append(nodeToAdd)
+            
 
         return nodeToAdd
+
+    def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
+
+        minPathStartNode = nearestNode 
+        minPath, minPathLength = self._calculate_dubins_path_length(nearestNode, point)
+        minCost = self._get_cost(nearestNode) + minPathLength 
+
+        for node in nearestNodes:
+
+            path, pathLength = self._calculate_dubins_path_length(node, point)
+
+            collisionFree = self._is_point_reachable(node, point, path)
+            if not collisionFree:
+                continue
+
+            costToNewPoint = self._get_cost(node) + pathLength
+
+            if minPath is None or costToNewPoint < minCost:
+                minPath = path
+                minPathLength = pathLength
+                minPathStartNode = node
+                minCost = costToNewPoint
+
+        return minPath, minPathLength, minPathStartNode
+
+    def _find_nearest_nodes_to_new_point(self, randomPoint):
+
+        # setup to begin search 
+        shortestPath = None
+        shortestPathLength = None
+        nearestNode = None
+        nearestNodes = []
+        
+        # search tree for nearest neighbor to new point
+        for node in self.nodeList:
+
+            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint))
+
+            # ignore nodes that are too close to point 
+            if euclideanDistance < (2.0 * self.car.minTurningRadius):
+                continue
+
+            # get dubins optimal path and length
+            path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
+
+            # only care about long path case
+            if pathLength < self.nearestNeighborRadius:# and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
+                nearestNodes.append(node)
+
+            # store shortest path
+            if shortestPathLength is None or pathLength < shortestPathLength:
+                shortestPathLength = pathLength
+                shortestPath = path
+                nearestNode = node
+
+                if self.animate:
+                    self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
+
+        return shortestPath, shortestPathLength, nearestNode, nearestNodes
+
+
+    def _extend(self, point=None, goal=False):
+ 
+        if point is None:
+            point = self._sample_random_point()
+
+        shortestPath, shortestPathLength, nearestNode, nearestNodes = self._find_nearest_nodes_to_new_point(point)
+
+        # check for viable path from parent node to new point
+        isPointReachable = self._is_point_reachable(nearestNode, point, shortestPath)
+
+        newNode = None
+
+        # collision free
+        if isPointReachable:
+
+            # connect along a minimum-cost path
+            minCostPath, minCostPathLength, minCostNode = self._connect_along_min_cost_path(point, nearestNodes, nearestNode)
+
+            
+            if goal:
+                # check if this path is already in goal node list
+                for node in self.goalNodeList:
+                    if node.parent == minCostNode:
+                        return None, None 
+            
+
+            # add node to tree/add goal node to goal node list
+            newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
+
+            if goal:
+                return newNode, nearestNodes
+            elif self.animate:
+                self._update_animation(point=point, path=minCostPath, event='valid path', node=newNode)
+
+        elif self.animate:
+            self._update_animation(point=point, path=shortestPath, event='invalid path')
+
+        return newNode, nearestNodes
+
+    def _get_cost(self, node):
+        
+        # sum costs from node to root
+        cost = node.pathLength
+
+        while node.name != 'Root':
+
+            node = node.parent
+            cost += node.pathLength
+
+        return cost
+
+    def _rewire(self, newNode, nearestNodes):
+
+        rewire = False
+
+        for nearNode in nearestNodes:
+
+            # cannot rewire root node
+            if nearNode.name == 'Root':
+                continue
+            
+            newNodeCost = self._get_cost(newNode)
+            nearNodeCost = self._get_cost(nearNode)
+
+            pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
+
+            if pathToNear is None:
+                continue
+
+            collisionFree = self._is_point_reachable(newNode, nearNode, pathToNear)
+
+            if (newNodeCost + pathLengthToNear) < nearNodeCost and collisionFree:
+
+                rewire = True
+                nearNode.parent.numChildren -= 1
+                nearNode.parent = newNode
+                newNode.numChildren += 1
+                nearNode.path = pathToNear
+                nearNode.pathLength = pathLengthToNear
+
+                if self.animate:
+                    self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
+
+        return rewire
+
+    def _get_nodes_leaf_to_root(self, node):
+
+        nodesLeafToRoot = [node]
+
+        while node.name != 'Root':
+            nodesLeafToRoot.append(node.parent)
+            node = node.parent
+
+        return nodesLeafToRoot 
+
+    def _draw_min_cost_path_to_goal(self):
+
+        for plottedPath in self.plottedPathToGoal:
+            plottedPath.remove()
+
+        self.plottedPathToGoal = []
+
+        for node in self.minCostGoalPath:
+            if node.name != 'Root':
+                plottedPath = self._update_animation(point=node.position, path=node.path, event='Goal', node=node)
+                if plottedPath is not None:
+                    self.plottedPathToGoal.append(plottedPath)
+
+    def _set_min_cost_path_to_goal(self):
+
+        minCostPath = None
+        minCostGoal = None
+
+        for node in self.goalNodeList:
+            cost = self._get_cost(node)
+            if minCostPath is None or cost < minCostPath:
+                minCostGoal = node
+                minCostPath = cost
+
+        self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
+
+    def _sample_goal(self):
+
+        # treat goal like a new node, try to reach from nearest neighbors
+        newGoalNode, _ =  self._extend(self.target.position[:-1], goal=True)
+
+        if newGoalNode is not None:
+            self._set_min_cost_path_to_goal()
+
+        if self.animate:
+            self._draw_min_cost_path_to_goal()
+
+    def _get_final_path_start_to_goal(self):
+
+        finalPath = {'x': [], 'y': [], 'theta': []}
+
+        for node in self.minCostGoalPath:
+            if node.name != 'Root':
+                finalPath['x'] = node.path['x'] + finalPath['x']
+                finalPath['y'] = node.path['y'] + finalPath['y']
+                finalPath['theta'] = node.path['theta'] + finalPath['theta']
+
+        return finalPath
+
+    ########################
+    #### RRT* ALGORITHM ####
+    ########################
+
+    def simulate(self):
+        
+        target, targetIdx = self._select_random_target()
+        self.target = self.NodeRRT(target, name="Goal")
+
+        if self.animate:
+            self._draw_target(self.target.position, 'lime')
+            self.leg.remove()
+        
+        iteration = 0
+        while iteration < self.maxIter:
+
+            # extend tree
+            newNode, nearestNodes = self._extend()
+            if newNode is not None:
+                rewire = self._rewire(newNode, nearestNodes)
+                self._sample_goal()
+
+            iteration += 1
+
+        if self.animate:
+            self._display_final_legend()
+            plt.show()
+
+        sample = None
+        sample = {}
+        sample['target'] = {'coordinates': target, 'index': targetIdx }
+        sample['path'] = self._get_final_path_start_to_goal()
+
+        return sample
+
+
+    ###################
+    #### ANIMATION ####
+    ###################
 
     def _draw_point_and_path(self, point, pathToPlot, colorSelection, style = '-', goal=False ):
 
@@ -243,9 +460,21 @@ class DubinsCarOptimalRRT:
         self.fig.canvas.draw()
 
     def on_press(self, event):
+
         print('press', event.key)
+
         if event.key == 'escape':
             print('number of goal nodes:', len(self.goalNodeList))
+
+            for node in self.goalNodeList:
+
+                print('Total cost = {}'.format(self._get_cost(node)))
+                print(node)
+
+            for node in self.nodeList:
+                print('Total cost = {}'.format(self._get_cost(node)))
+                print(node)
+
             plt.close('all')
             sys.exit(1)
 
@@ -310,6 +539,24 @@ class DubinsCarOptimalRRT:
 
         plottedGoal, plottedPathToGoal= self._draw_point_and_path(self.goal, finalPath, 'pink')
         self.plottedPathToGoal = plottedPathToGoal
+
+    def _display_final_legend(self):
+
+        legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
+                        markeredgecolor='blue', markersize=15),
+                        Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Selected Target',
+                        markeredgecolor='green', markersize=15),
+                        Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Obstacle',
+                        markeredgecolor='red', markersize=15),
+                        Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='RRT Tree Branches',
+                        markeredgecolor='pink', markersize=15),
+                        Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='RRT* Rewiring',
+                        markeredgecolor='green', markersize=15),
+                        Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='Final Path',
+                        markeredgecolor='blue', markersize=15)
+                        ]
+        leg = self.ax.legend(handles=legend_elements, loc='best')
+
     
     def _update_animation(self, point, path, event, node=None):
  
@@ -349,222 +596,8 @@ class DubinsCarOptimalRRT:
             plottedPoint.remove()
             plottedPath.remove()
             return None
-        elif event != 'Goal':
-            node.plottedPath = plottedPath
+        elif event == 'Goal':
+            return plottedPath
 
-        return plottedPath
-
-    def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
-
-        minPathStartNode = nearestNode 
-        minPath, minPathLength = self._calculate_dubins_path_length(nearestNode, point)
-        minCost = self._get_cost(nearestNode) + minPathLength 
-
-        for node in nearestNodes:
-
-            path, pathLength = self._calculate_dubins_path_length(node, point)
-
-            collisionFree = self._is_point_reachable(node, point, path)
-            if not collisionFree:
-                continue
-
-            costToNewPoint = self._get_cost(node) + pathLength
-
-            if minPath is None or costToNewPoint < minCost:
-                minPath = path
-                minPathLength = pathLength
-                minPathStartNode = node
-                minCost = costToNewPoint
-
-        return minPath, minPathLength, minPathStartNode
-
-    def _extend(self, point=None, goal=False):
- 
-        if point is None:
-            point = self._sample_random_point()
-
-        shortestPath, shortestPathLength, startNode, nearestNodes = self._find_nearest_nodes_to_new_point(point)
-
-        # check for viable path from parent node to new point
-        isPointReachable = self._is_point_reachable(startNode, point, shortestPath)
-
-        newNode = None
-
-        # collision free
-        if isPointReachable:
-
-            # connect along a minimum-cost path
-            shortestPath, shortestPathLength, startNode = self._connect_along_min_cost_path(point, nearestNodes, startNode)
-
-            if goal:
-                # check if the min cost path to goal has changed
-                for node in self.goalNodeList:
-                    if node.parent == startNode:
-                        return None, None 
-
-            # add node to tree, add goal node to goal node list
-            newNode = self._add_node(startNode, shortestPathLength, shortestPath, goal)
-
-            if goal:
-                return newNode, nearestNodes
-            elif self.animate:
-                self._update_animation(point=point, path=shortestPath, event='valid path', node=newNode)
-
-        elif self.animate:
-            self._update_animation(point=point, path=shortestPath, event='invalid path')
-
-        return newNode, nearestNodes
-
-    def _get_cost(self, node):
-        
-        # sum costs from node to root
-        cost = node.pathLength
-
-        while node.name != 'Root':
-
-            node = node.parent
-            cost += node.pathLength
-
-        return cost
-
-    def _rewire(self, newNode, nearestNodes):
-
-        rewire = False
-
-        for nearNode in nearestNodes:
-
-            # cannot rewire root node
-            if nearNode.parent is None:
-                continue
-            
-            newNodeCost = self._get_cost(newNode)
-            nearNodeCost = self._get_cost(nearNode)
-
-            try:
-                pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
-            # don't care about short path case
-            except DubinsError:
-                print('short path case')
-                continue
-
-            collisionFree = self._is_point_reachable(newNode, nearNode, pathToNear)
-
-            if (newNodeCost + pathLengthToNear) < nearNodeCost and collisionFree:
-
-                rewire = True
-                nearNode.parent.numChildren -= 1
-                nearNode.parent = newNode
-                newNode.numChildren += 1
-                nearNode.path = pathToNear
-                nearNode.pathLength = pathLengthToNear
-
-                if self.animate:
-                    self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
-
-        return rewire
-
-    def _get_nodes_leaf_to_root(self, node):
-
-        nodesLeafToRoot = [node]
-
-        while node.name != 'Root':
-            nodesLeafToRoot.append(node.parent)
-            node = node.parent
-
-        return nodesLeafToRoot 
-
-    def _draw_min_cost_path_to_goal(self):
-        for plottedPath in self.plottedPathToGoal:
-            plottedPath.remove()
-
-        self.plottedPathToGoal = []
-
-        for node in self.minCostGoalPath:
-            if node.name != 'Root':
-                plottedPath = self._update_animation(point=node.position, path=node.path, event='Goal', node=node)
-                if plottedPath is not None:
-                    self.plottedPathToGoal.append(plottedPath)
-
-
-    def _set_min_cost_path_to_goal(self):
-
-        minCostPath = None
-        minCostGoal = None
-
-        for node in self.goalNodeList:
-            cost = self._get_cost(node)
-            if minCostPath is None or cost < minCostPath:
-                minCostGoal = node
-                minCostPath = cost
-
-        self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
-
-    def _sample_goal(self):
-
-        # treat goal like a new node, try to reach from nearest neighbors
-        newGoalNode, _ =  self._extend(self.goalNode.position[:-1], goal=True)
-
-        if newGoalNode is not None:
-            self._set_min_cost_path_to_goal()
-
-        if self.animate:
-            self._draw_min_cost_path_to_goal()
-
-
-    def _get_final_path_start_to_goal(self):
-
-        finalPath = {'x': [], 'y': [], 'theta': []}
-
-        for node in self.minCostGoalPath:
-            if node.name != 'Root':
-                finalPath['x'] = node.path['x'] + finalPath['x']
-                finalPath['y'] = node.path['y'] + finalPath['y']
-                finalPath['theta'] = node.path['theta'] + finalPath['theta']
-
-        return finalPath
-
-    # RRT* ALGORITHM
-    def simulate(self):
-        
-        target, targetIdx = self._select_random_target()
-        self.goalNode = self.NodeRRT(target, name="Goal")
-
-        if self.animate:
-            self._draw_target(self.goalNode.position, 'lime')
-            #plt.pause(2.0)
-            self.leg.remove()
-        
-        iteration = 0
-        while iteration < self.maxIter:
-
-            # extend tree
-            newNode, nearestNodes = self._extend()
-            if newNode is not None:
-                rewire = self._rewire(newNode, nearestNodes)
-                self._sample_goal()
-
-            iteration += 1
-
-        if self.animate:
-            legend_elements = [ Line2D([0], [0], marker='o', linestyle='', fillstyle='none', label='Non-selected Target',
-                            markeredgecolor='blue', markersize=15),
-                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Selected Target',
-                            markeredgecolor='green', markersize=15),
-                            Line2D([0], [0], marker='o', fillstyle='none', linestyle='', label='Obstacle',
-                            markeredgecolor='red', markersize=15),
-                            Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='RRT Tree Branches',
-                            markeredgecolor='pink', markersize=15),
-                            Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='RRT* Rewiring',
-                            markeredgecolor='green', markersize=15),
-                            Line2D([0], [0], marker='_', fillstyle='none', linestyle='', label='Final Path',
-                            markeredgecolor='blue', markersize=15)
-                            ]
-            leg = self.ax.legend(handles=legend_elements, loc='best')
-            plt.show()
-
-        sample = None
-        sample = {}
-        sample['target'] = {'coordinates': target, 'index': targetIdx }
-        sample['path'] = self._get_final_path_start_to_goal()
-
-        return sample
+        node.plottedPath = plottedPath
+        return None
