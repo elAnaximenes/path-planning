@@ -58,12 +58,12 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
             else:
                 try:
                     sample = run_optimal_RRT(animate=False, sceneName=args.scene)
-                except:
+                except Exception as e:
                     print('an exception occurred')
+                    print(e)
                     sample = None
-                    continue
 
-        samplesInBatch['{}'.format(sampleNum)] = sample
+samplesInBatch['{}'.format(sampleNum)] = sample
 
     save_batch(samplesInBatch, batchNum, args.scene, args.format)
 

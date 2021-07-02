@@ -16,6 +16,7 @@ def check_valid_start(scene, startPosition):
 
 def run_optimal_RRT(animate=False, sceneName='test_scene'):
 
+    np.random.seed(0)
     # load scene information
     scene = Scene(sceneName)
     
