@@ -33,6 +33,12 @@ class DubinsCarOptimalRRT:
             self.plottedPath= None
             self.name=name
 
+        def _set_position(self, position):
+            self.x = position[0] 
+            self.y = position[1] 
+            self.theta = position[2] 
+            self.position = position           
+
         def __eq__(self, otherNode):
             return otherNode is not None and self.name == otherNode.name 
             #return otherNode is not None and self.x - otherNode.x < 0.001 and self.y - otherNode.y < 0.001 and self.theta - otherNode.theta < 0.001
@@ -54,7 +60,7 @@ class DubinsCarOptimalRRT:
         self.goalNodeList = []
         self.minCostGoalPath = []
         self.scene = scene
-        self.nearestNeighborRadius = 5.0
+        self.nearestNeighborRadius = 6.0
 
         # path to goal
         self.pathToGoalNodes = None
@@ -136,8 +142,8 @@ class DubinsCarOptimalRRT:
 
         return path
 
-    def _calculate_dubins_path_length(self, originNode, destinationPoint):
-
+    def _get_dubins_path(self, originNode, destinationPoint):
+ 
         # re-initialize dubins car to be at origin node
         dubinsState = originNode.position 
         self.car.set_state(dubinsState)
@@ -147,9 +153,22 @@ class DubinsCarOptimalRRT:
 
         # get optimal path produced by planner
         path = planner.run()
-        pathLength = planner.angularDistanceTraveled + planner.linearDistanceTraveled
 
-        return path, pathLength
+        return path
+   
+    def _calculate_dubins_path_length(self, originNode, destinationPoint):
+
+        # re-initialize dubins car to be at origin node
+        dubinsState = originNode.position 
+        self.car.set_state(dubinsState)
+
+        # instantiate optimal planner
+        planner = DubinsOptimalPlanner(self.car, dubinsState, destinationPoint)
+
+        # get optimal pathlength produced by planner
+        pathLength = planner.calculate_shortest_pathlength()
+
+        return pathLength
 
     def _calculate_dubins_path_length_final_heading(self, originNode, destinationPoint):
 
@@ -196,12 +215,14 @@ class DubinsCarOptimalRRT:
     def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
 
         minPathStartNode = nearestNode 
-        minPath, minPathLength = self._calculate_dubins_path_length(nearestNode, point)
+        minPathLength = self._calculate_dubins_path_length(nearestNode, point)
+        minPath = self._get_dubins_path(nearestNode, point)
         minCost = self._get_cost(nearestNode) + minPathLength 
 
         for node in nearestNodes:
 
-            path, pathLength = self._calculate_dubins_path_length(node, point)
+            pathLength = self._calculate_dubins_path_length(node, point)
+            path = self._get_dubins_path(node, point)
 
             collisionFree = self._is_point_reachable(node, point, path)
             if not collisionFree:
@@ -231,11 +252,11 @@ class DubinsCarOptimalRRT:
             euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint))
 
             # ignore nodes that are too close to point 
-            if euclideanDistance < (2.0 * self.car.minTurningRadius):
+            if euclideanDistance < (2.0 * self.car.minTurningRadius) or euclideanDistance > self.nearestNeighborRadius:
                 continue
 
             # get dubins optimal path and length
-            path, pathLength = self._calculate_dubins_path_length(node, randomPoint)
+            pathLength = self._calculate_dubins_path_length(node, randomPoint)
 
             # only care about long path case
             if pathLength < self.nearestNeighborRadius:# and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
@@ -243,6 +264,7 @@ class DubinsCarOptimalRRT:
 
             # store shortest path
             if shortestPathLength is None or pathLength < shortestPathLength:
+                path = self._get_dubins_path(node, randomPoint)
                 shortestPathLength = pathLength
                 shortestPath = path
                 nearestNode = node
@@ -316,10 +338,11 @@ class DubinsCarOptimalRRT:
             newNodeCost = self._get_cost(newNode)
             nearNodeCost = self._get_cost(nearNode)
 
-            #if nearNode.numChildren > 0:
-            pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
-            #else:
-                #pathToNear, pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
+            if nearNode.numChildren > 0:
+                pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
+            else:
+                pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
+                pathToNear = self._get_dubins_path(newNode, nearNode.position)
 
             if pathToNear is None:
                 continue
@@ -330,7 +353,9 @@ class DubinsCarOptimalRRT:
 
                 rewire = True
                 nearNode.parent.numChildren -= 1
+                carStateAtPoint = np.array([pathToNear['x'][-1], pathToNear['y'][-1], pathToNear['theta'][-1]])
                 nearNode.parent = newNode
+                nearNode._set_position(carStateAtPoint)
                 newNode.numChildren += 1
                 nearNode.path = pathToNear
                 nearNode.pathLength = pathLengthToNear
@@ -393,6 +418,10 @@ class DubinsCarOptimalRRT:
 
         for node in self.minCostGoalPath:
             if node.name != 'Root':
+                if len(finalPath['x']) > 1 and abs(finalPath['x'][0]) - abs(node.path['x'][-1]) > 0.1:
+                    print('DISCONTINUITY IN FINAL PATH!')
+                    sys.exit(-1)
+
                 finalPath['x'] = node.path['x'] + finalPath['x']
                 finalPath['y'] = node.path['y'] + finalPath['y']
                 finalPath['theta'] = node.path['theta'] + finalPath['theta']
@@ -405,8 +434,6 @@ class DubinsCarOptimalRRT:
 
     def simulate(self):
         
-        random.seed(31)
-
         target, targetIdx = self._select_random_target()
         self.target = self.NodeRRT(target, name="Goal")
 

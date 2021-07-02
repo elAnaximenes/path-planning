@@ -297,6 +297,12 @@ class DubinsOptimalPlannerFinalHeading:
 
         return bestWord, params
 
+    def get_shortest_path_length(self):
+
+        word, (t,p,q) = self._get_shortest_path_params()
+
+        return t, p, q
+
     # plan path and steer car to target
     def run(self):
 

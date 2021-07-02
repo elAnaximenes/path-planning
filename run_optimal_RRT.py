@@ -1,6 +1,7 @@
 import sys
 import math
 import numpy as np
+import random
 from dubins_path_planner.car_models.dubins_model import DubinsCar
 from dubins_path_planner.optimal_RRT import DubinsCarOptimalRRT
 from dubins_path_planner.RRT import Scene
@@ -16,7 +17,6 @@ def check_valid_start(scene, startPosition):
 
 def run_optimal_RRT(animate=False, sceneName='test_scene'):
 
-    np.random.seed(0)
     # load scene information
     scene = Scene(sceneName)
     
@@ -64,5 +64,9 @@ if __name__ == '__main__':
         for arg in sys.argv[1:]:
             if arg == 'animate':
                 animate = True
+    seed = random.randint(1, 10000)
+    print('seed:', seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
     sample = run_optimal_RRT(animate, sceneName)

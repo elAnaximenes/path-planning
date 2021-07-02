@@ -3,6 +3,8 @@ import argparse
 import csv
 import json
 import dubins_path_planner.RRT
+import numpy as np
+import random
 from run_RRT import run_RRT
 from run_optimal_RRT import run_optimal_RRT
 
@@ -50,6 +52,12 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
     samplesInBatch = {}
     for sampleNum in range(args.batchsize):
 
+        print('sample number:', sampleNum)
+        seed = random.randint(1, 100000)
+        print('seed:', seed)
+        np.random.seed(seed)
+        random.seed(seed)
+
         sample = None 
         while sample is None:
 
@@ -63,7 +71,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
                     print(e)
                     sample = None
 
-samplesInBatch['{}'.format(sampleNum)] = sample
+        samplesInBatch['{}'.format(sampleNum)] = sample
 
     save_batch(samplesInBatch, batchNum, args.scene, args.format)
 

@@ -15,6 +15,7 @@ class DubinsCar:
         self.umin = inputRange[0]
         self.umax = inputRange[1]
         self.minTurningRadius = abs(self.velocity / self.umax)
+        print('min turning radius', self.minTurningRadius)
 
     def set_state(self, newState):
         self.state['x'] = newState[0]
