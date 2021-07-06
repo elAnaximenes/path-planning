@@ -19,33 +19,36 @@ def build_model(modelSelection, inputShape):
 
     print('input shape:', inputShape)
 
-    if modelSelection == 'FeedForward':
+    if modelSelection.lower() == 'feedforward':
 
         model = FeedForward(inputShape)
 
-    elif modelSelection == 'LSTM':
+    elif modelSelection.lower() == 'lstm':
 
         model = LSTM(inputShape)
         
     return model
 
-def get_trainer(modelSelection, model):
+def get_trainer(modelSelection, model, weightsDir):
 
-    if modelSelection == 'FeedForward':
+    if modelSelection.lower() == 'feedforward':
 
-        trainer = FeedForwardTrainer(model)
+        trainer = FeedForwardTrainer(model, weightsDir)
 
-    elif modelSelection == 'LSTM':
+    elif modelSelection.lower() == 'lstm':
 
-        trainer = LSTMTrainer(model)
+        trainer = LSTMTrainer(model, weightsDir)
 
     return trainer
 
 def get_data_loader(modelSelection, numBatches, dataDirectory):
 
-    if modelSelection == 'FeedForward':
+    if modelSelection.lower() == 'feedforward':
+
         dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
-    elif modelSelection == 'LSTM':
+
+    elif modelSelection.lower() == 'lstm':
+
         dataLoader = LstmTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
 
     return dataLoader
@@ -96,7 +99,7 @@ def summary(history, modelSelection, numBatches, startBatch):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt'):
 
     # load training and validation data
     dataLoader = get_data_loader(modelSelection, numBatches, dataDirectory)
@@ -107,7 +110,8 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume, st
     #inputShape = x_train[0].shape[1]
     inputShape = (3,)
     model = build_model(modelSelection, inputShape)
-    trainer = get_trainer(modelSelection, model)
+    weightsDir = '{}\\{}_{}_weights'.format(dataDirectory, modelSelection.lower(), algo)
+    trainer = get_trainer(modelSelection, model, weightsDir)
 
     print('successfully loaded data and built model')
     # fit model to training data
@@ -132,7 +136,8 @@ if __name__ == '__main__':
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
     parser.set_defaults(resume=False)
     parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)
-    parser.add_argument('--directory', type = str, default = './data/batches-train')
+    parser.add_argument('--directory', type = str, default = '.\\data\\')
+    parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
 
     args = parser.parse_args()
     modelSelection=args.model
@@ -148,7 +153,11 @@ if __name__ == '__main__':
         print('split must be a real number between 0.0 and 1.0')
         exit(2)
     if dataDirectory == 'tower':
-        dataDirectory = 'D:\\path_planning_data\\batches-train'
+        dataDirectory = 'D:\\path_planning_data\\'
+
+    algorithm = args.algo.lower()
+
+    dataDirectory += algorithm + '-batches-train\\'
 
     # train
-    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm)

@@ -70,7 +70,7 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 300
+        self.maxIter = 400
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -338,6 +338,7 @@ class DubinsCarOptimalRRT:
             newNodeCost = self._get_cost(newNode)
             nearNodeCost = self._get_cost(nearNode)
 
+            # Only consider heading for rewiring to non leaf nodes
             if nearNode.numChildren > 0:
                 pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
             else:
@@ -399,15 +400,15 @@ class DubinsCarOptimalRRT:
                 minCostGoal = node
                 minCostPath = cost
 
-        self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
+        if len(self.goalNodeList) > 0:
+            self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
 
     def _sample_goal(self):
 
         # treat goal like a new node, try to reach from nearest neighbors
         newGoalNode, _ =  self._extend(self.target.position[:-1], goal=True)
 
-        if newGoalNode is not None:
-            self._set_min_cost_path_to_goal()
+        self._set_min_cost_path_to_goal()
 
         if self.animate:
             self._draw_min_cost_path_to_goal()
@@ -456,10 +457,11 @@ class DubinsCarOptimalRRT:
             self._display_final_legend()
             plt.show()
 
-        sample = None
         sample = {}
         sample['target'] = {'coordinates': target, 'index': targetIdx }
         sample['path'] = self._get_final_path_start_to_goal()
+        if len(sample['path']['x']) <= 1:
+            return None
 
         return sample
 
@@ -617,7 +619,7 @@ class DubinsCarOptimalRRT:
                 node.plottedPath = plottedPath
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
-        plt.pause(0.0001)
+        #plt.pause(0.00001)
         self.imgcount += 1
         self.text.remove()
 

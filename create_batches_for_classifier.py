@@ -52,15 +52,21 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
     samplesInBatch = {}
     for sampleNum in range(args.batchsize):
 
-        print('sample number:', sampleNum)
+
+        print('sample number: {}'.format(sampleNum), flush=False)
+
+        # uncomment for debugging
+        """
         seed = random.randint(1, 100000)
         print('seed:', seed)
         np.random.seed(seed)
         random.seed(seed)
+        """
 
         sample = None 
         while sample is None:
 
+            print('running RRT*')
             if args.algorithm == 'RRT':
                 sample = run_RRT(animate=False, sceneName=args.scene)
             else:

@@ -32,8 +32,8 @@ class LstmTrainDataLoader(TrainLoader):
         for i in range(self.numSamples):
             if len(self.x[i][0]) > maxLen:
                 maxLen = len(self.x[i][0])
-        if maxLen > 3000:
-            maxLen = 3000
+        #if maxLen > 3000:
+            #maxLen = 3000
 
         print('longest path:', maxLen)
         padded_samples = np.zeros(shape = (self.numSamples, 3, maxLen))
@@ -92,7 +92,7 @@ class LstmTrainDataLoader(TrainLoader):
 
         # load raw json dict
         rawData = {}
-        with open('{}/{}'.format(self.dataDirectory, batchFileName), 'r') as f:
+        with open(os.path.join(self.dataDirectory, batchFileName), 'r') as f:
             rawData = json.load(f)
 
         # build a list of instances and labels

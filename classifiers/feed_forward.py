@@ -28,7 +28,7 @@ class FeedForward(tf.keras.Model):
 		
 class FeedForwardTrainer():
 
-    def __init__(self, model):
+    def __init__(self, model, weightsDir):
         
         self.model = model
         self.optimizer = tf.keras.optimizers.Adam()
@@ -36,6 +36,7 @@ class FeedForwardTrainer():
         self.trainAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.valAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.trainingHistory = {'trainAcc':[], 'valAcc':[], 'trainLoss':[], 'valLoss':[]}
+        self.weightsDir = weightsDir
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
@@ -73,7 +74,7 @@ class FeedForwardTrainer():
     def train(self, trainData, valData, epochs, batchSize, resume):
 
         if resume:
-            self.model.load_weights('./data/feed_forward_weights/feed_forward_final_weights')
+            self.model.load_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
 
         x_train, y_train = trainData
         x_val, y_val = valData
@@ -98,23 +99,24 @@ class FeedForwardTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('./data/feed_forward_weights/feed_forward_final_weights')
-        self.model.save('./data/feed_forward_weights/feed_forward_model')
+        self.model.save_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
+        self.model.save('{}/feed_forward_model'.format(self.weightsDir))
 
         return self.trainingHistory
     
 class FeedForwardTester():
 
-    def __init__(self, dataset, model):
+    def __init__(self, dataset, model, weightsDir):
 
         self.dataset = dataset
         self.model = model
         self.numSamples = len(dataset[1])
         self.accuracyInfo = {'tp': [], 'label count': []}
+        self.weightsDir = weightsDir
 
     def test(self):
 
-        self.model.load_weights('./data/feed_forward_weights/feed_forward_final_weights')
+        self.model.load_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
         
         print('model weights were loaded')
         self.dataset = self.dataset[:1000]

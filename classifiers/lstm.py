@@ -4,14 +4,14 @@ from tensorflow.keras import layers
 
 class LSTM(tf.keras.Model):
 
-    def __init__(self, inputShape=(3,)):
+    def __init__(self, inputShape=(1,3)):
         
         super(LSTM, self).__init__()
         
-        self.inputLayer = layers.InputLayer(input_shape=(100,3))
-        self.mask = layers.Masking(mask_value = 0.0, input_shape=(100,3))
-        self.lstm = layers.LSTM(128, stateful=True, input_shape = (100,3))
-        self.h1 = layers.Dense(64, activation='relu')
+        self.inputLayer = layers.InputLayer(inputShape)
+        self.mask = layers.Masking(mask_value = 0.0)
+        self.lstm = layers.LSTM(128, stateful=True)
+        self.h1 = layers.Dense(128, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
@@ -29,7 +29,7 @@ class LSTM(tf.keras.Model):
 		
 class LSTMTrainer():
 
-    def __init__(self, model):
+    def __init__(self, model, weightsDir):
         
         self.model = model
         self.optimizer = tf.keras.optimizers.Adam()
@@ -37,6 +37,7 @@ class LSTMTrainer():
         self.trainAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.valAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.history = {'trainAcc':[], 'valAcc':[], 'trainLoss':[], 'valLoss':[]}
+        self.weightsDir = weightsDir
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
@@ -74,8 +75,7 @@ class LSTMTrainer():
     def train(self, trainData, valData, epochs, batchSize, resume = False):
 
         if resume:
-            self.model.load_weights('./data/lstm_weights/lstm_final_weights')
-            #self.model = tf.keras.models.load_model('./data/weights/lstm_final_model')
+            self.model.load_weights('{}/lstm_final_weights'.format(self.weightsDir))
 
         x_train, y_train = trainData
         x_val, y_val = valData
@@ -93,10 +93,11 @@ class LSTMTrainer():
 
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
-                windowSize = 100
+                windowSize = 1
+                sampleRate = 100
                 #print('Batch shape:', xBatchTrain.shape, yBatchTrain)
 
-                windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], windowSize)]
+                windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], sampleRate)]
 
                 for windowStart, windowEnd in windows:
                     xBatchWindow = xBatchTrain[:, windowStart:windowEnd, :]
@@ -114,19 +115,20 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
-        self.model.save('./data/lstm_weights/lstm_model')
+        self.model.save_weights('{}/lstm_final_weights'.format(self.weightsDir))
+        self.model.save('{}/lstm_model'.format(self.weightsDir))
             
         return self.history
 
 class LSTMTester:
 
-    def __init__(self, dataset, model):
+    def __init__(self, dataset, model, weightsDir):
 
         self.dataset = dataset
         self.model = model
         self.numSamples = len(dataset[1])
         self.accuracyInfo = {'tp': [], 'label count': []}
+        self.weightsDir = weightsDir
 
     def _transform_timeseries(self, instance):
 
@@ -139,10 +141,9 @@ class LSTMTester:
 
     def test(self):
 
-        self.model.load_weights('./data/lstm_weights/lstm_final_weights')
+        self.model.load_weights('{}/lstm_final_weights'.format(self.weightsDir))
 
         print('model weights were loaded')
-        self.dataset = self.dataset[:1000]
         stepSize = 1
         timeSteps = [x*stepSize for x in range(10000)]
 

@@ -30,7 +30,7 @@ def draw_scene(scene, path, sampleNum):
     
     ax.plot(path['x'], path['y'], color='blue', linestyle='-', markersize=2)
         
-    plt.savefig('./path_figures/path-{}.png'.format(sampleNum))
+    #plt.savefig('./path_figures/path-{}.png'.format(sampleNum))
     plt.show()
 
 def load_json(sceneName, batchNum, dataDirectory):
