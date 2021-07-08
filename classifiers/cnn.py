@@ -2,34 +2,34 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.keras import layers 
 
-class LSTM(tf.keras.Model):
+class CNN(tf.keras.Model):
 
-    def __init__(self, inputShape=(3,)):
+    def __init__(self, inputShape=(1,3)):
         
-        super(LSTM, self).__init__()
+        super(CNN, self).__init__()
         
-        self.inputLayer = layers.InputLayer(input_shape=(100,3))
-        self.mask = layers.Masking(mask_value = 0.0, input_shape=(100,3))
-        self.lstm = layers.LSTM(128, stateful=True, input_shape = (100,3))
+        self.inputLayer = layers.Inputlayer(inputShape)
+        self.conv1 = layers.Conv1D(64, 7, padding='causal', activation='relu')
+        self.maxPool = layers.MaxPooling1D(5)
+        self.conv2 = layers.Conv1D(64, 7, padding='causal', activation='relu')
+        self.globalMaxPool = layers.GlobalMaxPooling1D()
         self.h1 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
         
-        #print('shape of network input:', x.shape)
         x = self.inputLayer(x)
-        x = self.mask(x)
-        #print('input to LSTM layer')
-        #print(x.shape)
-        x = self.lstm(x)
+        x = self.conv1(x)
+        x = self.maxPool(x)
+        x = self.conv2(x)
+        x = self.globalMaxPool(x)
         x = self.h1(x)
-        #print('output of LSTM layer')
-        #print(x.shape)
+
         return self.outputLayer(x)
 		
-class LSTMTrainer():
+class CNNTrainer():
 
-    def __init__(self, model):
+    def __init__(self, model, weightsDir):
         
         self.model = model
         self.optimizer = tf.keras.optimizers.Adam()
@@ -37,6 +37,7 @@ class LSTMTrainer():
         self.trainAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.valAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.history = {'trainAcc':[], 'valAcc':[], 'trainLoss':[], 'valLoss':[]}
+        self.weightsDir = weightsDir
 
     def _train_step(self, xBatchTrain, yBatchTrain):
 
@@ -74,8 +75,11 @@ class LSTMTrainer():
     def train(self, trainData, valData, epochs, batchSize, resume = False):
 
         if resume:
-            self.model.load_weights('./data/lstm_weights/lstm_final_weights')
-            #self.model = tf.keras.models.load_model('./data/weights/lstm_final_model')
+            self.model.load_weights(os.path.join(self.weightsDir, 'cnn_final_weights'))
+            print('loading weights from checkpoint')
+            print(self.weightsDir, flush=True)
+        else:
+            print('\nTraining from scratch\n'
 
         x_train, y_train = trainData
         x_val, y_val = valData
@@ -93,18 +97,7 @@ class LSTMTrainer():
 
             for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
 
-                windowSize = 100
-                #print('Batch shape:', xBatchTrain.shape, yBatchTrain)
-
-                windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], windowSize)]
-
-                for windowStart, windowEnd in windows:
-                    xBatchWindow = xBatchTrain[:, windowStart:windowEnd, :]
-                    if abs(np.sum(xBatchWindow[:, 0, :])) < 0.000001:
-                        print(xBatchWindow[:, 0, :])
-                        print('input fully masked')
-                        break
-                    lossValue = self._train_step(xBatchWindow, yBatchTrain)
+                lossValue = self._train_step(xBatchTrain, yBatchTrain)
 
                 if step % 2 == 0:
                     print("Training loss at step {}: {:.4f}".format(step, float(lossValue)))
@@ -113,19 +106,20 @@ class LSTMTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('./data/lstm_weights/lstm_final_weights')
-        self.model.save('./data/lstm_weights/lstm_model')
+        self.model.save_weights(os.path.join(self.weightsDir, 'cnn_final_weights'))
+        self.model.save(os.path.join(self.weightsDir, 'cnn_model'))
             
         return self.history
 
-class LSTMTester:
+class CNNTester:
 
-    def __init__(self, dataset, model):
+    def __init__(self, dataset, model, weightsDir):
 
         self.dataset = dataset
         self.model = model
         self.numSamples = len(dataset[1])
         self.accuracyInfo = {'tp': [], 'label count': []}
+        self.weightsDir = weightsDir
 
     def _transform_timeseries(self, instance):
 
@@ -138,7 +132,7 @@ class LSTMTester:
 
     def test(self):
 
-        self.model.load_weights('./data/lstm_weights/lstm_final_weights')
+        self.model.load_weights(os.path.join(self.weightsDir,'cnn_final_weights'))
 
         print('model weights were loaded')
         self.dataset = self.dataset[:1000]
@@ -169,6 +163,8 @@ class LSTMTester:
                     self.accuracyInfo['tp'][i] += 1
 
             self.model.reset_states()
+
+
 
         return self.accuracyInfo
 

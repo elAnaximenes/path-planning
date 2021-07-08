@@ -11,21 +11,26 @@ import os
 import sys
 from classifiers.feed_forward import FeedForward, FeedForwardTrainer
 from classifiers.lstm import LSTM, LSTMTrainer
+#from classifiers.cnn import CNN, CNNTrainer
 from data.feed_forward_train_loader import FeedForwardTrainDataLoader
 from data.lstm_train_loader import LstmTrainDataLoader
 from training_history.plot_training_history import plot_training_history
 
-def build_model(modelSelection, inputShape):
+def build_model(modelSelection):
 
-    print('input shape:', inputShape)
+    print('input shape:')
 
     if modelSelection.lower() == 'feedforward':
 
-        model = FeedForward(inputShape)
+        model = FeedForward()
 
     elif modelSelection.lower() == 'lstm':
 
-        model = LSTM(inputShape)
+        model = LSTM()
+
+    #elif modelSelection.lower() == 'cnn':
+
+        #model = CNN()
         
     return model
 
@@ -39,6 +44,10 @@ def get_trainer(modelSelection, model, weightsDir):
 
         trainer = LSTMTrainer(model, weightsDir)
 
+    #elif modelSelection.lower() == 'cnn':
+        
+        #trainer = CNNTrainer(model, weightsDir)
+
     return trainer
 
 def get_data_loader(modelSelection, numBatches, dataDirectory):
@@ -47,7 +56,7 @@ def get_data_loader(modelSelection, numBatches, dataDirectory):
 
         dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
 
-    elif modelSelection.lower() == 'lstm':
+    elif modelSelection.lower() == 'lstm' or modelSelection.lower() == 'cnn':
 
         dataLoader = LstmTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
 
@@ -67,7 +76,7 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('loss')
+    #plt.savefig('loss')
     plt.show()
 
     plt.clf()
@@ -83,7 +92,7 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig('loss')
+    #plt.savefig('loss')
     plt.show()
 
 def summary(history, modelSelection, numBatches, startBatch):
@@ -102,23 +111,23 @@ def summary(history, modelSelection, numBatches, startBatch):
 def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt'):
 
     # load training and validation data
-    dataLoader = get_data_loader(modelSelection, numBatches, dataDirectory)
+    trainingDataDir = os.path.join(dataDirectory, '{}_batches_train'.format(algo)) 
+    dataLoader = get_data_loader(modelSelection, numBatches, trainingDataDir)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
 
     # build classifier
     #inputShape = x_train[0].shape[1]
-    inputShape = (3,)
-    model = build_model(modelSelection, inputShape)
-    weightsDir = '{}\\{}_{}_weights'.format(dataDirectory, modelSelection.lower(), algo)
+    model = build_model(modelSelection)
+    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algo, modelSelection.lower()))
     trainer = get_trainer(modelSelection, model, weightsDir)
 
     print('successfully loaded data and built model')
     # fit model to training data
     originalOut = sys.stdout
-    sys.stdout = open('./logs/{}-training.log'.format(modelSelection), 'w')
+    #sys.stdout = open('./logs/{}-training.log'.format(modelSelection), 'w')
     history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize, resume)
-    sys.stdout = originalOut
+    #sys.stdout = originalOut
     print('successfully trained model')
 
     # summarize training results
@@ -156,8 +165,6 @@ if __name__ == '__main__':
         dataDirectory = 'D:\\path_planning_data\\'
 
     algorithm = args.algo.lower()
-
-    dataDirectory += algorithm + '-batches-train\\'
 
     # train
     train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm)

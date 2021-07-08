@@ -26,7 +26,7 @@ class FeedForward(tf.keras.Model):
 
         return self.outputLayer(x)
 		
-class FeedForwardTrainer():
+class FeedForwardTrainer:
 
     def __init__(self, model, weightsDir):
         
@@ -104,7 +104,7 @@ class FeedForwardTrainer():
 
         return self.trainingHistory
     
-class FeedForwardTester():
+class FeedForwardTester:
 
     def __init__(self, dataset, model, weightsDir):
 
@@ -146,6 +146,18 @@ class FeedForwardTester():
         return self.accuracyInfo
 
 
+class FeedForwardGradientVisualizer:
+
+    def __init(self, model, dataset, scene, weightsDir='./data/optimal_rrt_feed_forward_weights'):
+            
+        self.model = model
+        self.weightsDir = weightsDir
+        self.dataset = dataset
+        self.model.load_weights(os.path.join(self.weightsDir, 'feed_forward_final_weights'))
+        self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
+        self.scene = scene
+
+    
 
 
 

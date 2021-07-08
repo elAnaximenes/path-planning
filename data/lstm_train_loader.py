@@ -4,12 +4,15 @@ import os
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from .base_loaders.loaders import TrainLoader
+import matplotlib.pyplot as plt
 
 class LstmTrainDataLoader(TrainLoader):
 
-    def __init__(self, split, numBatches, dataDirectory):
+    def __init__(self, split, numBatches, dataDirectory, batchSize = 512, downSampleStride = 50):
 
         super().__init__(split, numBatches, dataDirectory=dataDirectory)
+        self.batchSize = batchSize
+        self.downSampleStride = downSampleStride
 
     def _transform_timeseries(self):
 
@@ -17,10 +20,16 @@ class LstmTrainDataLoader(TrainLoader):
         Y = self.x[:, 1, :]
         T = self.x[:, 2, :]
 
+        # transform each instance from features, timesteps (n x t)
+        # to timesteps, features (t x n)
         listX = []
+
         for i in range(X.shape[0]):
+
             timesteps = []
+
             for j in range(X.shape[1]):
+
                 timesteps.append([X[i,j], Y[i,j], T[i,j]])
 
             listX.append(timesteps)
@@ -32,12 +41,11 @@ class LstmTrainDataLoader(TrainLoader):
         for i in range(self.numSamples):
             if len(self.x[i][0]) > maxLen:
                 maxLen = len(self.x[i][0])
-        #if maxLen > 3000:
-            #maxLen = 3000
-
         print('longest path:', maxLen)
+
         padded_samples = np.zeros(shape = (self.numSamples, 3, maxLen))
         
+        # insert each sample into our numpy array of zeros
         for i in range(self.numSamples):
 
             broadcast = min(len(self.x[i][0]), maxLen)
@@ -106,7 +114,18 @@ class LstmTrainDataLoader(TrainLoader):
             x = sample['path']['x']
             y = sample['path']['y']
             theta = sample['path']['theta']
-            instance = np.array([x,y,theta])
+
+            downSampledX = []
+            downSampledY = []
+            downSampledTheta = []
+
+            # DOWNSAMPLING
+            for i in range(0, len(x), self.downSampleStride):
+                downSampledX.append(x[i])
+                downSampledY.append(y[i])
+                downSampledTheta.append(theta[i])
+
+            instance = np.array([downSampledX, downSampledY, downSampledTheta])
             label = sample['target']['index']
 
             instances.append(instance)

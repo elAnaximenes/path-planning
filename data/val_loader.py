@@ -95,7 +95,8 @@ class ValidateDataLoader(DataLoader):
         self.batchFileNames = os.listdir(self.dataDirectory)[startBatch: startBatch+self.numBatchesToLoad]
     
         for batchFileName in self.batchFileNames:
-            
+
+            print('loading ' + batchFileName)
             x_batch, y_batch = self.load_batch_json(batchFileName)
             self.batches.append((x_batch, y_batch))
     

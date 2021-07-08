@@ -42,27 +42,28 @@ def build_model(modelSelection, inputShape):
 
     elif modelSelection.lower() == 'lstm':
 
-        model = LSTM(inputShape)
+        model = LSTM()
         
     return model
 
-def get_tester(modelSelection, dataset, model):
+def get_tester(modelSelection, dataset, model, weightsDir):
 
     if modelSelection.lower() == 'feedforward':
 
-        tester = FeedForwardTester(dataset, model)
+        tester = FeedForwardTester(dataset, model, weightsDir)
 
     elif modelSelection.lower() == 'lstm':
 
-        tester = LSTMTester(dataset, model)
+        tester = LSTMTester(dataset, model, weightsDir)
 
     return tester
 
-def test_model(modelSelection, dataDirectory, numBatches):
+def test_model(modelSelection, dataDirectory, numBatches, algo='RRT'):
 
     loader = None
 
-    loader =ValidateDataLoader(numBatches, dataDirectory)
+    trainingDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algo)) 
+    loader =ValidateDataLoader(numBatches, trainingDataDir)
     dataset = loader.load()
     print('dataset loaded')
 
@@ -70,7 +71,9 @@ def test_model(modelSelection, dataDirectory, numBatches):
     model = build_model(modelSelection, inputShape)
     print('model loaded')
 
-    tester = get_tester(modelSelection, dataset, model) 
+    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algo, modelSelection.lower()))
+    print(weightsDir)
+    tester = get_tester(modelSelection, dataset, model, weightsDir) 
     print('tester loaded')
 
     performance = tester.test()
@@ -83,14 +86,16 @@ if __name__ == '__main__':
     argparser.add_argument('--model', type=str, default='FeedForward')
     argparser.add_argument('--directory', type=str, default='./data/batches-validate')
     argparser.add_argument('--batches', type=int, default=1)
+    argparser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
 
     args = argparser.parse_args()
 
     modelSelection = args.model
     dataDirectory = args.directory
+    algorithm = args.algo.lower()
 
     if dataDirectory == 'tower':
-        dataDirectory = 'D:\\path_planning_data\\batches-validate'
+        dataDirectory = 'D:\\path_planning_data'
     numBatches = args.batches
 
-    test_model(modelSelection, dataDirectory, numBatches)
+    test_model(modelSelection, dataDirectory, numBatches, algorithm)

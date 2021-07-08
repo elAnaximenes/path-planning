@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
+import os
 from tensorflow.keras import layers 
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 class LSTM(tf.keras.Model):
 
@@ -16,15 +19,11 @@ class LSTM(tf.keras.Model):
 		
     def call(self, x):
         
-        #print('shape of network input:', x.shape)
         x = self.inputLayer(x)
         x = self.mask(x)
-        #print('input to LSTM layer')
-        #print(x.shape)
         x = self.lstm(x)
         x = self.h1(x)
-        #print('output of LSTM layer')
-        #print(x.shape)
+
         return self.outputLayer(x)
 		
 class LSTMTrainer():
@@ -57,6 +56,7 @@ class LSTMTrainer():
     def _save_metrics(self, lossValue, valDataset):
 
         trainAcc = self.trainAccMetric.result()
+        print('Accuracy: {}'.format(trainAcc), flush=True)
         self.history['trainAcc'].append(trainAcc)
         self.history['trainLoss'].append(float(lossValue))
         self.trainAccMetric.reset_states()
@@ -72,51 +72,54 @@ class LSTMTrainer():
         self.history['valLoss'].append(float(lossValue))
         self.valAccMetric.reset_states()
 
+    def _train_epoch(self, trainDataset, valDataset):
+
+        for batchNum, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
+
+            numTimeSteps = xBatchTrain.shape[1]
+
+            for t in range(numTimeSteps-1):
+                xBatchTimeStep = xBatchTrain[:, t:t+1, :]
+                lossValue = self._train_step(xBatchTimeStep, yBatchTrain)
+
+            if batchNum % 2 == 0:
+                print("Training loss at step {}: {:.4f}".format(batchNum, float(lossValue)))
+                print("Seen so far: {} samples".format((batchNum * self.batchSize)), flush=True)
+
+            # reset state after each batch
+            self.model.reset_states()
+
+        self._save_metrics(lossValue, valDataset)
+
     def train(self, trainData, valData, epochs, batchSize, resume = False):
 
         if resume:
-            self.model.load_weights('{}/lstm_final_weights'.format(self.weightsDir))
+            self.model.load_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
+            print('loading weights from checkpoint')
+            print(self.weightsDir, flush=True)
+        else:
+            print('training from scratch', flush=True)
+
+        self.batchSize = batchSize
 
         x_train, y_train = trainData
         x_val, y_val = valData
-        print(x_train.shape)
+        print('Shape of training dataset:', x_train.shape)
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-        trainDataset = trainDataset.batch(batchSize)
+        trainDataset = trainDataset.batch(self.batchSize)
 
         valDataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
-        valDataset = valDataset.batch(batchSize)
+        valDataset = valDataset.batch(self.batchSize)
 
         for epoch in range(epochs):
             
             print("\nStart of epoch {}\n".format(epoch))
+            self._train_epoch(trainDataset, valDataset)
 
-            for step, (xBatchTrain, yBatchTrain) in enumerate(trainDataset):
-
-                windowSize = 1
-                sampleRate = 100
-                #print('Batch shape:', xBatchTrain.shape, yBatchTrain)
-
-                windows = [(t, t+windowSize) for t in range(0, xBatchTrain.shape[1], sampleRate)]
-
-                for windowStart, windowEnd in windows:
-                    xBatchWindow = xBatchTrain[:, windowStart:windowEnd, :]
-                    if abs(np.sum(xBatchWindow[:, 0, :])) < 0.000001:
-                        print(xBatchWindow[:, 0, :])
-                        print('input fully masked')
-                        break
-                    lossValue = self._train_step(xBatchWindow, yBatchTrain)
-
-                if step % 2 == 0:
-                    print("Training loss at step {}: {:.4f}".format(step, float(lossValue)))
-                    print("Seen so far: {} samples".format((step * batchSize)))
-
-                self.model.reset_states()
-
-            self._save_metrics(lossValue, valDataset)
-
-        self.model.save_weights('{}/lstm_final_weights'.format(self.weightsDir))
-        self.model.save('{}/lstm_model'.format(self.weightsDir))
+        self.model.save_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
+        self.model.save(os.path.join(self.weightsDir, 'lstm_model'))
+        print('saving weights {}/lstm_final_weights'.format(self.weightsDir))
             
         return self.history
 
@@ -141,11 +144,13 @@ class LSTMTester:
 
     def test(self):
 
-        self.model.load_weights('{}/lstm_final_weights'.format(self.weightsDir))
-
+        self.model.load_weights(os.path.join(self.weightsDir,'lstm_final_weights'))
+        print(self.weightsDir)
         print('model weights were loaded')
+
         stepSize = 1
-        timeSteps = [x*stepSize for x in range(10000)]
+        downSampleStride = 100
+        timeSteps = [x*stepSize for x in range(0, 10000, downSampleStride)]
 
         for instance, label in self.dataset:
 
@@ -158,7 +163,6 @@ class LSTMTester:
 
                 inputTensor = instance[:, timeStep:timeStep+stepSize, :]
                 
-                #inputTensor = tf.tensor(newInstance )
                 logits = self.model(inputTensor)
                 prediction = np.argmax(logits)
 
@@ -174,5 +178,107 @@ class LSTMTester:
 
         return self.accuracyInfo
 
+class LSTMGradientVisualizer:
 
+    def __init__(self, model, dataset, scene, weightsDir='./data/optimal_rrt_lstm_weights'):
+
+        self.model = model
+        self.weightsDir = weightsDir
+        self.dataset = dataset
+        self.model.load_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
+        self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
+        self.scene = scene
+
+    def _transform_timeseries(self, instance):
+
+        timeseries = []
+
+        for i in range(len(instance[0])):
+
+            timeseries.append([instance[0][i], instance[1][i], instance[2][i]])
+
+        return np.array([timeseries])
+   
+    def _draw_obstacle(self, obstacle):
+
+        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+        self.ax.add_patch(obs)
+        self.fig.canvas.draw()
+
+    def _draw_target(self, target, colorSelection='blue'):
+
+        tar = plt.Circle((target[0], target[1]), target[2], color=colorSelection, fill=False)
+        self.ax.add_patch(tar)
+        self.fig.canvas.draw()
+
+    def _plot_scene(self, targetIdx):
+
+        self.fig = plt.figure()
+        self.ax = self.fig.gca()
+        plt.xlim(self.scene.dimensions['xmin'] , self.scene.dimensions['xmax'] )
+        plt.ylim(self.scene.dimensions['ymin'] , self.scene.dimensions['ymax'] )
+        self.ax.set_aspect('equal')
+        self.ax.set_ylabel('Y-distance(M)')
+        self.ax.set_xlabel('X-distance(M)')
+
+        for obstacle in self.scene.obstacles:
+
+            self._draw_obstacle(obstacle)
+
+        for target in self.scene.targets:
+
+            self._draw_target(target)
+ 
+    def _sensitivity_gradients(self, instance, label):
+
+        grads = []
+
+        for timeStep in range(instance.shape[1]):
+
+            success = False
+            x = tf.constant(instance[:,timeStep,:], shape=(1,1,3))
+
+            with tf.GradientTape() as tape:
+
+                tape.watch(x)
+                logits = self.model(x)
+                label = label.reshape((1,5))
+                lossValue = self.loss_fn(label, logits)
+
+                if np.argmax(logits) == np.argmax(label):
+                    success = True
+
+            grads.append(tape.gradient(lossValue, x))
+
+        grads = np.array(grads)
+
+        return grads
+
+    def visualize(self):
+
+        for instance, label in self.dataset:
+
+            self._plot_scene(np.argmax(label))
+
+            instance = self._transform_timeseries(instance)#[:,:1000,:]
+
+            grads = self._sensitivity_gradients(instance, label)
+
+            x = []
+            y = []
+            gradientMagnitudes = []
+            for step, position in enumerate(instance[0]):
+
+                if step % 10 == 0:
+                    x.append(position[0]*10.0)
+                    y.append(position[1]*10.0)
+                    gradientMagnitudes.append(np.linalg.norm(grads[step,:]))
                 
+            gradientMagnitudes = np.array(gradientMagnitudes)
+            gradientMagnitudes /= gradientMagnitudes.max() 
+
+            self.ax.scatter(x, y, c=cm.hot(gradientMagnitudes), edgecolor='none')
+            plt.show()
+
+            self.model.reset_states()
+
