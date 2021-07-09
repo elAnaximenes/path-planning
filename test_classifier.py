@@ -20,14 +20,14 @@ def plot_performance(performance, modelSelection):
     accuracyOverTime = []
     timesteps = []
 
-    for i in range(len(labelCount)):
-        percent = float(tp[i])/float(labelCount[i])
+    for key in sorted(labelCount.keys()):
+        percent = float(tp[key])/float(labelCount[key])
         accuracyOverTime.append(percent)
-        timesteps.append(i)
+        timesteps.append(key)
 
     plt.title('{} Accuracy over time'.format(modelSelection))
     plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')
-    plt.xlabel('timestep')
+    plt.xlabel('Timesteps from goal')
     plt.ylabel('% correct')
     plt.legend()
     plt.show()
