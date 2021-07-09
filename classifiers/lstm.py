@@ -144,7 +144,6 @@ class LSTMTester:
 
         return np.array([timeseries])
 
-
     def test(self):
 
         self.model.load_weights(os.path.join(self.weightsDir,'lstm_final_weights'))
@@ -183,20 +182,95 @@ class LSTMTester:
 
         return self.accuracyInfo
 
+class LSTMGradientAnalyzer:
+
+    def __init__(self, model, weightsDir):
+
+        self.model = model
+        self.weightsDir = weightsDir
+        self.model.load_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
+        self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
+        self.instance = None
+        self.label = None
+        self.gradientMagnitudes = None
+        self.timeSteps = None 
+        self.stepSize = 10
+
+    def _calculate_gradient_magnitudes(self, grads):
+
+        gradientMagnitudes = []
+
+        for step in range(grads.shape[0]):
+            gradientMagnitudes.append(np.linalg.norm(grads[step,:]))
+            
+        gradientMagnitudes = np.array(gradientMagnitudes)
+        gradientMagnitudes /= gradientMagnitudes.max() 
+
+        self.gradientMagnitudes = gradientMagnitudes
+
+    def _transform_timeseries(self, instance):
+
+        timeSeries = []
+
+        for i in range(len(instance[0])):
+
+            timeSeries.append([instance[0][i], instance[1][i], instance[2][i]])
+
+        self.timeSteps = range(0, len(timeSeries), self.stepSize)
+
+        return np.array([timeSeries])
+
+    def _calculate_gradients_and_predictions(self, transform=True):
+
+        grads = []
+        predictions = []
+        if transform:
+            self.instance = self._transform_timeseries(self.instance)
+        label = self.label
+
+        for t in self.timeSteps:
+
+            success = False
+            x = tf.constant(self.instance[:, t,:], shape=(1,1,3))
+
+            with tf.GradientTape() as tape:
+
+                tape.watch(x)
+                logits = self.model(x)
+                label = label.reshape((1,5))
+                lossValue = self.loss_fn(label, logits)
+
+                if np.argmax(logits) == np.argmax(label):
+                    success = True
+
+            gradient = tape.gradient(lossValue, x)[0][0]
+            grads.append(gradient)
+            predictions.append(logits)
+
+        self.model.reset_states()
+        grads = np.array(grads)
+        
+        self.grads = grads
+        self.predictions = predictions
+
+    def analyze(self, instance, label, transform=True):
+        
+        self.instance = instance
+        self.label = label
+        
+        self._calculate_gradients_and_predictions(transform)
+
+        return self.grads, self.predictions, self.instance
+
 class LSTMGradientVisualizer:
 
     def __init__(self, model, dataset, scene, weightsDir='./data/optimal_rrt_lstm_weights', display=True):
 
-        self.model = model
-        self.weightsDir = weightsDir
-        self.dataset = dataset
-        self.model.load_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
-        self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
+        self.analyzer = LSTMGradientAnalyzer(model, weightsDir)
         self.scene = scene
+        self.dataset = dataset
         self.targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
         self.gradientMagnitudes = None
-        self.stepSize = 10
-        self.timeSteps = None
         self.display = display
 
     def _plot_gradients(self, grads):
@@ -205,9 +279,9 @@ class LSTMGradientVisualizer:
         grads[:, 1] /= np.amax(grads[:, 1])
         grads[:, 2] /= np.amax(grads[:, 2])
 
-        self.grads_ax_x.plot(self.timeSteps, grads[:, 0])
-        self.grads_ax_y.plot(self.timeSteps, grads[:, 1])
-        self.grads_ax_theta.plot(self.timeSteps, grads[:, 2])
+        self.grads_ax_x.plot(self.analyzer.timeSteps, grads[:, 0])
+        self.grads_ax_y.plot(self.analyzer.timeSteps, grads[:, 1])
+        self.grads_ax_theta.plot(self.analyzer.timeSteps, grads[:, 2])
 
         self.grads_ax_x.set_title('Gradient Magnitude w.r.t. "X" position')
         self.grads_ax_y.set_title('Gradient Magnitude w.r.t. "Y" position')
@@ -228,7 +302,7 @@ class LSTMGradientVisualizer:
     def _plot_classification_over_time(self, predictions, label):
 
         self.class_ax.set_title('Classifier Confidence over Time')
-        self.class_ax.set_xlim(0, self.timeSteps[-1]) 
+        self.class_ax.set_xlim(0, self.analyzer.timeSteps[-1]) 
         self.class_ax.set_ylim(-0.05, 1.05)
         self.scene_ax.set_aspect('equal', adjustable='box', anchor = 'C')
         self.class_ax.set_xlabel('Timestep')
@@ -238,11 +312,11 @@ class LSTMGradientVisualizer:
 
             confidence = []
             time = []
-            for t in range(len(self.timeSteps)):
+            for t in range(len(self.analyzer.timeSteps)):
 
                 confidence.append(predictions[t][0][targetIdx])
 
-            self.class_ax.plot(self.timeSteps, confidence, linestyle='--', color=self.targetColors[targetIdx], label = 'Target {}'.format(targetIdx))
+            self.class_ax.plot(self.analyzer.timeSteps, confidence, linestyle='--', color=self.targetColors[targetIdx], label = 'Target {}'.format(targetIdx))
 
         self.class_ax.legend(loc='lower left')
     
@@ -262,9 +336,9 @@ class LSTMGradientVisualizer:
         """
     def _annotate_path(self, x, y):
         
-        for t in range(0, len(x), 500//self.stepSize):
+        for t in range(0, len(x), 500//self.analyzer.stepSize):
 
-            self.scene_ax.text(x[t]+0.5, y[t]-0.5, t*self.stepSize, color='red')
+            self.scene_ax.text(x[t]+0.5, y[t]-0.5, t*self.analyzer.stepSize, color='red')
 
     def _show_colorbar(self, scatter):
 
@@ -286,7 +360,7 @@ class LSTMGradientVisualizer:
         x = []
         y = []
 
-        for t in self.timeSteps: 
+        for t in self.analyzer.timeSteps: 
             x.append(instance[t, 0]*10)
             y.append(instance[t, 1]*10)
 
@@ -316,7 +390,7 @@ class LSTMGradientVisualizer:
 
         self.scene_ax.legend(handles=legend_elements, loc='best')
 
-    def _plot_scene(self, targetIdx, timeSteps):
+    def _plot_scene(self):
 
         self.scene_ax.set_title('LSTM Gradient Magnitude w.r.t. Dubins State')
         self.scene_ax.set_xlim(self.scene.dimensions['xmin'] , self.scene.dimensions['xmax'] )
@@ -346,7 +420,7 @@ class LSTMGradientVisualizer:
     def _show_plots(self, instance, grads, predictions, label):
 
         self._initialize_plot()
-        self._plot_scene(targetIdx = np.argmax(label), timeSteps = instance.shape[0] )
+        self._plot_scene()
         x, y = self._get_path(instance)
         self._plot_path(x, y, grads)
         self._plot_classification_over_time(predictions, label)
@@ -367,55 +441,13 @@ class LSTMGradientVisualizer:
 
         self.gradientMagnitudes = gradientMagnitudes
 
-    def _get_gradients_and_predictions(self, instance, label):
-
-        grads = []
-        predictions = []
-
-        for t in self.timeSteps:
-
-            success = False
-            x = tf.constant(instance[:, t,:], shape=(1,1,3))
-
-            with tf.GradientTape() as tape:
-
-                tape.watch(x)
-                logits = self.model(x)
-                label = label.reshape((1,5))
-                lossValue = self.loss_fn(label, logits)
-
-                if np.argmax(logits) == np.argmax(label):
-                    success = True
-
-            gradient = tape.gradient(lossValue, x)[0][0]
-            grads.append(gradient)
-            predictions.append(logits)
-
-        self.model.reset_states()
-        grads = np.array(grads)
-
-        return grads, predictions
-
-    def _transform_timeseries(self, instance):
-
-        timeSeries = []
-
-        for i in range(len(instance[0])):
-
-            timeSeries.append([instance[0][i], instance[1][i], instance[2][i]])
-
-        self.timeSteps = range(0, len(timeSeries), self.stepSize)
-
-        return np.array([timeSeries])
-
     def visualize_single_instance(self, instance=None, label=None):
 
         if instance is None:
 
             instance, label = self.dataset.pop(0)
 
-        instance = self._transform_timeseries(instance)
-        grads, predictions = self._get_gradients_and_predictions(instance, label)
+        grads, predictions, instance = self.analyzer.analyze(instance, label)
         self._calculate_gradient_magnitudes(grads)
         self._show_plots(instance[0], grads, predictions, label)
 

@@ -6,20 +6,74 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from data.val_loader import ValidateDataLoader
-from classifiers.lstm import LSTM, LSTMGradientVisualizer
-from classifiers.feed_forward import FeedForward, FeedForwardGradientVisualizer
+from classifiers.lstm import LSTM, LSTMGradientAnalyzer
 from dubins_path_planner.RRT import Scene
 import visualize_gradients
 
-def get_visualizer(modelSelection, dataDirectory, algorithm):
+class AdversarialPlanner:
 
-    return visualize_gradients.visualize_gradients(modelSelection, dataDirectory, algorithm, display=False)
+    def __init__(self):
+        
+        pass
+
+    def add_noise(self, grads, instance):
+
+        #instance is (1, timesteps, features)
+
+        pass
+
+def is_fooled(predictions, label):
+
+    print(predictions.shape)
+    print(label.shape)
+    exit(1)
+
+    return True 
+
+def get_dataset(modelSelection, dataDirectory, algorithm):
+
+    dataset = None 
+    
+    valDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algorithm)) 
+    if modelSelection.lower() == 'lstm':
+        loader = ValidateDataLoader(numBatches=1, dataDirectory=valDataDir)
+
+    dataset = loader.load()
+
+    return dataset
+
+def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
+
+    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algorithm, modelSelection.lower()))
+    analyzer = None
+
+    if modelSelection.lower() == 'lstm':
+        model = LSTM()
+        analyzer = LSTMGradientAnalyzer(model, weightsDir)
+
+    return analyzer
 
 def replan(modelSelection, dataDirectory, algorithm):
 
-    visualizer = get_visualizer(modelSelection, dataDirectory, algorithm)
-    visualizer.visualize_single_instance()
-    plt.show()
+    analyzer = get_gradient_analyzer(modelSelection, dataDirectory, algorithm)
+    dataset = get_dataset(modelSelection, dataDirectory, algorithm)
+    planner = AdversarialPlanner()
+
+    for instance, label in dataset:
+
+        fooled = False
+        grads, originalPredictions, instance = analyzer.analyze(origInstance, label)
+        origInstance = np.copy(path)
+
+        while not fooled:
+
+            noisyPath, noisyPredictions = planner.add_noise(grads, instance)
+            plot_paths_and_predictions((origPath, originalPredictions), (noisyPath, noisyPredictions))
+            grads, predictions, instance = analyzer.analyze(instance, label, transform=False)
+            fooled = is_fooled(predictions, label)
+
+        #spaPath, spaPredictions = planner.single_point_attack(grads, instance)
+        #instance = origInstance
 
 if __name__ == '__main__':
 
