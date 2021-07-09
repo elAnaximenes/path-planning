@@ -18,7 +18,8 @@ def get_visualizer(modelSelection, dataDirectory, algorithm):
 def replan(modelSelection, dataDirectory, algorithm):
 
     visualizer = get_visualizer(modelSelection, dataDirectory, algorithm)
-
+    visualizer.visualize_single_instance()
+    plt.show()
 
 if __name__ == '__main__':
 

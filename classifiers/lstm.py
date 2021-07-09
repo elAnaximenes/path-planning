@@ -260,8 +260,6 @@ class LSTMGradientVisualizer:
 
             self.scene_ax.arrow(x=x[step], y=y[step], dx=gradsNorm[step, 0], dy = gradsNorm[step, 1], width=0.05, color='green', overhang=-.3)
         """
-            
-
     def _annotate_path(self, x, y):
         
         for t in range(0, len(x), 500//self.stepSize):
@@ -410,11 +408,20 @@ class LSTMGradientVisualizer:
 
         return np.array([timeSeries])
 
+    def visualize_single_instance(self, instance=None, label=None):
+
+        if instance is None:
+
+            instance, label = self.dataset.pop(0)
+
+        instance = self._transform_timeseries(instance)
+        grads, predictions = self._get_gradients_and_predictions(instance, label)
+        self._calculate_gradient_magnitudes(grads)
+        self._show_plots(instance[0], grads, predictions, label)
+
     def visualize(self):
 
         for instance, label in self.dataset:
 
-            instance = self._transform_timeseries(instance)
-            grads, predictions = self._get_gradients_and_predictions(instance, label)
-            self._calculate_gradient_magnitudes(grads)
-            self._show_plots(instance[0], grads, predictions, label)
+            self.visualize_single_instance(instance, label)
+

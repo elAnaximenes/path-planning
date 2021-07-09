@@ -54,10 +54,10 @@ def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', scene
 
     visualizer = get_visualizer(modelSelection, dataset, model, weightsDir, scene, display = display)
 
-    visualizer.visualize()
+    if display:
+        visualizer.visualize()
 
     return visualizer
-
 
 if __name__ == '__main__':
 
