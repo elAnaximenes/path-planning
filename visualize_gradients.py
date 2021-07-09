@@ -13,7 +13,6 @@ from classifiers.lstm import LSTM, LSTMGradientVisualizer
 from classifiers.feed_forward import FeedForward, FeedForwardGradientVisualizer
 from dubins_path_planner.RRT import Scene
 
-
 def build_model(modelSelection, inputShape):
 
     print('input shape:', inputShape)
@@ -28,15 +27,15 @@ def build_model(modelSelection, inputShape):
         
     return model
 
-def get_visualizer(modelSelection, dataset, model, weightsDir, scene):
+def get_visualizer(modelSelection, dataset, model, weightsDir, scene, display):
 
     if modelSelection.lower() == 'lstm':
 
-        visualizer = LSTMGradientVisualizer(model, dataset, weightsDir=weightsDir, scene=scene)
+        visualizer = LSTMGradientVisualizer(model, dataset, weightsDir=weightsDir, scene=scene, display=display)
 
     return visualizer
 
-def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', sceneName = 'test_room'):
+def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', sceneName = 'test_room', display=True):
 
     loader = None
 
@@ -53,9 +52,12 @@ def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', scene
 
     scene = Scene(sceneName)
 
-    visualizer = get_visualizer(modelSelection, dataset, model, weightsDir, scene)
+    visualizer = get_visualizer(modelSelection, dataset, model, weightsDir, scene, display = display)
 
     visualizer.visualize()
+
+    return visualizer
+
 
 if __name__ == '__main__':
 

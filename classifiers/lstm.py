@@ -213,9 +213,9 @@ class LSTMGradientVisualizer:
         self.grads_ax_y.set_title('Gradient Magnitude w.r.t. "Y" position')
         self.grads_ax_theta.set_title('Gradient Magnitude w.r.t. Heading')
 
-        self.grads_ax_x.set_ylim(-1.0, 1.0)
-        self.grads_ax_y.set_ylim(-1.0, 1.0)
-        self.grads_ax_theta.set_ylim(-1.0, 1.0)
+        self.grads_ax_x.set_ylim(-1.1, 1.1)
+        self.grads_ax_y.set_ylim(-1.1, 1.1)
+        self.grads_ax_theta.set_ylim(-1.1, 1.1)
 
         self.grads_ax_x.set_ylabel('magnitude')
         self.grads_ax_y.set_ylabel('magnitude')
@@ -248,10 +248,19 @@ class LSTMGradientVisualizer:
     
     def _plot_gradient_arrows(self, x, y, grads):
 
-        samplingRate = 5
-        print(grads.shape[0])
-        for step in range(grads.shape[0]):
-            pass
+        gradsNorm = np.zeros((grads.shape[0], 2))
+        gradsNorm[:,0] = (grads[:,0]/grads[:, 0].max())
+        gradsNorm[:,1] = (grads[:,1]/grads[:, 1].max())
+        colorMap = np.hypot(gradsNorm[:,0], gradsNorm[:,1])
+
+        self.scene_ax.quiver(x,y, gradsNorm[:,0], gradsNorm[:, 1], colorMap, cmap='hot')
+        """
+        samplingRate = 5 
+        for step in range(0, len(x), samplingRate):
+
+            self.scene_ax.arrow(x=x[step], y=y[step], dx=gradsNorm[step, 0], dy = gradsNorm[step, 1], width=0.05, color='green', overhang=-.3)
+        """
+            
 
     def _annotate_path(self, x, y):
         
@@ -272,7 +281,7 @@ class LSTMGradientVisualizer:
         # plot line over gradient heat path to show actual state
         self.scene_ax.plot(x,y, 'b--', linewidth=1.0)
         self._annotate_path(x,y)
-        #self._plot_gradient_arrows(x, y, grads)
+        self._plot_gradient_arrows(x, y, grads)
 
     def _get_path(self, instance):
 
