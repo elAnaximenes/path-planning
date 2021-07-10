@@ -6,18 +6,46 @@ import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from .base_loaders.loaders import DataLoader 
 
+class ValidationDataSet:
+
+    def __init__(self, stepSize):
+        
+        self.stepSize = stepSize
+        data = None
+
 class ValidateDataLoader(DataLoader):
 
-    def __init__(self, numBatches, dataDirectory = './data/batches-validate/'):
+    def __init__(self, numBatches, dataDirectory = './data/batches-validate/', stepSize = 100):
 
         super().__init__(numBatches=numBatches, dataDirectory=dataDirectory)
-        self.dataset = None
+        self.dataset = ValidationDataSet(stepSize) 
+
+    def _transform_timeseries(self, instance):
+
+        timeSeries = []
+
+        for i in range(len(instance[0])):
+
+            timeSeries.append([instance[0][i], instance[1][i], instance[2][i]])
+
+        return np.array([timeSeries])
+
+    def _downsample(self):
+
+        newX = []
+
+        for i in range(len(self.x)):
+            
+            timeSeries = self._transform_timeseries(self.x[i])
+            downSampledTimeSeries = timeSeries[:, ::self.dataset.stepSize, :]
+            newX.append(downSampledTimeSeries)
+
+        self.x = newX
 
     def _normalize_instances(self):
 
         numInstances = len(self.x)
         numFeatures = len(self.x[0])
-        print(numInstances, numFeatures)
 
         for i in range(numInstances):
             numTimesteps = len(self.x[i][0])
@@ -31,7 +59,7 @@ class ValidateDataLoader(DataLoader):
 
         print('batches:',len(self.batches))
         print('batch size:',len(self.batches[0][0]))
-        print('features:',len(self.batches[0][0][0]))
+        print('features:',len(self.batches[0][0][0]), flush=True)
 
         self.x = self.batches[0][0]
         self.y = self.batches[0][1]
@@ -48,6 +76,7 @@ class ValidateDataLoader(DataLoader):
         self._combine_batches()
         self.y = to_categorical(np.array(self.y))
         self._normalize_instances()
+        self._downsample()
 
     def load_batch_json(self, batchFileName):
 
@@ -82,12 +111,14 @@ class ValidateDataLoader(DataLoader):
 
         # package data in a zipped list of instance label pairs
 
-        self.dataset = []
+        data = []
 
         for i in range(len(self.x)):
 
-            pair = (np.array(self.x[i]), self.y[i])
-            self.dataset.append(pair)
+            pair = (self.x[i], self.y[i])
+            data.append(pair)
+
+        self.dataset.data=data
 
     def load(self, startBatch=0):
 

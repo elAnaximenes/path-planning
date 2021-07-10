@@ -42,7 +42,7 @@ def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', scene
     valDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algo))
 
     numBatchesToLoad = 1
-    loader = ValidateDataLoader(numBatchesToLoad, valDataDir)
+    loader = ValidateDataLoader(numBatchesToLoad, valDataDir, stepSize=10)
     dataset = loader.load()
 
     inputShape = (1,3)
