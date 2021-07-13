@@ -13,20 +13,28 @@ import visualize_gradients
 
 class AdversarialPlanner:
 
-    def __init__(self, perturbationRate=0.001):
+    def __init__(self, perturbationRate=0.1):
 
         self.perturbationRate = perturbationRate
         pass
 
-    def add_noise(self, grads, instance):
+    def add_noise(self, grads, instance, gtIdx, perturbIdx):
 
         #instance is (1, timesteps, features)
 
         noisyPath = instance
-        
-        noisyPath[0] += grads*self.perturbationRate
+        noisyPath[0] += (grads[:,perturbIdx,:] - grads[:,gtIdx,:])*self.perturbationRate
 
         return noisyPath
+    
+    def one_pixel_attack(self, grads, instance, gtIdx, perturbIdx):
+
+        attackedPath = instance
+
+        print(grads.shape)
+
+        #maxGradient = 
+
 
 def is_fooled(predictions, label):
 
@@ -48,63 +56,71 @@ def get_path(path):
 
     return x, y
 
-def plot_paths_and_predictions(orig, perturbed, scene, it):
+def plot_paths_and_predictions(paths, predictions, scene, it):
     
-    
-    fig = plt.figure(figsize=(12,12))
-    gs = gridspec.GridSpec(4,2, width_ratios=(1,1))
-    orig_ax = plt.subplot(gs[:3, 0])
-    orig_pred_ax = plt.subplot(gs[3, 0])
-    perturbed_ax = plt.subplot(gs[:3, 1])
-    perturbed_pred_ax = plt.subplot(gs[3, 1])
-
-    orig_ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
-    perturbed_ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
-    orig_ax.set_aspect('equal')
-    perturbed_ax.set_aspect('equal')
+    fig = plt.figure(figsize=(14,15))
+    gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
 
     targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
-    for obstacle in scene.obstacles:
 
-        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-        orig_ax.add_patch(obs)
-        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-        perturbed_ax.add_patch(obs)
+    col = 0
+    row = 0
 
-    for i, target in enumerate(scene.targets):
+    for (path, prediction) in zip(paths, predictions):
 
-        tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
-        orig_ax.add_patch(tar)
-        tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
-        perturbed_ax.add_patch(tar)
+        row %= 2 
+        print('row, col:', row, col)
 
-    origInstance, origPredictions = orig
-    perturbedPath, perturbedPredictions = perturbed
+        ax = plt.subplot(gs[row, col])
+        ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
+        ax.set_ylim(scene.dimensions['ymin'], scene.dimensions['ymax'])
+        ax.set_aspect('equal')
 
-    orig_x, orig_y = get_path(origInstance)
-    pert_x, pert_y = get_path(perturbedPath)
+        ax.set_xlabel('X-Position [m]')
+        ax.set_ylabel('Y-Position [m]')
 
-    orig_ax.scatter(orig_x, orig_y)
-    perturbed_ax.scatter(pert_x, pert_y)
+        for obstacle in scene.obstacles:
 
-    timeSteps = range(0, len(origPredictions), 10)
+            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+            ax.add_patch(obs)
+     
+        for i, target in enumerate(scene.targets):
 
-    orig_pred_ax.set_ylim(-0.05, 1.05) 
-    perturbed_pred_ax.set_ylim(-0.05, 1.05) 
+            tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
+            ax.add_patch(tar)        
+            ax.text(target[0]-0.5, target[1]+0.5, i)
 
+        x, y = get_path(path)
+        ax.scatter(x, y, color='blue')
 
-    for targetIdx in range(len(targetColors)):
+        timeSteps = range(0, prediction.shape[0])
 
-        origConf = []
-        pertConf = []
+        row += 1
+        pred_ax = plt.subplot(gs[row, col])
+        pred_ax.set_ylim(0.0, 1.0)
+        pred_ax.set_xlabel('Time step (1/100 s)')
+        pred_ax.set_ylabel('Confidence')
 
-        for t in range(len(timeSteps)):
+        if col == 0:
+            ax.set_title('Non-perturbed Optimal RRT Path')
+            pred_ax.set_title('LSTM Confidence Given Non-perturbed Path')
+        else:
+            ax.set_title('Optimal RRT Path with Perturbation')
+            pred_ax.set_title('LSTM Confidence Given Path with Perturbation')
+    
 
-            origConf.append(origPredictions[t][0][targetIdx])
-            pertConf.append(perturbedPredictions[t][0][targetIdx])
+        for targetIdx in range(len(targetColors)):
 
-        orig_pred_ax.plot(timeSteps, origConf, linestyle='--', color=targetColors[targetIdx])
-        perturbed_pred_ax.plot(timeSteps, pertConf, linestyle='--', color=targetColors[targetIdx])
+            conf = []
+
+            for t in range(len(timeSteps)):
+
+                conf.append(prediction[t, targetIdx])
+
+            pred_ax.plot(timeSteps, conf, linestyle='--', color=targetColors[targetIdx])
+
+        col += 1
+        row += 1
 
     plt.savefig('./data/saved_images/img-{}'.format(it))
     plt.show()
@@ -132,7 +148,22 @@ def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
 
     return analyzer
 
-def replan(modelSelection, dataDirectory, algorithm):
+def get_perturbation_target(labelIdx, noisyPredictions, timeStep=20):
+
+    secondBest = 0.0 
+    secondBestIdx = None
+
+    for i in range(len(noisyPredictions[timeStep])):
+
+        candidate = noisyPredictions[timeStep][i]
+        print(i, secondBest, candidate)
+        if i != labelIdx and secondBest < candidate:
+            secondBestIdx = i
+            secondBest = candidate
+
+    return secondBestIdx 
+
+def replan(modelSelection, dataDirectory, algorithm, attack='noise'):
 
     analyzer = get_gradient_analyzer(modelSelection, dataDirectory, algorithm)
     dataset = get_dataset(modelSelection, dataDirectory, algorithm)
@@ -142,23 +173,40 @@ def replan(modelSelection, dataDirectory, algorithm):
     for instance, label in dataset.data:
 
         fooled = False
-        # transforms instance into timeseries
-        grads, originalPredictions, instance = analyzer.analyze(instance, label)
+        gtTarget = np.argmax(label)
+
         origInstance = np.copy(instance)
+        origGrads, origPredictions = analyzer.analyze(origInstance, label)
+        attackedPath = instance 
+        attackedPredictions = origPredictions
+        grads = origGrads
 
         it = 0
+
         while not fooled:
 
-            noisyPath = planner.add_noise(grads, instance)
-            grads, noisyPredictions, instance = analyzer.analyze(noisyPath, label)
+            perturbTarget = get_perturbation_target(gtTarget, attackedPredictions)
 
-            plot_paths_and_predictions((origInstance, originalPredictions), (noisyPath, noisyPredictions), scene, it)
 
-            fooled = is_fooled(noisyPredictions, label)
+            if attack == 'noise':
+                attackedPath = planner.add_noise(grads, attackedPath, gtIdx=gtTarget, perturbIdx=perturbTarget)
+            else:
+                attackedPath = planner.one_pixel_attack(grads, attackedPath, gtIdx=gtTarget, perturbIdx=perturbTarget)
+
+            grads, attackedPredictions = analyzer.analyze(attackedPath, label)
+
+
+            print('perturb idx:', perturbTarget)
+            print('gt idx:', gtTarget, flush=True)
+            
+            paths = [origInstance, attackedPath]
+            preds = [origPredictions, attackedPredictions]
+
+            plot_paths_and_predictions(paths, preds, scene, it)
+
+            fooled = is_fooled(attackedPredictions, label)
+
             it += 1
-
-        #spaPath, spaPredictions = planner.single_point_attack(grads, instance)
-        #instance = origInstance
 
 if __name__ == '__main__':
 
@@ -166,6 +214,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--directory', type = str, default = '.\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
+    parser.add_argument('--attack', type=str, help='Adversarial attack [noist/one_pixel.', default = "noise")
 
     args = parser.parse_args()
 
@@ -174,5 +223,6 @@ if __name__ == '__main__':
     dataDirectory = args.directory
     if dataDirectory == 'tower':
         dataDirectory = 'D:\\path_planning_data\\'
+    attack = args.attack
 
-    replan(modelSelection, dataDirectory, algorithm)
+    replan(modelSelection, dataDirectory, algorithm, attack)

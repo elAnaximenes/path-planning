@@ -77,6 +77,11 @@ class DubinsCarOptimalRRT:
         self.text = None
         self.imgcount = 0
 
+        for i, target in enumerate(scene.targets):
+
+            print(i, target)
+
+
     def _select_random_target(self):
 
         targetIdx = random.randint(0, len(self.scene.targets) - 1)

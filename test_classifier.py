@@ -27,6 +27,8 @@ def plot_performance(performance, modelSelection):
 
     plt.title('{} Accuracy over time'.format(modelSelection))
     plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')
+    plt.xlim(0, timesteps[-1])
+    plt.ylim(0.0, 1.0)
     plt.xlabel('Timesteps from goal')
     plt.ylabel('% correct')
     plt.legend()

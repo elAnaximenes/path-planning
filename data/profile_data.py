@@ -71,7 +71,6 @@ for pathL in pathLengths:
         longestPath = pathL
 
 print('longestPath:', longestPath)
-exit(0)
 
 print('label length', len(labels))
 print('lengths length', len(pathLengths))
