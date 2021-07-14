@@ -113,6 +113,135 @@ class AdversarialPlanner:
 
         return attackedPath
 
+class AttackVisualizer:
+
+    def __init__(self, scene):
+
+        self.scene = scene
+        self.targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
+        self.fig = None
+        self.gs = None
+        self.row = None
+        self.col = None
+
+    def _setup_prediction_ax(self, timeStepToAttack):
+    
+        pred_ax = plt.subplot(self.gs[self.row, self.col])
+        pred_ax.set_ylim(0.0, 1.0)
+        pred_ax.set_xlabel('Time step (1/100 s)')
+        pred_ax.set_ylabel('Confidence')
+        pred_ax.grid(True)
+        pred_ax.axvline(timeStepToAttack)
+
+        if self.col == 0:
+            pred_ax.set_title('LSTM Confidence Given Non-perturbed Path')
+        else:
+            pred_ax.set_title('LSTM Confidence Given Path with Perturbation')
+
+        return pred_ax
+
+    def _plot_prediction(self, prediction, timeStepToAttack):
+
+        pred_ax = self._setup_prediction_ax(timeStepToAttack)
+
+        timeSteps = range(0, prediction.shape[0])
+
+        for targetIdx in range(len(self.targetColors)):
+
+            conf = []
+
+            for t in range(len(timeSteps)):
+
+                conf.append(prediction[t, targetIdx])
+
+            pred_ax.plot(timeSteps, conf, linestyle='--', color=self.targetColors[targetIdx])
+
+    def _get_path(self, path):
+
+        x = []
+        y = []
+
+        for t in range(path.shape[1]):
+
+            x.append(path[0,t, 0]*10)
+            y.append(path[0,t, 1]*10)
+
+        return x, y
+
+    def _plot_targets(self, ax):
+
+        for i, target in enumerate(self.scene.targets):
+
+            tar = plt.Circle((target[0], target[1]), target[2], color=self.targetColors[i], fill=False)
+            ax.add_patch(tar)        
+            ax.text(target[0]-0.5, target[1]+0.5, i)
+        
+        return ax
+
+    def _plot_obstacles(self, ax):
+
+        for obstacle in self.scene.obstacles:
+
+            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+            ax.add_patch(obs)
+
+        return ax
+
+    def _plot_scene(self, ax):
+    
+        ax = self._plot_obstacles(ax)
+        ax = self._plot_targets(ax)
+             
+        return ax
+
+    def _setup_path_ax(self):
+
+        ax = plt.subplot(self.gs[self.row, self.col])
+        ax.set_xlim(self.scene.dimensions['xmin'], self.scene.dimensions['xmax'])
+        ax.set_ylim(self.scene.dimensions['ymin'], self.scene.dimensions['ymax'])
+        ax.set_aspect('equal')
+        
+        return ax
+
+    def _plot_path(self, path):
+
+        ax = self._setup_path_ax()
+
+        if self.col == 0:
+            ax.set_title('Non-perturbed Optimal RRT Path')
+        else:
+            ax.set_title('Optimal RRT Path with Perturbation')
+
+        ax.set_xlabel('X-Position [m]')
+        ax.set_ylabel('Y-Position [m]')
+
+        ax = self._plot_scene(ax)
+
+        x, y = self._get_path(path)
+        ax.scatter(x, y, color='blue')
+
+    def plot_paths_and_predictions(self, paths, predictions, timeStepToAttack):
+        
+        self.fig = plt.figure(figsize=(14,15))
+        self.gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
+
+        self.row = 0
+        self.col = 0
+
+        for (path, prediction) in zip(paths, predictions):
+
+            self._plot_path(path)
+
+            self.row += 1
+
+            self._plot_prediction(prediction, timeStepToAttack)
+
+            self.col += 1
+            self.row = 0 
+
+        plt.show()
+
+
 def get_dataset(modelSelection, dataDirectory, algorithm):
 
     dataset = None 
