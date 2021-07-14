@@ -11,7 +11,7 @@ import os
 from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientVisualizer
 from classifiers.feed_forward import FeedForward, FeedForwardGradientVisualizer
-from dubins_path_planner.RRT import Scene
+from dubins_path_planner.scene import Scene
 
 def build_model(modelSelection, inputShape):
 

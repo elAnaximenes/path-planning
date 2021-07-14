@@ -4,7 +4,7 @@ import numpy as np
 import random
 from dubins_path_planner.car_models.dubins_model import DubinsCar
 from dubins_path_planner.optimal_RRT import DubinsCarOptimalRRT
-from dubins_path_planner.RRT import Scene
+from dubins_path_planner.scene import Scene
 
 def check_valid_start(scene, startPosition):
 

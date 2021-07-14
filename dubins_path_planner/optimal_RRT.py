@@ -11,7 +11,7 @@ from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
 from .car_models.dubins_model import DubinsCar
 from matplotlib.lines import Line2D
-from .RRT import Scene
+from .scene import Scene
 
 class DubinsCarOptimalRRT:
 

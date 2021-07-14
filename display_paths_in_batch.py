@@ -70,7 +70,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     sceneName = args.scene
-    scene = RRT.Scene(sceneName)
+    scene = Scene(sceneName)
     print('scene loaded')
 
     batchNum = args.batch 

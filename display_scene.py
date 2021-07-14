@@ -1,7 +1,7 @@
 import json
 import matplotlib.pyplot as plt
 import sys
-from dubins_path_planner.RRT import Scene
+from dubins_path_planner.scene import Scene
 
 if len(sys.argv) < 2:
     print('usage: {} scene_name'.format(sys.argv[0]))

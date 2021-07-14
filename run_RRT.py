@@ -2,7 +2,8 @@ import sys
 import math
 import numpy as np
 from dubins_path_planner.car_models.dubins_model import DubinsCar
-from dubins_path_planner.RRT import DubinsCarRRT, Scene
+from dubins_path_planner.RRT import DubinsCarRRT
+from dubins_path_planner.scene import Scene
 
 def check_valid_start(scene, startPosition):
 

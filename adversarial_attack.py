@@ -8,7 +8,7 @@ import os
 from matplotlib import gridspec
 from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
-from dubins_path_planner.RRT import Scene
+from dubins_path_planner.scene import Scene
 import visualize_gradients
 
 class Adversary:
