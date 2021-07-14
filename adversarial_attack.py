@@ -81,7 +81,7 @@ class AdversarialPlanner:
         tMax, cMax = mostSalientGradientIdx
 
         # get x and y components of most salient gradient
-        mostSalientGradient = summedGrads[tmax, cmax] 
+        mostSalientGradient = summedGrads[tMax, cMax] 
 
         return mostSalientGradient, mostSalientGradientIdx
 
@@ -240,7 +240,6 @@ class AttackVisualizer:
             self.row = 0 
 
         plt.show()
-
 
 def get_dataset(modelSelection, dataDirectory, algorithm):
 
