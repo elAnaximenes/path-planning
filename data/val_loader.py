@@ -13,12 +13,30 @@ class ValidationDataSet:
         self.stepSize = stepSize
         data = None
 
-class ValidateDataLoader(DataLoader):
+class ValidateDataLoader:
 
     def __init__(self, numBatches, dataDirectory = './data/batches-validate/', stepSize = 100):
 
-        super().__init__(numBatches=numBatches, dataDirectory=dataDirectory)
+        self.numBatchesToLoad = int(numBatches)
+        self.dataDirectory = dataDirectory
+        self.batches = None
+        self.numSamples = 0
+        self.x = None
+        self.y = None
         self.dataset = ValidationDataSet(stepSize) 
+
+    def _package_data_for_testing(self):
+
+        # package data in a zipped list of instance label pairs
+
+        data = []
+
+        for i in range(len(self.x)):
+
+            pair = (self.x[i], self.y[i])
+            data.append(pair)
+
+        self.dataset.data=data
 
     def _transform_timeseries(self, instance):
 
@@ -106,19 +124,6 @@ class ValidateDataLoader(DataLoader):
         y_batch = labels
 
         return x_batch, y_batch
-
-    def _package_data_for_testing(self):
-
-        # package data in a zipped list of instance label pairs
-
-        data = []
-
-        for i in range(len(self.x)):
-
-            pair = (self.x[i], self.y[i])
-            data.append(pair)
-
-        self.dataset.data=data
 
     def load(self, startBatch=0):
 
