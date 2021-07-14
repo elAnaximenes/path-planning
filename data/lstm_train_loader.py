@@ -2,17 +2,39 @@ import numpy as np
 import json
 import os
 import tensorflow as tf
+import math
 from tensorflow.keras.utils import to_categorical
 from .base_loaders.loaders import TrainLoader
 import matplotlib.pyplot as plt
 
-class LstmTrainDataLoader(TrainLoader):
+class LstmTrainDataLoader():
 
     def __init__(self, split, numBatches, dataDirectory, batchSize = 512, downSampleStride = 50):
 
-        super().__init__(split, numBatches, dataDirectory=dataDirectory)
+        #super().__init__(split, numBatches, dataDirectory=dataDirectory)
         self.batchSize = batchSize
         self.downSampleStride = downSampleStride
+        self.numBatchesToLoad = int(numBatches)
+        self.dataDirectory = dataDirectory
+        self.batches = None
+        self.numSamples = 0
+        self.x = None
+        self.y = None
+        self.x_train = None
+        self.y_train = None
+        self.x_val = None
+        self.y_val = None
+        self.trainData = None
+        self.valData = None
+        self.split = split
+
+    def _split_data(self):
+
+        splitIndex = int(self.x.shape[0] * self.split)
+        self.x_train = self.x[:splitIndex]
+        self.y_train = self.y[:splitIndex]
+        self.x_val = self.x[splitIndex:]
+        self.y_val = self.y[splitIndex:]
 
     def _transform_timeseries(self):
 
@@ -34,7 +56,31 @@ class LstmTrainDataLoader(TrainLoader):
 
             listX.append(timesteps)
         self.x = np.array(listX) 
-        
+    
+    def _normalize_instances(self):
+
+        print('\nShape of data set:')
+        print(self.x.shape)
+
+        print('\nmaximum x value before normalization:', np.amax(self.x[:,0,:]))
+        print('minimum x value before normalization:', np.amin(self.x[:,0,:]))
+        print('maximum y value before normalization:', np.amax(self.x[:,1,:]))
+        print('minimum y value before normalization:', np.amin(self.x[:,1,:]))
+        self.x[:,:2,:] /= 10.0
+
+        print('\nmaximum x value after normalization:', np.amax(self.x[:,0,:]))
+        print('minimum x value after normalization:', np.amin(self.x[:,0,:]))
+        print('maximum y value after normalization:', np.amax(self.x[:,1,:]))
+        print('minimum y value after normalization:', np.amin(self.x[:,1,:]))
+
+        print('\nmaximum theta value before normalization:', np.amax(self.x[:,2,:]))
+        print('minimum theta value before normalization:', np.amin(self.x[:,2,:]))
+        self.x[:,2,:] -= (math.pi)
+        self.x[:,2,:] /= (math.pi)
+        print('maximum theta value after normalization:', np.amax(self.x[:,2,:]))
+        print('minimum theta value after normalization:', np.amin(self.x[:,2,:]))
+        print('\n')
+
     def _pad_instances(self):
 
         maxLen = 0
@@ -136,3 +182,23 @@ class LstmTrainDataLoader(TrainLoader):
 
         return (x_batch, y_batch)
 
+    def load(self, startBatch=0):
+
+        self.batches = []
+        
+        print('Loading data...')
+        for i in range(startBatch, startBatch + self.numBatchesToLoad):
+
+            batchFileName = 'test_room_batch_{}.json'.format(i)
+            print(batchFileName)
+
+            x_batch, y_batch = self._load_batch_json(batchFileName)
+            self.batches.append((x_batch, y_batch))
+
+            self.numBatchesToLoad -= 1
+            if self.numBatchesToLoad == 0:
+                break
+
+        self._pre_process_data()
+        
+        return (self.x_train, self.y_train), (self.x_val, self.y_val)

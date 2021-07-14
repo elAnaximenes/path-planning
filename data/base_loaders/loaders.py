@@ -8,9 +8,7 @@ class DataLoader:
 
     def __init__(self, numBatches, truncatedPathLength=1000, dataDirectory='./data/batches-train/'):
 
-
         self.numBatchesToLoad = int(numBatches)
-        print(self.numBatchesToLoad)
         self.truncatedPathLength = truncatedPathLength 
         self.dataDirectory = dataDirectory
         self.batches = None
@@ -31,10 +29,6 @@ class DataLoader:
         return mean, std
 
     def _normalize_instances(self):
-
-        #mean = self.x_train.mean(axis=0, dtype=np.float64)
-        #self.x_train -= mean
-        #std = self.x_train.std(axis=0, dtype=np.float64)
 
         print('\nShape of data set:')
         print(self.x.shape)
@@ -58,27 +52,6 @@ class DataLoader:
         print('minimum theta value after normalization:', np.amin(self.x[:,2,:]))
         print('\n')
 
-        """
-        samples, features, timesteps = self.x_train.shape
-        print(samples, features, timesteps)
-        for i in range(samples):
-            for j in range(features):
-                for k in range(timesteps):
-                    if std[j,k] > 0:
-                        self.x_train[i,j,k] /= std[j,k]
-        #self.x_train /= std
-
-        self.x_val -= mean
-        samples, features, timesteps = self.x_val.shape
-        print(samples, features, timesteps)
-        for i in range(samples):
-            for j in range(features):
-                for k in range(timesteps):
-                    if std[j,k] > 0:
-                        self.x_val[i,j,k] /= std[j,k]
-        #self.x_val /= std
-        """
-
     def _combine_batches(self):
 
         self.x = self.batches[0][0]
@@ -91,10 +64,32 @@ class DataLoader:
 
     def _load_batch_json(self, batchFileName):
 
-        # template for subclasses
-        print('Load batch from json is not implemented in subclass')
-        pass
-        
+        rawData = {}
+        with open(os.path.join(self.dataDirectory, batchFileName), 'r') as f:
+            rawData = json.load(f)
+
+        instances = []
+        labels = []
+
+        for sampleNumber in range(len(rawData)):
+
+            sample = rawData[str(sampleNumber)]
+
+            x = sample['path']['x']
+            y = sample['path']['y']
+            theta = sample['path']['theta']
+
+            instance = np.array([x, y, theta])
+            label = sample['target']['index']
+
+            instances.append(instance)
+            labels.append(label)
+
+        x_batch = instances
+        y_batch = labels
+
+        return (x_batch, y_batch)
+
 class TrainLoader(DataLoader):
 
     def __init__(self, split, numBatches, dataDirectory):
@@ -116,6 +111,15 @@ class TrainLoader(DataLoader):
         self.x_val = self.x[splitIndex:]
         self.y_val = self.y[splitIndex:]
 
+    def _combine_batches(self):
+
+        self.x = []
+        self.y = [] 
+
+        for x_batch, y_batch in self.batches:
+            self.x += x_batch
+            self.y += y_batch
+
     def _pre_process_data(self):
 
         self._combine_batches()
@@ -133,7 +137,7 @@ class TrainLoader(DataLoader):
         self.trainData = (self.x_train, self.y_train)
         self.valData = (self.x_val, self.y_val)
 
-    def load(self, startBatch):
+    def load(self, startBatch=0):
 
         self.batches = []
         
@@ -153,5 +157,3 @@ class TrainLoader(DataLoader):
         self._pre_process_data()
         
         return (self.x_train, self.y_train), (self.x_val, self.y_val)
-
-
