@@ -24,7 +24,6 @@ class MeanPathDataLoader():
         for y in self.pathsByClass:
 
             self.meanPaths[y] = np.mean(self.pathsByClass[y], axis=0)
-            print(self.meanPaths[y].shape)
     
     def _sort_paths_into_bins(self):
 
