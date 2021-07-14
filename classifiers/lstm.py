@@ -195,6 +195,18 @@ class LSTMGradientAnalyzer:
 
         self.gradientMagnitudes = gradientMagnitudes
 
+    def _normalize_grads(self, grads):
+
+        maxXIdx = np.argmax(np.absolute(grads[:, :, 0]), axis=0)
+        maxYIdx = np.argmax(np.absolute(grads[:, :, 1]), axis=0)
+        maxThetaIdx = np.argmax(np.absolute(grads[:, :, 2]), axis=0)
+        for i, (x, y, z) in enumerate(zip(maxXIdx.tolist(), maxYIdx.tolist(), maxThetaIdx.tolist())):
+            grads[:, i, 0] /= grads[x, i, 0]
+            grads[:, i, 1] /= grads[y, i, 1]
+            grads[:, i, 2] /= grads[z, i, 2]
+
+        return grads
+
     def _calculate_gradients_and_predictions(self):
 
         grads = []
@@ -222,19 +234,23 @@ class LSTMGradientAnalyzer:
                 self.losses.append(lossValue)
 
             jacobian = tape.jacobian(logits, x)
-            print('jacobian', jacobian.shape)
 
-            grads.append(jacobian.numpy().reshape(5,3))
+            if t < self.timeSteps:
+                grads.append(jacobian.numpy().reshape(5,3))
             predictions.append(logits[0].numpy().tolist())
 
         self.model.reset_states()
         grads = np.array(grads)
 
-        self.grads = grads
+        self.grads = self._normalize_grads(grads) 
         self.predictions = np.array(predictions)
 
-    def analyze(self, instance, label):
+    def analyze(self, instance, label, timeSteps=None):
         
+        if timeSteps == None:
+            timeSteps = instance.shape[1]
+
+        self.timeSteps = timeSteps
         self.instance = instance
         self.label = label
         
@@ -272,8 +288,8 @@ class LSTMGradientVisualizer:
 
         timeSteps = range(0, grads.shape[0]*self.dataset.stepSize, self.dataset.stepSize)
 
-        grads[:, self.targetIdx, 0] /= np.amax(np.abs(grads[:, self.targetIdx, 0]))
-        grads[:, self.targetIdx, 1] /= np.amax(np.abs(grads[:, self.targetIdx, 1]))
+        #grads[:, self.targetIdx, 0] /= np.amax(np.abs(grads[:, self.targetIdx, 0]))
+        #grads[:, self.targetIdx, 1] /= np.amax(np.abs(grads[:, self.targetIdx, 1]))
 
         self.grads_ax_x.plot(timeSteps, grads[:, self.targetIdx, 0])
         self.grads_ax_y.plot(timeSteps, grads[:, self.targetIdx, 1])
@@ -289,6 +305,9 @@ class LSTMGradientVisualizer:
 
         self.grads_ax_x.set_xlabel('Timesteps')
         self.grads_ax_y.set_xlabel('Timesteps')
+
+        self.grads_ax_x.grid(True)
+        self.grads_ax_y.grid(True)
 
     def _plot_classification_over_time(self, predictions, label):
 
@@ -312,12 +331,13 @@ class LSTMGradientVisualizer:
             self.class_ax.plot(timeSteps, confidence, linestyle='--', color=self.targetColors[targetIdx], label = 'Target {}'.format(targetIdx))
 
         self.class_ax.legend(loc='lower left')
+        self.class_ax.grid(True)
     
     def _plot_gradient_arrows(self, x, y, grads):
 
         gradsNorm = np.zeros((grads.shape[0], 2))
-        gradsNorm[:,0] = (grads[:, self.targetIdx, 0]/np.abs(grads[:, self.targetIdx, 0]).max())
-        gradsNorm[:,1] = (grads[:, self.targetIdx, 1]/np.abs(grads[:, self.targetIdx, 1]).max())
+        gradsNorm[:,0] = grads[:, self.targetIdx, 0]#/np.abs(grads[:, self.targetIdx, 0]).max())
+        gradsNorm[:,1] = grads[:, self.targetIdx, 1]#/np.abs(grads[:, self.targetIdx, 1]).max())
         colorMap = np.hypot(gradsNorm[:,0], gradsNorm[:,1])
 
         self.scene_ax.quiver(x,y, gradsNorm[:,0], gradsNorm[:, 1], colorMap, cmap='hot')

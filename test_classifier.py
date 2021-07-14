@@ -12,7 +12,7 @@ from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMTester
 from classifiers.feed_forward import FeedForward, FeedForwardTester
 
-def plot_performance(performance, modelSelection):
+def plot_performance(performance, modelSelection, algo):
 
     tp = performance['tp']
     labelCount = performance['label count']
@@ -25,7 +25,7 @@ def plot_performance(performance, modelSelection):
         accuracyOverTime.append(percent)
         timesteps.append(key)
 
-    plt.title('{} Accuracy over time'.format(modelSelection))
+    plt.title('{} Accuracy over time -- {}'.format(modelSelection, algo))
     plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')
     plt.xlim(0, timesteps[-1])
     plt.ylim(0.0, 1.0)
@@ -80,7 +80,7 @@ def test_model(modelSelection, dataDirectory, numBatches, algo='RRT'):
 
     performance = tester.test()
 
-    plot_performance(performance, modelSelection)
+    plot_performance(performance, modelSelection, algo)
 
 if __name__ == '__main__':
 

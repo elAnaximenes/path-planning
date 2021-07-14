@@ -13,36 +13,83 @@ import visualize_gradients
 
 class AdversarialPlanner:
 
-    def __init__(self, perturbationRate=0.1):
+    def __init__(self, instance, label, attackType, pointOfInterest = -1, perturbationRate=0.1):
 
+        self.instance = instance
+        self.label = label
+        self.attackType = attackType
+        self.pointOfInterest = pointOfInterest
         self.perturbationRate = perturbationRate
-        pass
 
-    def add_noise(self, grads, instance, gtIdx, perturbIdx):
+    def _get_most_salient_gradient(self, grads):
 
-        #instance is (1, timesteps, features)
+        gtIdx = np.argmax(self.label)
 
-        noisyPath = instance
-        noisyPath[0] += (grads[:,perturbIdx,:] - grads[:,gtIdx,:])*self.perturbationRate
+        # column of gt label grads and subtract this column from all other columns
+        gtGrads = grads[:, gtIdx, :2].reshape(grads.shape[0], 1, 2)
+        wrongGrads = np.delete(grads[:, :, :2], gtIdx, axis=1)
+        summedGrads = wrongGrads - gtGrads
 
-        return noisyPath
-    
-    def one_pixel_attack(self, grads, instance, gtIdx, perturbIdx):
+        # compute largest summed gradient
+        summedGradsMagnitudes = np.linalg.norm(summedGrads, axis = 2)
+
+        # get index of most salient gradient 
+        mostSalientGradientIdx = np.unravel_index(np.argmax(summedGradsMagnitudes), summedGradsMagnitudes.shape)
+        tMax, cMax = mostSalientGradientIdx
+
+        # get x and y components of most salient gradient
+        mostSalientGradient = summedGrads[tmax, cmax] 
+
+        return mostSalientGradient, mostSalientGradientIdx
+
+    def _one_pixel_attack(self, grads):
+
+        mostSalientGradient, mostSalientGradientIdx = self._get_most_salient_gradient(grads)
 
         attackedPath = instance
+        r = np.linalg.norm(instance[0, :, :] - instance[0, tMax], axis = 1)
+        print(r.shape)
+        exit(1)
 
-        print(grads.shape)
+        return attackedPath
 
-        #maxGradient = 
+    def _add_noise(self, grads, timeStepsToAttack):
 
+        noisyPath = self.instance
+        targetIdx = np.argmax(self.label)
+        noisyPath[0, :timeStepsToAttack, :2] += (grads[:,targetIdx, :2] * self.perturbationRate)
 
-def is_fooled(predictions, label):
+        return noisyPath
 
-    #for pred in predictions:
+    def perturb(self, grads):
 
-        #if np.argmax
+        if self.attackType == 'noise':
+            attackedPath = self._add_noise(grads, timeStepsToAttack=self.pointOfInterest)
+        elif attack == 'one_pixel':
+            attackedPath = self._one_pixel_attack(grads)
 
-    return False 
+        return attackedPath
+
+def plot_prediction(pred_ax, prediction):
+
+    timeSteps = range(0, prediction.shape[0])
+    pred_ax.set_ylim(0.0, 1.0)
+    pred_ax.set_xlabel('Time step (1/100 s)')
+    pred_ax.set_ylabel('Confidence')
+    pred_ax.grid(True)
+
+    targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
+    for targetIdx in range(len(targetColors)):
+
+        conf = []
+
+        for t in range(len(timeSteps)):
+
+            conf.append(prediction[t, targetIdx])
+
+        pred_ax.plot(timeSteps, conf, linestyle='--', color=targetColors[targetIdx])
+
+    return pred_ax
 
 def get_path(path):
 
@@ -56,12 +103,36 @@ def get_path(path):
 
     return x, y
 
-def plot_paths_and_predictions(paths, predictions, scene, it):
+def plot_path(ax, path, scene):
+
+    ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
+    ax.set_ylim(scene.dimensions['ymin'], scene.dimensions['ymax'])
+    ax.set_aspect('equal')
+
+    ax.set_xlabel('X-Position [m]')
+    ax.set_ylabel('Y-Position [m]')
+
+    for obstacle in scene.obstacles:
+
+        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+        ax.add_patch(obs)
+ 
+    targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
+    for i, target in enumerate(scene.targets):
+
+        tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
+        ax.add_patch(tar)        
+        ax.text(target[0]-0.5, target[1]+0.5, i)
+
+    x, y = get_path(path)
+    ax.scatter(x, y, color='blue')
+
+    return ax
+
+def plot_paths_and_predictions(paths, predictions, scene, timeStep, it):
     
     fig = plt.figure(figsize=(14,15))
     gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
-
-    targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
 
     col = 0
     row = 0
@@ -69,37 +140,14 @@ def plot_paths_and_predictions(paths, predictions, scene, it):
     for (path, prediction) in zip(paths, predictions):
 
         row %= 2 
-        print('row, col:', row, col)
 
         ax = plt.subplot(gs[row, col])
-        ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
-        ax.set_ylim(scene.dimensions['ymin'], scene.dimensions['ymax'])
-        ax.set_aspect('equal')
-
-        ax.set_xlabel('X-Position [m]')
-        ax.set_ylabel('Y-Position [m]')
-
-        for obstacle in scene.obstacles:
-
-            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-            ax.add_patch(obs)
-     
-        for i, target in enumerate(scene.targets):
-
-            tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
-            ax.add_patch(tar)        
-            ax.text(target[0]-0.5, target[1]+0.5, i)
-
-        x, y = get_path(path)
-        ax.scatter(x, y, color='blue')
-
-        timeSteps = range(0, prediction.shape[0])
+        ax = plot_path(ax, path, scene)
 
         row += 1
         pred_ax = plt.subplot(gs[row, col])
-        pred_ax.set_ylim(0.0, 1.0)
-        pred_ax.set_xlabel('Time step (1/100 s)')
-        pred_ax.set_ylabel('Confidence')
+        pred_ax = plot_prediction(pred_ax, prediction)
+        pred_ax.axvline(timeStep)
 
         if col == 0:
             ax.set_title('Non-perturbed Optimal RRT Path')
@@ -107,23 +155,20 @@ def plot_paths_and_predictions(paths, predictions, scene, it):
         else:
             ax.set_title('Optimal RRT Path with Perturbation')
             pred_ax.set_title('LSTM Confidence Given Path with Perturbation')
-    
-
-        for targetIdx in range(len(targetColors)):
-
-            conf = []
-
-            for t in range(len(timeSteps)):
-
-                conf.append(prediction[t, targetIdx])
-
-            pred_ax.plot(timeSteps, conf, linestyle='--', color=targetColors[targetIdx])
 
         col += 1
         row += 1
 
     plt.savefig('./data/saved_images/img-{}'.format(it))
     plt.show()
+
+def is_fooled(predictions, label, timeStep):
+
+    gtClass = np.argmax(label)
+    predictedClass = np.argmax(predictions[timeStep])
+    print('gt class is {}, prediction is {}'.format(gtClass, predictedClass))
+
+    return gtClass != predictedClass 
 
 def get_dataset(modelSelection, dataDirectory, algorithm):
 
@@ -148,7 +193,7 @@ def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
 
     return analyzer
 
-def get_perturbation_target(labelIdx, noisyPredictions, timeStep=20):
+def get_perturbation_target(labelIdx, noisyPredictions, timeStep):
 
     secondBest = 0.0 
     secondBestIdx = None
@@ -156,7 +201,6 @@ def get_perturbation_target(labelIdx, noisyPredictions, timeStep=20):
     for i in range(len(noisyPredictions[timeStep])):
 
         candidate = noisyPredictions[timeStep][i]
-        print(i, secondBest, candidate)
         if i != labelIdx and secondBest < candidate:
             secondBestIdx = i
             secondBest = candidate
@@ -167,44 +211,31 @@ def replan(modelSelection, dataDirectory, algorithm, attack='noise'):
 
     analyzer = get_gradient_analyzer(modelSelection, dataDirectory, algorithm)
     dataset = get_dataset(modelSelection, dataDirectory, algorithm)
-    planner = AdversarialPlanner()
+
     scene = Scene('test_room')
+    windowOfInterest = 0.99 
 
     for instance, label in dataset.data:
 
-        fooled = False
-        gtTarget = np.argmax(label)
+        timeStepsToAttack = int(instance.shape[1] * windowOfInterest) 
 
+        planner = AdversarialPlanner(instance, label, attack, pointOfInterest=timeStepsToAttack)
+
+        grads, origPredictions = analyzer.analyze(origInstance, label, timeStepsToAttack)
         origInstance = np.copy(instance)
-        origGrads, origPredictions = analyzer.analyze(origInstance, label)
-        attackedPath = instance 
-        attackedPredictions = origPredictions
-        grads = origGrads
 
+        fooled = False
         it = 0
-
         while not fooled:
 
-            perturbTarget = get_perturbation_target(gtTarget, attackedPredictions)
+            attackedPath = planner.perturb(grads)
+            grads, attackedPredictions = analyzer.analyze(attackedPath, label, timeStepsToAttack)
+            fooled = is_fooled(attackedPredictions, label, timeStepsToAttack)
 
-
-            if attack == 'noise':
-                attackedPath = planner.add_noise(grads, attackedPath, gtIdx=gtTarget, perturbIdx=perturbTarget)
-            else:
-                attackedPath = planner.one_pixel_attack(grads, attackedPath, gtIdx=gtTarget, perturbIdx=perturbTarget)
-
-            grads, attackedPredictions = analyzer.analyze(attackedPath, label)
-
-
-            print('perturb idx:', perturbTarget)
-            print('gt idx:', gtTarget, flush=True)
-            
-            paths = [origInstance, attackedPath]
-            preds = [origPredictions, attackedPredictions]
-
-            plot_paths_and_predictions(paths, preds, scene, it)
-
-            fooled = is_fooled(attackedPredictions, label)
+            if True:
+                paths = [origInstance, attackedPath]
+                preds = [origPredictions, attackedPredictions]
+                plot_paths_and_predictions(paths, preds, scene, timeStepsToAttack, it)
 
             it += 1
 
@@ -217,6 +248,10 @@ if __name__ == '__main__':
     parser.add_argument('--attack', type=str, help='Adversarial attack [noist/one_pixel.', default = "noise")
 
     args = parser.parse_args()
+
+    files = os.listdir('./data/saved_images/')
+    for f in files:
+        os.remove(os.path.join('./data/saved_images/',f))
 
     modelSelection = args.model
     algorithm = args.algo.lower()

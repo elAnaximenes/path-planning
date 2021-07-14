@@ -273,7 +273,7 @@ class DubinsCarRRT:
 
         plt.pause(0.00001)
 
-        plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
+        #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
         self.imgcount += 1
 
         if event != 'reached target':

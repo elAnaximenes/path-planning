@@ -76,7 +76,7 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    #plt.savefig('loss')
+    # plt.savefig('loss')
     plt.show()
 
     plt.clf()
@@ -92,7 +92,7 @@ def plot_performance(history):
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    #plt.savefig('loss')
+    # plt.savefig('loss')
     plt.show()
 
 def summary(history, modelSelection, numBatches, startBatch):
@@ -125,9 +125,9 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=Fal
     print('successfully loaded data and built model')
     # fit model to training data
     originalOut = sys.stdout
-    #sys.stdout = open('./logs/{}-training.log'.format(modelSelection), 'w')
+    # sys.stdout = open('./logs/{}-training.log'.format(modelSelection), 'w')
     history = trainer.train((x_train, y_train), (x_val, y_val), epochs, batchSize, resume)
-    #sys.stdout = originalOut
+    # sys.stdout = originalOut
     print('successfully trained model')
 
     # summarize training results
