@@ -1,8 +1,19 @@
 import json
 import argparse
 import os
+import matplotlib as plt
 from dubins_path_planner.scene import Scene
 from data.mean_path_loader import MeanPathDataLoader 
+
+def plot_mean_paths(dataset, scene):
+
+    meanPaths = dataset['mean paths']
+    pathsByLabel = dataset['all paths']
+
+    for label in meanPaths:
+
+        fig, ax = plt.subplots()
+        ax = scene.draw(ax)
 
 def get_dataset(dataDir, algo, numBatches):
 
@@ -18,6 +29,7 @@ def get_mean_paths(dataDir, algo, numBatches):
     sceneName = 'test_room'
     scene = Scene(sceneName)
     dataset = get_dataset(dataDir, algo, numBatches)
+    plot_mean_paths(dataset, scene)
 
 if __name__ == '__main__':
 

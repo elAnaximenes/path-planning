@@ -114,4 +114,6 @@ class MeanPathDataLoader():
 
         self._pre_process_data()
 
-        return self.meanPaths
+        dataset = {'mean paths':self.meanPaths, 'all paths':self.pathsByClass}
+
+        return dataset
