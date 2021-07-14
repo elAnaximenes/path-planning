@@ -32,6 +32,7 @@ def plot_performance(performance, modelSelection, algo):
     plt.xlabel('Timesteps from goal')
     plt.ylabel('% correct')
     plt.legend()
+    plt.grid(True)
     plt.show()
 
 def build_model(modelSelection, inputShape):

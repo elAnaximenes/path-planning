@@ -11,6 +11,134 @@ from classifiers.lstm import LSTM, LSTMGradientAnalyzer
 from dubins_path_planner.RRT import Scene
 import visualize_gradients
 
+class AttackVisualizer:
+
+    def __init__(self, scene):
+
+        self.scene = scene
+        self.targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
+        self.fig = None
+        self.gs = None
+        self.row = None
+        self.col = None
+
+    def _setup_prediction_ax(self, timeStepToAttack):
+    
+        pred_ax = plt.subplot(self.gs[self.row, self.col])
+        pred_ax.set_ylim(0.0, 1.0)
+        pred_ax.set_xlabel('Time step (1/100 s)')
+        pred_ax.set_ylabel('Confidence')
+        pred_ax.grid(True)
+        pred_ax.axvline(timeStepToAttack)
+
+        if self.col == 0:
+            pred_ax.set_title('LSTM Confidence Given Non-perturbed Path')
+        else:
+            pred_ax.set_title('LSTM Confidence Given Path with Perturbation')
+
+        return pred_ax
+
+    def _plot_prediction(self, prediction, timeStepToAttack):
+
+        pred_ax = self._setup_prediction_ax(timeStepToAttack)
+
+        timeSteps = range(0, prediction.shape[0])
+
+        for targetIdx in range(len(self.targetColors)):
+
+            conf = []
+
+            for t in range(len(timeSteps)):
+
+                conf.append(prediction[t, targetIdx])
+
+            pred_ax.plot(timeSteps, conf, linestyle='--', color=self.targetColors[targetIdx])
+
+    def _get_path(self, path):
+
+        x = []
+        y = []
+
+        for t in range(path.shape[1]):
+
+            x.append(path[0,t, 0]*10)
+            y.append(path[0,t, 1]*10)
+
+        return x, y
+
+    def _plot_targets(self, ax):
+
+        for i, target in enumerate(self.scene.targets):
+
+            tar = plt.Circle((target[0], target[1]), target[2], color=self.targetColors[i], fill=False)
+            ax.add_patch(tar)        
+            ax.text(target[0]-0.5, target[1]+0.5, i)
+        
+        return ax
+
+    def _plot_obstacles(self, ax):
+
+        for obstacle in self.scene.obstacles:
+
+            obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
+            ax.add_patch(obs)
+
+        return ax
+
+    def _plot_scene(self, ax):
+    
+        ax = self._plot_obstacles(ax)
+        ax = self._plot_targets(ax)
+             
+        return ax
+
+    def _setup_path_ax(self):
+
+        ax = plt.subplot(self.gs[self.row, self.col])
+        ax.set_xlim(self.scene.dimensions['xmin'], self.scene.dimensions['xmax'])
+        ax.set_ylim(self.scene.dimensions['ymin'], self.scene.dimensions['ymax'])
+        ax.set_aspect('equal')
+        
+        return ax
+
+    def _plot_path(self, path):
+
+        ax = self._setup_path_ax()
+
+        if self.col == 0:
+            ax.set_title('Non-perturbed Optimal RRT Path')
+        else:
+            ax.set_title('Optimal RRT Path with Perturbation')
+
+        ax.set_xlabel('X-Position [m]')
+        ax.set_ylabel('Y-Position [m]')
+
+        ax = self._plot_scene(ax)
+
+        x, y = self._get_path(path)
+        ax.scatter(x, y, color='blue')
+
+    def plot_paths_and_predictions(self, paths, predictions, timeStepToAttack):
+        
+        self.fig = plt.figure(figsize=(14,15))
+        self.gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
+
+        self.row = 0
+        self.col = 0
+
+        for (path, prediction) in zip(paths, predictions):
+
+            self._plot_path(path)
+
+            self.row += 1
+
+            self._plot_prediction(prediction, timeStepToAttack)
+
+            self.col += 1
+            self.row = 0 
+
+        plt.show()
+
 class AdversarialPlanner:
 
     def __init__(self, instance, label, attackType, pointOfInterest = -1, perturbationRate=0.1):
@@ -70,105 +198,48 @@ class AdversarialPlanner:
 
         return attackedPath
 
-def plot_prediction(pred_ax, prediction):
+class Adversary:
 
-    timeSteps = range(0, prediction.shape[0])
-    pred_ax.set_ylim(0.0, 1.0)
-    pred_ax.set_xlabel('Time step (1/100 s)')
-    pred_ax.set_ylabel('Confidence')
-    pred_ax.grid(True)
+    def __init__(self, analyzer, scene, windowOfInterest):
 
-    targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
-    for targetIdx in range(len(targetColors)):
+        self.analyzer = analyzer
+        self.scene = scene
+        self.windowOfInterest = windowOfInterest
+        self.planner = None
+        self.visualizer = AttackVisualizer(self.scene)
 
-        conf = []
+    def _is_classifier_fooled(self, predictions, label, timeStep):
 
-        for t in range(len(timeSteps)):
+        gtClass = np.argmax(label)
+        predictedClass = np.argmax(predictions[timeStep])
+        print('gt class is {}, prediction is {}'.format(gtClass, predictedClass))
 
-            conf.append(prediction[t, targetIdx])
+        return gtClass != predictedClass 
 
-        pred_ax.plot(timeSteps, conf, linestyle='--', color=targetColors[targetIdx])
+    def attack(self, instance, label, attackType='noise'):
 
-    return pred_ax
+        timeStepsToAttack = int(instance.shape[1] * self.windowOfInterest) 
 
-def get_path(path):
+        self.planner = AdversarialPlanner(instance, label, attackType, pointOfInterest=timeStepsToAttack)
 
-    x = []
-    y = []
+        origInstance = np.copy(instance)
+        grads, origPredictions = self.analyzer.analyze(origInstance, label, timeStepsToAttack)
 
-    for t in range(path.shape[1]):
+        attackedPath = None
+        fooled = False
 
-        x.append(path[0,t, 0]*10)
-        y.append(path[0,t, 1]*10)
+        while not fooled:
 
-    return x, y
+            attackedPath = self.planner.perturb(grads)
+            grads, attackedPredictions = self.analyzer.analyze(attackedPath, label, timeStepsToAttack)
+            fooled = self._is_classifier_fooled(attackedPredictions, label, timeStepsToAttack)
 
-def plot_path(ax, path, scene):
-
-    ax.set_xlim(scene.dimensions['xmin'], scene.dimensions['xmax'])
-    ax.set_ylim(scene.dimensions['ymin'], scene.dimensions['ymax'])
-    ax.set_aspect('equal')
-
-    ax.set_xlabel('X-Position [m]')
-    ax.set_ylabel('Y-Position [m]')
-
-    for obstacle in scene.obstacles:
-
-        obs = plt.Circle((obstacle[0], obstacle[1]), obstacle[2], color='red', fill=False)
-        ax.add_patch(obs)
- 
-    targetColors = ['green', 'blue', 'cyan', 'darkorange', 'purple']
-    for i, target in enumerate(scene.targets):
-
-        tar = plt.Circle((target[0], target[1]), target[2], color=targetColors[i], fill=False)
-        ax.add_patch(tar)        
-        ax.text(target[0]-0.5, target[1]+0.5, i)
-
-    x, y = get_path(path)
-    ax.scatter(x, y, color='blue')
-
-    return ax
-
-def plot_paths_and_predictions(paths, predictions, scene, timeStep, it):
-    
-    fig = plt.figure(figsize=(14,15))
-    gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
-
-    col = 0
-    row = 0
-
-    for (path, prediction) in zip(paths, predictions):
-
-        row %= 2 
-
-        ax = plt.subplot(gs[row, col])
-        ax = plot_path(ax, path, scene)
-
-        row += 1
-        pred_ax = plt.subplot(gs[row, col])
-        pred_ax = plot_prediction(pred_ax, prediction)
-        pred_ax.axvline(timeStep)
-
-        if col == 0:
-            ax.set_title('Non-perturbed Optimal RRT Path')
-            pred_ax.set_title('LSTM Confidence Given Non-perturbed Path')
-        else:
-            ax.set_title('Optimal RRT Path with Perturbation')
-            pred_ax.set_title('LSTM Confidence Given Path with Perturbation')
-
-        col += 1
-        row += 1
-
-    plt.savefig('./data/saved_images/img-{}'.format(it))
-    plt.show()
-
-def is_fooled(predictions, label, timeStep):
-
-    gtClass = np.argmax(label)
-    predictedClass = np.argmax(predictions[timeStep])
-    print('gt class is {}, prediction is {}'.format(gtClass, predictedClass))
-
-    return gtClass != predictedClass 
+            if True:
+                paths = [origInstance, attackedPath]
+                preds = [origPredictions, attackedPredictions]
+                self.visualizer.plot_paths_and_predictions(paths, preds, timeStepsToAttack)
+        
+        return attackedPath
 
 def get_dataset(modelSelection, dataDirectory, algorithm):
 
@@ -193,51 +264,22 @@ def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
 
     return analyzer
 
-def get_perturbation_target(labelIdx, noisyPredictions, timeStep):
-
-    secondBest = 0.0 
-    secondBestIdx = None
-
-    for i in range(len(noisyPredictions[timeStep])):
-
-        candidate = noisyPredictions[timeStep][i]
-        if i != labelIdx and secondBest < candidate:
-            secondBestIdx = i
-            secondBest = candidate
-
-    return secondBestIdx 
-
-def replan(modelSelection, dataDirectory, algorithm, attack='noise'):
+def attack_paths_in_batch(modelSelection, dataDirectory, algorithm, attackType='noise'):
 
     analyzer = get_gradient_analyzer(modelSelection, dataDirectory, algorithm)
-    dataset = get_dataset(modelSelection, dataDirectory, algorithm)
-
     scene = Scene('test_room')
     windowOfInterest = 0.99 
+    adversary = Adversary(analyzer, scene, windowOfInterest)
+
+    dataset = get_dataset(modelSelection, dataDirectory, algorithm)
+    adversarialPaths = []
 
     for instance, label in dataset.data:
 
-        timeStepsToAttack = int(instance.shape[1] * windowOfInterest) 
+        attackedPath = adversary.attack(instance, label, attackType)
+        adversarialPaths.append(attackedPath)
 
-        planner = AdversarialPlanner(instance, label, attack, pointOfInterest=timeStepsToAttack)
-
-        grads, origPredictions = analyzer.analyze(origInstance, label, timeStepsToAttack)
-        origInstance = np.copy(instance)
-
-        fooled = False
-        it = 0
-        while not fooled:
-
-            attackedPath = planner.perturb(grads)
-            grads, attackedPredictions = analyzer.analyze(attackedPath, label, timeStepsToAttack)
-            fooled = is_fooled(attackedPredictions, label, timeStepsToAttack)
-
-            if True:
-                paths = [origInstance, attackedPath]
-                preds = [origPredictions, attackedPredictions]
-                plot_paths_and_predictions(paths, preds, scene, timeStepsToAttack, it)
-
-            it += 1
+    return adversarialPaths
 
 if __name__ == '__main__':
 
@@ -260,4 +302,4 @@ if __name__ == '__main__':
         dataDirectory = 'D:\\path_planning_data\\'
     attack = args.attack
 
-    replan(modelSelection, dataDirectory, algorithm, attack)
+    attack_paths_in_batch(modelSelection, dataDirectory, algorithm, attack)
