@@ -1,25 +1,32 @@
 import json
 import argparse
 import os
+import json
 import matplotlib.pyplot as plt
 from dubins_path_planner.scene import Scene
 from data.mean_path_loader import MeanPathDataLoader 
 
 def plot_mean_paths(dataset, scene):
 
-    meanPaths = dataset['mean paths']
-    pathsByLabel = dataset['all paths']
+    meanPaths = dataset.meanPaths
+    pathsByLabel = dataset.pathsByLabel
 
     for label in meanPaths:
 
         fig, ax = plt.subplots()
         ax = scene.draw(ax)
 
-        for i in range(100):#pathsByLabel[label].shape[0]):
+        for i in range(pathsByLabel[label].shape[0]):
             ax.plot(pathsByLabel[label][i, 0, :], pathsByLabel[label][i, 1, :], 'y')
-        ax.plot(meanPaths[label][0, :], meanPaths[label][1, :], 'r--')
+        ax.plot(meanPaths[label][0, :]*10.0, meanPaths[label][1, :]*10.0, 'r--')
 
         plt.show()
+
+def save_mean_paths(dataDir, algo, meanPaths):
+
+    meanPathFile = os.path.join(dataDir, '{}_mean_paths.json')
+    with open(meanPathFile) as f:
+        json.dump(meanPaths['mean paths'], f)
         
 def get_dataset(dataDir, algo, numBatches):
 

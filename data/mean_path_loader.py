@@ -2,10 +2,44 @@ import numpy as np
 import json
 import os
 import tensorflow as tf
+import math
 from tensorflow.keras.utils import to_categorical
 from .base_loaders.loaders import DataLoader 
 
-class MeanPathDataLoader():
+class meanPathDataset:
+
+    def __init__(self, stepSize = 1):
+
+        self.pathsByLabel = {0:[], 1:[], 2:[], 3:[], 4:[]}
+        self.meanPaths = {0:None, 1:None, 2:None, 3:None, 4:None}
+        self.data = None
+        self.stepSize = stepSize 
+
+    def format_datasets_by_target(self):
+
+        datasetsByTarget = {0:None, 1:None, 2:None, 3:None, 4:None}
+
+        for target in datasetsByTarget:
+
+            label = np.zeros(len(datasetsByTarget))
+            label[target] = 1.0
+
+            subDataset = meanPathDataset()
+            data = []
+
+            for path in self.pathsByLabel[target]:
+
+                instance = np.transpose(path)
+                instance = instance[np.newaxis, :, :] 
+                pair = (instance, label)
+                data.append(pair)
+
+            subDataset.data = data
+            datasetsByTarget[target] = subDataset
+
+        return datasetsByTarget
+
+class MeanPathDataLoader:
 
     def __init__(self, numBatches, dataDirectory, sampleNodes=100):
 
@@ -16,24 +50,47 @@ class MeanPathDataLoader():
         self.numSamples = 0
         self.x = None
         self.y = None
-        self.pathsByClass = {0:[], 1:[], 2:[], 3:[], 4:[]}
-        self.meanPaths = {0:None, 1:None, 2:None, 3:None, 4:None}
+        self.dataset = meanPathDataset()
+
+    def _package_data_for_testing(self):
+        
+        data = []
+
+        for category in self.dataset.meanPaths:
+
+            # one hot
+            label = np.zeros(len(self.dataset.meanPaths))
+            label[category] = 1.0
+
+            # batch, time, features
+            instance = np.transpose(self.dataset.meanPaths[category])
+            instance = instance[np.newaxis, :, :] 
+            instance[:, :, :2] /= 10.0
+            instance[:, :, 2] -= math.pi
+            instance[:, :, 2] /= math.pi
+
+            # zip
+            pair = (instance, label)
+            data.append(pair)
+
+
+        self.dataset.data = data
 
     def _calculate_mean_paths(self):
 
-        for y in self.pathsByClass:
+        for y in self.dataset.pathsByLabel:
 
-            self.meanPaths[y] = np.mean(self.pathsByClass[y], axis=0)
-    
+            self.dataset.meanPaths[y] = np.mean(self.dataset.pathsByLabel[y], axis=0)
+ 
     def _sort_paths_into_bins(self):
 
         for x, y in zip(self.x, self.y):
 
-            self.pathsByClass[y].append(x)
+            self.dataset.pathsByLabel[y].append(x)
 
-        for y in self.pathsByClass:
+        for y in self.dataset.pathsByLabel:
 
-            self.pathsByClass[y] = np.array(self.pathsByClass[y])
+            self.dataset.pathsByLabel[y] = np.array(self.dataset.pathsByLabel[y])
 
     def _make_all_paths_same_length(self):
 
@@ -113,6 +170,6 @@ class MeanPathDataLoader():
 
         self._pre_process_data()
 
-        dataset = {'mean paths':self.meanPaths, 'all paths':self.pathsByClass}
+        self._package_data_for_testing()
 
-        return dataset
+        return self.dataset

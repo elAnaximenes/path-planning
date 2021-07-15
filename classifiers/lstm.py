@@ -288,9 +288,6 @@ class LSTMGradientVisualizer:
 
         timeSteps = range(0, grads.shape[0]*self.dataset.stepSize, self.dataset.stepSize)
 
-        #grads[:, self.targetIdx, 0] /= np.amax(np.abs(grads[:, self.targetIdx, 0]))
-        #grads[:, self.targetIdx, 1] /= np.amax(np.abs(grads[:, self.targetIdx, 1]))
-
         self.grads_ax_x.plot(timeSteps, grads[:, self.targetIdx, 0])
         self.grads_ax_y.plot(timeSteps, grads[:, self.targetIdx, 1])
 

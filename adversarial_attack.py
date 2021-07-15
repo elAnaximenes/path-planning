@@ -70,6 +70,13 @@ class AdversarialPlanner:
         self.perturbationRate = perturbationRate
         self.it = 1
 
+    def _get_normal_vector(self, p1, p2):
+
+        d = p2 - p1
+        normalVector = np.array([-1.0*d[0,1], d[0,0]])*10.0
+
+        return normalVector
+
     def _get_most_salient_point(self, grads):
 
         gtIdx = np.argmax(self.label)
@@ -89,18 +96,20 @@ class AdversarialPlanner:
     def _one_pixel_attack(self, grads):
 
         mostSalientGradient, mostSalientTimeStep = self._get_most_salient_point(grads)
-        gtIdx = np.argmax(self.label)
+        normalVectorAtSalientPoint = self._get_normal_vector(self.instance[:, mostSalientTimeStep-1, :2], self.instance[:, mostSalientTimeStep+1, :2])
+
+        normalVectorAtSalientPoint *= np.dot(10.0*mostSalientGradient, normalVectorAtSalientPoint)
 
         # euclidean distance from point of attack
-        r = np.linalg.norm(self.instance[0, :, :] -self.instance[0, mostSalientTimeStep, :], axis = 1)
+        r = np.linalg.norm((self.instance[0, :, :] * 10.0) - (self.instance[0, mostSalientTimeStep, :] * 10.0), axis = 1)
 
         # dimension matching
-        mostSalientGradient = np.tile(mostSalientGradient, (r.shape[0],1))
+        normalVectors = np.tile(normalVectorAtSalientPoint, (r.shape[0],1))
         r = np.transpose(np.tile(r, (2,1)))
         
         # attack and smooth
         attackedPath = np.copy(self.origInstance)
-        attackedPath[0, :, :2] -= (np.exp(-5.0 * r) * mostSalientGradient * self.it )
+        attackedPath[0, :, :2] += (np.exp(-1.0*r) * normalVectors * self.it )
 
         return attackedPath 
 
@@ -108,6 +117,7 @@ class AdversarialPlanner:
 
         noisyPath = self.instance
         targetIdx = np.argmax(self.label)
+        # add perturbation to every x y coordinate
         noisyPath[0, :timeStepsToAttack, :2] += (grads[:,targetIdx, :2] * self.perturbationRate)
 
         return noisyPath

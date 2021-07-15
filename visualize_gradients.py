@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from data.val_loader import ValidateDataLoader
+from data.mean_path_loader import MeanPathDataLoader 
 from classifiers.lstm import LSTM, LSTMGradientVisualizer
 from classifiers.feed_forward import FeedForward, FeedForwardGradientVisualizer
 from dubins_path_planner.scene import Scene
@@ -35,14 +36,24 @@ def get_visualizer(modelSelection, dataset, model, weightsDir, scene, display):
 
     return visualizer
 
-def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', sceneName = 'test_room', display=True):
+def get_data_loader(dataDir, algo, meanPaths):
 
     loader = None
 
-    valDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algo))
+    if meanPaths:
+        valDataDir = os.path.join(dataDirectory, '{}_batches_train'.format(algo))
+        numBatchesToLoad = 10
+        loader = MeanPathDataLoader(numBatchesToLoad, valDataDir, loadMeanPaths=True)
+    else:
+        valDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algo))
+        numBatchesToLoad = 1
+        loader = ValidateDataLoader(numBatchesToLoad, valDataDir, stepSize=10)
 
-    numBatchesToLoad = 1
-    loader = ValidateDataLoader(numBatchesToLoad, valDataDir, stepSize=10)
+    return loader
+
+def visualize_gradients(modelSelection, dataDirectory, algo='optimal_rrt', sceneName = 'test_room', display=True, meanPaths=False):
+
+    loader = get_data_loader(dataDirectory, algo, meanPaths)
     dataset = loader.load()
 
     inputShape = (1,3)
@@ -65,15 +76,17 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--directory', type = str, default = '.\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
+    parser.add_argument('--mean_paths', default=False, action='store_true')
 
     args = parser.parse_args()
 
     modelSelection = args.model
     algorithm = args.algo.lower()
     dataDirectory = args.directory
+    meanPaths = args.mean_paths
     if dataDirectory == 'tower':
         dataDirectory = 'D:\\path_planning_data\\'
 
-    visualize_gradients(modelSelection, dataDirectory, algorithm)
+    visualize_gradients(modelSelection, dataDirectory, algorithm, meanPaths=meanPaths)
 
 
