@@ -5,6 +5,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import math
 from matplotlib import gridspec
 from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
@@ -35,22 +36,25 @@ class Adversary:
 
         self.planner = AdversarialPlanner(instance, label, attackType, pointOfInterest=timeStepsToAttack)
 
-        origInstance = np.copy(instance)
-        grads, origPredictions = self.analyzer.analyze(origInstance, label, timeStepsToAttack)
+        grads, origPredictions = self.analyzer.analyze(instance, label, timeStepsToAttack)
+        origGrads = np.copy(grads)
 
         attackedPath = None
         fooled = False
 
         while not fooled:
 
+            if attackType == 'one_pixel':
+                grads = origGrads
+
             attackedPath = self.planner.perturb(grads)
             grads, attackedPredictions = self.analyzer.analyze(attackedPath, label, timeStepsToAttack)
             fooled = self._is_classifier_fooled(attackedPredictions, label, timeStepsToAttack)
 
             if True:
-                paths = [origInstance, attackedPath]
+                paths = [self.planner.origInstance, attackedPath]
                 preds = [origPredictions, attackedPredictions]
-                self.visualizer.plot_paths_and_predictions(paths, preds, timeStepsToAttack)
+                self.visualizer.plot_paths_and_predictions(paths, preds, timeStepsToAttack, self.planner.it-2)
         
         return attackedPath
 
@@ -59,42 +63,46 @@ class AdversarialPlanner:
     def __init__(self, instance, label, attackType, pointOfInterest = -1, perturbationRate=0.1):
 
         self.instance = instance
+        self.origInstance = np.copy(instance)
         self.label = label
         self.attackType = attackType
         self.pointOfInterest = pointOfInterest
         self.perturbationRate = perturbationRate
+        self.it = 1
 
-    def _get_most_salient_gradient(self, grads):
+    def _get_most_salient_point(self, grads):
 
         gtIdx = np.argmax(self.label)
 
         # column of gt label grads and subtract this column from all other columns
-        gtGrads = grads[:, gtIdx, :2].reshape(grads.shape[0], 1, 2)
-        wrongGrads = np.delete(grads[:, :, :2], gtIdx, axis=1)
-        summedGrads = wrongGrads - gtGrads
-
-        # compute largest summed gradient
-        summedGradsMagnitudes = np.linalg.norm(summedGrads, axis = 2)
+        gtGrads = grads[:, gtIdx, :2]
 
         # get index of most salient gradient 
-        mostSalientGradientIdx = np.unravel_index(np.argmax(summedGradsMagnitudes), summedGradsMagnitudes.shape)
-        tMax, cMax = mostSalientGradientIdx
+        gradMagnitudes = np.linalg.norm(gtGrads, axis=1)
+        mostSalientTimeStep = np.argmax(gradMagnitudes[:self.pointOfInterest])
 
         # get x and y components of most salient gradient
-        mostSalientGradient = summedGrads[tMax, cMax] 
+        mostSalientGradient = gtGrads[mostSalientTimeStep] * self.perturbationRate
 
-        return mostSalientGradient, mostSalientGradientIdx
+        return mostSalientGradient, mostSalientTimeStep
 
     def _one_pixel_attack(self, grads):
 
-        mostSalientGradient, mostSalientGradientIdx = self._get_most_salient_gradient(grads)
+        mostSalientGradient, mostSalientTimeStep = self._get_most_salient_point(grads)
+        gtIdx = np.argmax(self.label)
 
-        attackedPath = instance
-        r = np.linalg.norm(instance[0, :, :] - instance[0, tMax], axis = 1)
-        print(r.shape)
-        exit(1)
+        # euclidean distance from point of attack
+        r = np.linalg.norm(self.instance[0, :, :] -self.instance[0, mostSalientTimeStep, :], axis = 1)
 
-        return attackedPath
+        # dimension matching
+        mostSalientGradient = np.tile(mostSalientGradient, (r.shape[0],1))
+        r = np.transpose(np.tile(r, (2,1)))
+        
+        # attack and smooth
+        attackedPath = np.copy(self.origInstance)
+        attackedPath[0, :, :2] -= (np.exp(-5.0 * r) * mostSalientGradient * self.it )
+
+        return attackedPath 
 
     def _add_noise(self, grads, timeStepsToAttack):
 
@@ -110,6 +118,8 @@ class AdversarialPlanner:
             attackedPath = self._add_noise(grads, timeStepsToAttack=self.pointOfInterest)
         elif attack == 'one_pixel':
             attackedPath = self._one_pixel_attack(grads)
+        
+        self.it += 1
 
         return attackedPath
 
@@ -220,7 +230,7 @@ class AttackVisualizer:
         x, y = self._get_path(path)
         ax.scatter(x, y, color='blue')
 
-    def plot_paths_and_predictions(self, paths, predictions, timeStepToAttack):
+    def plot_paths_and_predictions(self, paths, predictions, timeStepToAttack, it):
         
         self.fig = plt.figure(figsize=(14,15))
         self.gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
@@ -239,6 +249,7 @@ class AttackVisualizer:
             self.col += 1
             self.row = 0 
 
+        plt.savefig('./data/saved_images/img-{}.png'.format(it))
         plt.show()
 
 def get_dataset(modelSelection, dataDirectory, algorithm):
@@ -268,7 +279,7 @@ def attack_paths_in_batch(modelSelection, dataDirectory, algorithm, attackType='
 
     analyzer = get_gradient_analyzer(modelSelection, dataDirectory, algorithm)
     scene = Scene('test_room')
-    windowOfInterest = 0.99 
+    windowOfInterest = 0.90 
     adversary = Adversary(analyzer, scene, windowOfInterest)
 
     dataset = get_dataset(modelSelection, dataDirectory, algorithm)
@@ -287,7 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--directory', type = str, default = '.\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
-    parser.add_argument('--attack', type=str, help='Adversarial attack [noist/one_pixel.', default = "noise")
+    parser.add_argument('--attack', type=str, help='Adversarial attack [noist/one_pixel].', default = "noise")
 
     args = parser.parse_args()
 

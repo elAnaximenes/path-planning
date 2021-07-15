@@ -1,6 +1,7 @@
 saved_paths/*
 __pycache__
 *.png
+*.mp4
 *.out
 car_models/saved_paths/
 batches*/
