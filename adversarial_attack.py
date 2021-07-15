@@ -11,6 +11,8 @@ from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
 from dubins_path_planner.scene import Scene
 import visualize_gradients
+from dubins_path_planner.car_models.dubins_model import DubinsCar
+from dubins_path_planner.car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading 
 
 class Adversary:
 
@@ -68,12 +70,62 @@ class AdversarialPlanner:
         self.attackType = attackType
         self.pointOfInterest = pointOfInterest
         self.perturbationRate = perturbationRate
+        self.dubinsCar = None 
         self.it = 1
+
+    def _setup_dubins_car(self, startPosition):
+
+        velocity = 1.0 
+        maxSteeringAngle = (math.pi / 4.0)
+        U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
+        dt = 0.01
+        dubinsCar = DubinsCar(startPosition, velocity, U, dt)
+
+        return dubinsCar
+    
+    def _reroute_through_point(self, normalVector, timeStep):
+
+        t1 = timeStep - 30
+        startPosition = np.array([self.origInstance[0, t1, 0] * 10.0, self.origInstance[0, t1, 1] * 10.0, (self.origInstance[0, t1, 2]*math.pi) + math.pi])
+
+        t2 = timeStep
+    
+        endPosition = np.array([(self.origInstance[0, t2, 0] * 10.0) + normalVector[0], (self.origInstance[0, t2, 1] * 10.0) + normalVector[1], (self.origInstance[0, t2, 2]*math.pi) + math.pi])
+        self.dubinsCar = self._setup_dubins_car(startPosition)
+        planner = DubinsOptimalPlannerFinalHeading(self.dubinsCar, startPosition, endPosition)
+        path = planner.run()
+
+        t3 = timeStep + 30
+        startPosition = endPosition
+        endPosition = np.array([self.origInstance[0, t3, 0] * 10.0, self.origInstance[0, t3, 1] * 10.0, (self.origInstance[0, t3, 2]*math.pi) + math.pi])
+        self.dubinsCar = self._setup_dubins_car(startPosition)
+        planner = DubinsOptimalPlannerFinalHeading(self.dubinsCar, startPosition, endPosition)
+        secondPath = planner.run()
+        path['x'].extend(secondPath['x'])
+        path['y'].extend(secondPath['y'])
+        path['theta'].extend(secondPath['theta'])
+
+        rerouting = np.transpose(np.array([path['x'][::10], path['y'][::10], path['theta'][::10]]))
+        print(rerouting.shape)
+        rerouting[:, 0] /= 10.0
+        rerouting[:, 1] /= 10.0
+        rerouting[:, 2] -= math.pi
+        rerouting[:, 2] /= math.pi
+
+        attackedPath = self.origInstance[0, :t1, :]
+        print(attackedPath.shape)
+        print(rerouting.shape, flush=True)
+        attackedPath = np.concatenate((attackedPath, rerouting,  np.copy(self.origInstance[0, t3:, :])), axis = 0)
+
+        attackedPath = attackedPath[np.newaxis, :, :]
+
+        return attackedPath
+        
 
     def _get_normal_vector(self, p1, p2):
 
         d = p2 - p1
-        normalVector = np.array([-1.0*d[0,1], d[0,0]])*10.0
+        normalVector = np.array([-1.0*d[0,1], d[0,0]])*100.0
 
         return normalVector
 
@@ -100,6 +152,9 @@ class AdversarialPlanner:
 
         normalVectorAtSalientPoint *= np.dot(10.0*mostSalientGradient, normalVectorAtSalientPoint)
 
+        attackedPath = self._reroute_through_point(normalVectorAtSalientPoint, mostSalientTimeStep)
+
+        """
         # euclidean distance from point of attack
         r = np.linalg.norm((self.instance[0, :, :] * 10.0) - (self.instance[0, mostSalientTimeStep, :] * 10.0), axis = 1)
 
@@ -110,6 +165,7 @@ class AdversarialPlanner:
         # attack and smooth
         attackedPath = np.copy(self.origInstance)
         attackedPath[0, :, :2] += (np.exp(-1.0*r) * normalVectors * self.it )
+        """
 
         return attackedPath 
 
