@@ -15,7 +15,7 @@ class SurfaceVisualizer:
         self.target = target
         self.scene = Scene('test_room')
         self._setup_figure()
-        self.paths = np.array(paths[:11])
+        self.paths = np.array(paths[:100])
         self.predictions = None
         self.scatter = scatter
         self.mesh = mesh
