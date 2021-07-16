@@ -119,7 +119,7 @@ class FeedForwardTester:
         self.model.load_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
         
         print('model weights were loaded')
-        self.dataset = self.dataset[:1000]
+        self.dataset = self.dataset.data[:1000]
         stepSize = 1
         timeSteps = [x*stepSize for x in range(1000)]
 
@@ -145,6 +145,82 @@ class FeedForwardTester:
     
         return self.accuracyInfo
 
+class FeedForwardGradientAnalyzer:
+
+    def __init__(self, model, weightsDir):
+
+        self.model = model
+        self.weightsDir = weightsDir
+        self.model.load_weights(os.path.join(self.weightsDir, 'feed_forward_final_weights'))
+        self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
+        self.losses = []
+        self.instance = None
+        self.label = None
+        self.gradientMagnitudes = None
+        self.grads = None
+        self.predictions = None
+
+    def _normalize_grads(self, grads):
+
+        maxXIdx = np.argmax(np.absolute(grads[:, :, 0]), axis=0)
+        maxYIdx = np.argmax(np.absolute(grads[:, :, 1]), axis=0)
+        maxThetaIdx = np.argmax(np.absolute(grads[:, :, 2]), axis=0)
+
+        for i, (x, y, z) in enumerate(zip(maxXIdx.tolist(), maxYIdx.tolist(), maxThetaIdx.tolist())):
+            grads[:, i, 0] /= grads[x, i, 0]
+            grads[:, i, 1] /= grads[y, i, 1]
+            grads[:, i, 2] /= grads[z, i, 2]
+
+        return grads
+
+    def _calculate_gradients_and_predictions(self):
+
+        grads = []
+        predictions = []
+        label = self.label
+        self.losses = []
+
+        x = np.zeros((1,3,1000))
+
+        timeStepsInPath = self.instance.shape[1]
+
+        if timeStepsInPath < 1000:
+            x[0, 0, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 0]  
+            x[0, 1, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 1]  
+            x[0, 2, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 2]  
+        else:
+            x[0, 0, :] = self.instance[0, :, 0]  
+            x[0, 1, :] = self.instance[0, :, 1]  
+            x[0, 2, :] = self.instance[0, :, 2]  
+
+        x = tf.constant(x, shape= (1,3,1000))
+
+        with tf.GradientTape() as tape:
+
+            tape.watch(x)
+            logits = self.model(x)
+            label = labe.reshape(1,5)
+            lossValue = self.loss_fn(label, logits)
+
+            self.losses.append(lossValue)
+
+            jacobian = tape.jacobian(logits, x)
+
+        self.grads = self._normalize_grads(grads)
+        self.predictions = np.array(predictions)
+
+    def analyze(self, instance, label, timeSteps=None):
+
+        if timeSteps is None:
+            timeSteps = instance.shape[1]
+
+        self.timeSteps = timeSteps
+        self.instance = instance
+        self.label = label
+
+        self._calculate_gradients_and_predictions()
+
+        return self.grads, self.predictions
 
 class FeedForwardGradientVisualizer:
 
@@ -156,12 +232,5 @@ class FeedForwardGradientVisualizer:
         self.model.load_weights(os.path.join(self.weightsDir, 'feed_forward_final_weights'))
         self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
         self.scene = scene
-
-    
-
-
-
-            
-
 
 

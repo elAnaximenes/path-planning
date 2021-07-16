@@ -8,6 +8,8 @@ batches*/
 *weights/
 saved_plots/
 saved_images/
+gradients/
+predictions/
 logs/
 training_history/*.json
 *.out

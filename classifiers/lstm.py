@@ -200,6 +200,7 @@ class LSTMGradientAnalyzer:
         maxXIdx = np.argmax(np.absolute(grads[:, :, 0]), axis=0)
         maxYIdx = np.argmax(np.absolute(grads[:, :, 1]), axis=0)
         maxThetaIdx = np.argmax(np.absolute(grads[:, :, 2]), axis=0)
+
         for i, (x, y, z) in enumerate(zip(maxXIdx.tolist(), maxYIdx.tolist(), maxThetaIdx.tolist())):
             grads[:, i, 0] /= grads[x, i, 0]
             grads[:, i, 1] /= grads[y, i, 1]

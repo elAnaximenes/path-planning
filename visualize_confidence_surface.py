@@ -1,106 +1,158 @@
-import json
+import numpy as np
+import matplotlib.pyplot as plt
+import os
 import csv
 import argparse
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
-import tensorflow as tf
-import logging
-tf.get_logger().setLevel(logging.ERROR)
-import json
-import matplotlib.pyplot as plt
+import sys
+from mpl_toolkits.mplot3d import Axes3D
 from dubins_path_planner.scene import Scene
-from data.mean_path_loader import MeanPathDataLoader 
-from classifiers.lstm import LSTM, LSTMGradientAnalyzer
+from data.mean_path_loader import MeanPathDataLoader
 
-def save_predictions(target, preds):
-    
-    fileName = './predictions/preds_{}.csv'.format(target)
-    with open(fileName, 'w') as f:
-        writer = csv.writer(f, delimiter=';')
-        for pred in preds:
-            writer.writerow(pred.tolist())
+class SurfaceVisualizer:
 
-def save_gradients(target, grads):
+    def __init__(self, target, paths, scatter=True, mesh=False, obs=False):
 
-    fileName = './gradients/grads_{}.csv'.format(target)
-    with open(fileName, 'w') as f:
-        writer = csv.writer(f, delimiter=';')
-        for grad in grads:
-            writer.writerow(grad.tolist())
+        self.target = target
+        self.scene = Scene('test_room')
+        self._setup_figure()
+        self.paths = np.array(paths[:11])
+        self.predictions = None
+        self.scatter = scatter
+        self.mesh = mesh
+        self.obs = obs
 
-def get_dataset(dataDir, algo, numBatches):
+    def _setup_figure(self):
 
-    valDataDir = os.path.join(dataDir, '{}_batches_train'.format(algo))
-    loader = MeanPathDataLoader(numBatches, valDataDir)
-    meanPathsData = loader.load()
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(projection='3d')
+        self.ax.set_xlim(self.scene.dimensions['xmin'], self.scene.dimensions['xmax'])
+        self.ax.set_ylim(self.scene.dimensions['ymin'], self.scene.dimensions['ymax'])
+        self.ax.set_zlim(0.0, 1.0)
+        self.ax.set_xlabel('x-position (m)')
+        self.ax.set_ylabel('y-position (m)')
+        self.ax.set_zlabel('GT-label confidence')
+        self.ax.set_title('Classifier confidence w.r.t. X and Y Position')
 
-    return meanPathsData
+    def _load_predictions(self):
 
-def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
+        fileName = os.path.join('./predictions/', 'preds_{}.csv'.format(self.target))
+        predictions = []
 
-    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algorithm, modelSelection.lower()))
-    analyzer = None
+        with open(fileName, 'r') as f:
 
-    if modelSelection.lower() == 'lstm':
-        model = LSTM()
-        analyzer = LSTMGradientAnalyzer(model, weightsDir)
-        print('got analyzer')
+            reader = csv.reader(f, delimiter=';')
+            for row in reader:
 
-    return analyzer
+                if len(row) ==  0:
+                    continue
+                predictionSingleInstance = []
+                for pred in row:
+                    pred = pred.strip('[]')
+                    pred = pred.split(',')
+                    pred = [float(p) for p in pred]
+                    predictionSingleInstance.append(pred)
 
-def get_model(modelSelection):
+                predictions.append(predictionSingleInstance)
 
-    if modelSelection == 'lstm':
+        self.predictions = np.array(predictions)
 
-        model = LSTM()
+    def _draw_cylinder(self, xCenter, yCenter, r, color='b'):
 
-    return model
+        maxZ = 1.0
+        if color != 'b':
+            maxZ = 0.2
 
-def visualize_confidence_surface(dataDir, algo, numBatches, modelSelection, target):
+        x = np.linspace(xCenter-r, xCenter+r, 100)
+        z = np.linspace(0.0, maxZ, 100)
+        xc, zc = np.meshgrid(x,z)
+        yc = np.sqrt(r**2 -  (xc - xCenter)**2) + yCenter
 
-    sceneName = 'test_room'
-    scene = Scene(sceneName)
-    model = get_model(modelSelection)
-    analyzer = get_gradient_analyzer(modelSelection, dataDir, algo)
-    meanPathsData = get_dataset(dataDir, algo, numBatches)
+        rstride = 20
+        cstride = 10
 
-    datasetsByTarget = meanPathsData.format_datasets_by_target()
+        a = 0.0
+        if color == 'b':
+            a = 0.5
+        else:
+            a = 0.5 
 
-    predictionsByTarget = {0:[], 1:[], 2:[], 3:[], 4:[]}
-    gradsByTarget = {0:[], 1:[], 2:[], 3:[], 4:[]}
+        self.ax.plot_surface(xc, yc, zc, alpha=a, rstride=rstride, cstride=cstride, color=color)
+        self.ax.plot_surface(xc, (2.0 * yCenter - yc), zc, alpha=a, rstride=rstride, cstride=cstride, color=color)
 
-    
-    i = 0
-    for instance, label in datasetsByTarget[target].data:
-            
-        grads, preds = analyzer.analyze(instance, label, 99)
-        gradsByTarget[target].append(grads)
-        predictionsByTarget[target].append(preds)
-        print(i, flush=True)
-        i+=1
+    def _plot_surface(self):
 
-    save_predictions(target, predictionsByTarget[target])
-    save_gradients(target, gradsByTarget[target])
-    
+        x = []
+        y = []
+        z = []
+        for i in range(self.predictions.shape[0]):
+
+            x.extend(self.paths[i, 0, :].tolist())
+            y.extend(self.paths[i, 1, :].tolist())
+            z.extend(self.predictions[i, :, target].tolist())
+
+        colorMap = plt.get_cmap('copper')
+        if self.scatter:
+            preds = self.ax.scatter(x, y, z, c=z, cmap = colorMap)
+        if self.mesh:
+            preds = self.ax.plot_trisurf(x, y, z, cmap=colorMap, alpha=0.8)
+
+        t = self.scene.targets[target]
+        self._draw_cylinder(t[0], t[1], t[2])
+
+        if self.obs:
+            for obs in self.scene.obstacles:
+                self._draw_cylinder(obs[0], obs[1], obs[2], 'teal')
+
+        self.fig.colorbar(preds, ax = self.ax, shrink = 0.5, aspect = 5)
+
+        plt.show()
+
+    def visualize(self):
+
+        self._load_predictions()
+        self._plot_surface()
+
+def get_dataset(target, dataDir, algo, numBatches):
+
+    dirToLoad = os.path.join(dataDir, '{}_batches_train'.format(algo))
+    split = 1.0
+    loader = MeanPathDataLoader(numBatches, dirToLoad)
+    dataset = loader.load()
+
+    return dataset
+
+def visualize_confidence_surface(target, dataDir, algo, numBatches, scatter, mesh, obs):
+
+    dataset = get_dataset(target, dataDir, algo, numBatches)
+    surfaceVisualizer = SurfaceVisualizer(target, dataset.pathsByLabel[target], scatter, mesh, obs)
+    surfaceVisualizer.visualize()
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
+    parser.add_argument('--target', type=int, default=0)
     parser.add_argument('--directory', type=str, default = './data/batches-train')
     parser.add_argument('--algo', type=str, help='Planning algorithm', default='rrt')
     parser.add_argument('--batches', type=int, help='number of training batches to load', default=10)
-    parser.add_argument('--model', type=str, default = 'lstm')
-    parser.add_argument('--target', type=int, default = 0)
+    parser.add_argument('--scatter', action='store_true', default=False)
+    parser.add_argument('--mesh', action='store_true', default=False)
+    parser.add_argument('--obs', action='store_true', default=False)
 
     args = parser.parse_args()
 
+    target = args.target
     dataDir = args.directory
     if dataDir == 'tower':
         dataDir = 'D:\\path_planning_data\\'
 
     algo = args.algo
     numBatches = args.batches
-    modelSelection = args.model.lower()
-    target = args.target
+    scatter = args.scatter
+    mesh = args.mesh
+    obs = args.obs
 
-    visualize_confidence_surface(dataDir, algo, numBatches, modelSelection, target)
+    if not scatter and not mesh:
+        print('Please specify --scatter or --mesh')
+        sys.exit(2)
+
+    visualize_confidence_surface(target, dataDir, algo, numBatches, scatter, mesh, obs)
