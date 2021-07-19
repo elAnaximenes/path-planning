@@ -117,9 +117,10 @@ class FeedForwardTester:
     def test(self):
 
         self.model.load_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
-        
         print('model weights were loaded')
+
         self.dataset = self.dataset.data[:1000]
+        # Iteratively fill input array, simulating a timeseries
         stepSize = 1
         timeSteps = [x*stepSize for x in range(1000)]
 
@@ -180,19 +181,23 @@ class FeedForwardGradientAnalyzer:
         label = self.label
         self.losses = []
 
+        # this is our input array, 'x,y,theta' x timesteps
         x = np.zeros((1,3,1000))
 
         timeStepsInPath = self.instance.shape[1]
 
+        # pad short sequences
         if timeStepsInPath < 1000:
             x[0, 0, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 0]  
             x[0, 1, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 1]  
             x[0, 2, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 2]  
+        # truncate long sequences
         else:
             x[0, 0, :] = self.instance[0, :, 0]  
             x[0, 1, :] = self.instance[0, :, 1]  
             x[0, 2, :] = self.instance[0, :, 2]  
 
+        # array to tensor
         x = tf.constant(x, shape= (1,3,1000))
 
         with tf.GradientTape() as tape:
@@ -204,17 +209,14 @@ class FeedForwardGradientAnalyzer:
 
             self.losses.append(lossValue)
 
+            # gradient for each output logit w.r.t. inputs x,y,theta
             jacobian = tape.jacobian(logits, x)
 
         self.grads = self._normalize_grads(grads)
         self.predictions = np.array(predictions)
 
-    def analyze(self, instance, label, timeSteps=None):
+    def analyze(self, instance, label):
 
-        if timeSteps is None:
-            timeSteps = instance.shape[1]
-
-        self.timeSteps = timeSteps
         self.instance = instance
         self.label = label
 

@@ -129,7 +129,6 @@ class CNNTester:
 
         return np.array([timeseries])
 
-
     def test(self):
 
         self.model.load_weights(os.path.join(self.weightsDir,'cnn_final_weights'))
@@ -164,9 +163,4 @@ class CNNTester:
 
             self.model.reset_states()
 
-
-
         return self.accuracyInfo
-
-
-                

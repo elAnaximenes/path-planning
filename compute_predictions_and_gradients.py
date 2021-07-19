@@ -74,10 +74,6 @@ def visualize_confidence_surface(dataDir, algo, numBatches, modelSelection, targ
         grads, preds = analyzer.analyze(instance, label, 99)
         gradsByTarget[target].append(grads)
         predictionsByTarget[target].append(preds)
-        print(i, flush=True)
-        i+=1
-        if i == 100:
-            break
 
     save_predictions(target, predictionsByTarget[target])
     save_gradients(target, gradsByTarget[target])
