@@ -75,17 +75,12 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 400
+        self.maxIter = 300
         self.leg=None
         if self.animate:
             self._setup_animation()
         self.text = None
         self.imgcount = 0
-
-        for i, target in enumerate(scene.targets):
-
-            print(i, target)
-
 
     def _select_random_target(self):
 
@@ -259,9 +254,9 @@ class DubinsCarOptimalRRT:
         # search tree for nearest neighbor to new point
         for node in self.nodeList:
 
-            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint))
+            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint[:2]))
 
-            # ignore nodes that are too close to point 
+            # ignore nodes that are too close to point or too far from point
             if euclideanDistance < (2.0 * self.car.minTurningRadius) or euclideanDistance > self.nearestNeighborRadius:
                 continue
 
@@ -309,7 +304,6 @@ class DubinsCarOptimalRRT:
                     if node.parent == minCostNode:
                         return node, None 
             
-
             # add node to tree/add goal node to goal node list
             newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
 
@@ -352,8 +346,11 @@ class DubinsCarOptimalRRT:
             if nearNode.numChildren > 0:
                 pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
             else:
-                pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
-                pathToNear = self._get_dubins_path(newNode, nearNode.position)
+                euclideanDistance = abs(np.linalg.norm(newNode.position[:2] - nearNode.position[:2]))
+                pathToNear = None
+                if euclideanDistance > (2.0 * self.car.minTurningRadius):
+                    pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
+                    pathToNear = self._get_dubins_path(newNode, nearNode.position)
 
             if pathToNear is None:
                 continue

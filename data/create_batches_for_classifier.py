@@ -16,12 +16,12 @@ from dubins_path_planner.run_optimal_RRT import run_optimal_RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName):
 
-    with open('./data/batches-new/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
+    with open('./batches-new/{}_batch_{}.json'.format(sceneName, batchNum), 'w') as outFile:
         json.dump(samplesInBatch, outFile)
 
 def save_csv_format(samplesInBatch, batchNum, sceneName):
 
-    with open('./data/batches-new/{}_batch_{}.csv'.format(sceneName, batchNum), 'w') as outFile:
+    with open('./batches-new/{}_batch_{}.csv'.format(sceneName, batchNum), 'w') as outFile:
 
         writer = csv.writer(outFile, delimiter=',')
 
@@ -57,7 +57,6 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
 
     samplesInBatch = {}
     for sampleNum in range(args.batchsize):
-
 
         print('sample number: {}'.format(sampleNum), flush=False)
 

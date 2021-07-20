@@ -12,7 +12,6 @@ def check_valid_start(scene, startPosition):
 
         if abs(np.linalg.norm(startPosition[:2] - obstacle[:2])) < obstacle[2]:
                 return False
-
     return True
 
 def run_optimal_RRT(animate=False, sceneName='test_scene'):
@@ -66,6 +65,7 @@ if __name__ == '__main__':
                 animate = True
 
     seed = random.randint(1, 10000)
+    #seed = 5441
     print('seed:', seed)
     random.seed(seed)
     np.random.seed(seed)
