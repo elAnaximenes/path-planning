@@ -18,7 +18,7 @@ from data.loaders.val_loader import ValidateDataLoader
 
 class GradientVisualizer:
 
-    def __init__(self, target, paths, scatter=True, mesh=False, obs=False):
+    def __init__(self, target, paths, scatter=True, mesh=False, obs=False, modelSelection='lstm'):
 
         self.target = target
         self.scene = Scene('test_room')
@@ -28,6 +28,7 @@ class GradientVisualizer:
         self.scatter = scatter
         self.mesh = mesh
         self.obs = obs
+        self.modelSelection = modelSelection
 
     def _setup_figure(self):
 
@@ -41,7 +42,7 @@ class GradientVisualizer:
         self.x_ax.set_xlabel('x-position (m)')
         self.x_ax.set_ylabel('y-position (m)')
         self.x_ax.set_zlabel('GT-label confidence derivative w.r.t. X')
-        self.x_ax.set_title('Classifier confidence derivative w.r.t. X Position')
+        self.x_ax.set_title('{} confidence derivative w.r.t. X Position'.format(self.modelSelection))
 
         self.y_ax = self.fig.add_subplot(1,2,2, projection='3d')
 
@@ -52,11 +53,11 @@ class GradientVisualizer:
         self.y_ax.set_xlabel('x-position (m)')
         self.y_ax.set_ylabel('y-position (m)')
         self.y_ax.set_zlabel('GT-label confidence derivative w.r.t. Y')
-        self.y_ax.set_title('Classifier confidence derivative w.r.t. Y Position')
+        self.y_ax.set_title('{} confidence derivative w.r.t. Y Position'.format(self.modelSelection))
 
     def _load_gradients(self):
 
-        fileName = os.path.join('./gradients/', 'grads_{}.csv'.format(self.target))
+        fileName = os.path.join('./gradients/', '{}/grads_{}.csv'.format(self.modelSelection, self.target))
         gradients = []
 
         with open(fileName, 'r') as f:
@@ -141,13 +142,11 @@ class GradientVisualizer:
             z.extend(self.gradients[i, :, index].tolist())
         #x, y, z = self._compute_grid(index)
 
-
         colorMap = plt.get_cmap('Spectral')
         if self.scatter:
             preds = ax.scatter(x, y, z, c=z, cmap = colorMap)
         if self.mesh:
             preds = ax.plot_trisurf(x, y, z, cmap=colorMap, alpha=0.8)
-
 
         t = self.scene.targets[target]
         self._draw_cylinder(ax, t[0], t[1], t[2])
@@ -170,7 +169,7 @@ class GradientVisualizer:
 
 class ConfidenceVisualizer:
 
-    def __init__(self, target, paths, scatter=True, mesh=False, obs=False):
+    def __init__(self, target, paths, scatter=True, mesh=False, obs=False, modelSelection='lstm'):
 
         self.target = target
         self.scene = Scene('test_room')
@@ -180,6 +179,7 @@ class ConfidenceVisualizer:
         self.scatter = scatter
         self.mesh = mesh
         self.obs = obs
+        self.modelSelection = modelSelection
 
     def _setup_figure(self):
 
@@ -198,7 +198,7 @@ class ConfidenceVisualizer:
 
     def _load_predictions(self):
 
-        fileName = os.path.join('./predictions/', 'preds_{}.csv'.format(self.target))
+        fileName = os.path.join('./predictions/', '{}/preds_{}.csv'.format(self.modelSelection, self.target))
         predictions = []
 
         with open(fileName, 'r') as f:
@@ -280,12 +280,6 @@ class ConfidenceVisualizer:
 
 def get_dataset(target, dataDir, algo, numBatches):
 
-    """
-    dirToLoad = os.path.join(dataDir, '{}_batches_train'.format(algo))
-    split = 1.0
-    loader = MeanPathDataLoader(numBatches, dirToLoad)
-    dataset = loader.load()
-    """
     valDataDir = os.path.join(dataDir, '{}_batches_train'.format(algo))
     stepSize = 100
     loader = ValidateDataLoader(numBatches, valDataDir, stepSize)
@@ -293,13 +287,13 @@ def get_dataset(target, dataDir, algo, numBatches):
 
     return dataset
 
-def visualize_network_surface(target, dataDir, algo, numBatches, scatter, mesh, obs, surface='predictions'):
+def visualize_network_surface(target, dataDir, algo, numBatches, scatter, mesh, obs, surface='predictions', modelSelection='lstm'):
 
     dataset = get_dataset(target, dataDir, algo, numBatches)
     if surface == 'predictions':
-        surfaceVisualizer = ConfidenceVisualizer(target, dataset.pathsByLabel[target], scatter, mesh, obs)
+        surfaceVisualizer = ConfidenceVisualizer(target, dataset.pathsByLabel[target], scatter, mesh, obs, modelSelection)
     elif surface == 'gradients':
-        surfaceVisualizer = GradientVisualizer(target, dataset.pathsByLabel[target], scatter, mesh, obs)
+        surfaceVisualizer = GradientVisualizer(target, dataset.pathsByLabel[target], scatter, mesh, obs, modelSelection)
     surfaceVisualizer.visualize()
 
 if __name__ == '__main__':
@@ -311,6 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('--batches', type=int, help='number of training batches to load', default=10)
     parser.add_argument('--surface', type=str, help='predictions/gradients', default='predictions')
     parser.add_argument('--scatter', action='store_true', default=False)
+    parser.add_argument('--model', type=str, help='Network Model Name', default='lstm')
     parser.add_argument('--mesh', action='store_true', default=False)
     parser.add_argument('--obs', action='store_true', default=False)
 
@@ -328,9 +323,10 @@ if __name__ == '__main__':
     mesh = args.mesh
     obs = args.obs
     surface = args.surface
+    modelSelection = args.model.lower()
 
     if not scatter and not mesh:
         print('Please specify --scatter or --mesh')
         sys.exit(2)
 
-    visualize_network_surface(target, dataDir, algo, numBatches, scatter, mesh, obs, surface)
+    visualize_network_surface(target, dataDir, algo, numBatches, scatter, mesh, obs, surface, modelSelection)
