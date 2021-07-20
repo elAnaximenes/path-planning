@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 from car_models.dubins_model import DubinsCar
-from RRT import DubinsCarRRT
+from planning_algorithms.RRT import DubinsCarRRT
 from scene import Scene
 
 def check_valid_start(scene, startPosition):

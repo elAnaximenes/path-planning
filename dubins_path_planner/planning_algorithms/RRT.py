@@ -6,10 +6,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import csv
-from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
-from .car_models.dubins_model import DubinsCar
+import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from car_models.dubins_optimal_planner import DubinsOptimalPlanner
+from car_models.dubins_model import DubinsCar
 from matplotlib.lines import Line2D
-from .scene import Scene
+from scene import Scene
 
 """
 USAGE: python RRT.py [animate] [scene_selection]

@@ -22,7 +22,7 @@ from classifiers.feed_forward import FeedForward, FeedForwardGradientAnalyzer
 
 def save_predictions(target, preds, modelSelection):
     
-    fileName = './predictions/{}/preds_{}.csv'.format(modelSelection, target)
+    fileName = './predictions/{}/tar_{}.csv'.format(modelSelection, target)
     with open(fileName, 'w') as f:
         writer = csv.writer(f, delimiter=';')
         for pred in preds:
@@ -30,7 +30,7 @@ def save_predictions(target, preds, modelSelection):
 
 def save_gradients(target, grads, modelSelection):
 
-    fileName = './gradients/{}/grads_{}.csv'.format(modelSelection, target)
+    fileName = './gradients/{}/tar_{}.csv'.format(modelSelection, target)
     with open(fileName, 'w') as f:
         writer = csv.writer(f, delimiter=';')
         for grad in grads:
@@ -91,8 +91,8 @@ def compute_predictions_and_gradients(dataDir, algo, numBatches, modelSelection,
         print(i, flush=True)
         i += 1
 
-    save_predictions(target, predictions)
-    save_gradients(target, gradients)
+    save_predictions(target, predictions, modelSelection)
+    save_gradients(target, gradients, modelSelection)
     
 if __name__ == '__main__':
 

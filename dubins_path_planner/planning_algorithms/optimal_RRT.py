@@ -7,11 +7,16 @@ import matplotlib.pyplot as plt
 import sys
 import json
 import csv
-from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
-from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
-from .car_models.dubins_model import DubinsCar
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from car_models.dubins_optimal_planner import DubinsOptimalPlanner
+from car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
+from car_models.dubins_model import DubinsCar
 from matplotlib.lines import Line2D
-from .scene import Scene
+from scene import Scene
 
 class DubinsCarOptimalRRT:
 
@@ -624,7 +629,7 @@ class DubinsCarOptimalRRT:
                 node.plottedPath = plottedPath
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
-        #plt.pause(0.00001)
+        plt.pause(0.00001)
         self.imgcount += 1
         self.text.remove()
 

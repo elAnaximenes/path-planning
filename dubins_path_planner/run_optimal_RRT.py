@@ -3,7 +3,7 @@ import math
 import numpy as np
 import random
 from car_models.dubins_model import DubinsCar
-from optimal_RRT import DubinsCarOptimalRRT
+from planning_algorithms.optimal_RRT import DubinsCarOptimalRRT
 from scene import Scene
 
 def check_valid_start(scene, startPosition):
@@ -64,6 +64,7 @@ if __name__ == '__main__':
         for arg in sys.argv[1:]:
             if arg == 'animate':
                 animate = True
+
     seed = random.randint(1, 10000)
     print('seed:', seed)
     random.seed(seed)

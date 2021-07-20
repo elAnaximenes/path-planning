@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 import sys
 import json
 import csv
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
 from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
 from .car_models.dubins_model import DubinsCar
@@ -50,7 +55,7 @@ class DubinsCarOptimalRRT:
             return rep
             
 
-    def __init__(self, dubinsCar, scene, animate = False):
+    def __init__(self, dubinsCar, scene, model, animate = False):
 
         # tree primitives
         self.car = dubinsCar
@@ -65,6 +70,9 @@ class DubinsCarOptimalRRT:
         # path to goal
         self.pathToGoalNodes = None
         self.plottedPathToGoal = [] 
+
+        # classifier
+        self.model = model
 
         # animation
         self.animate = animate
@@ -624,7 +632,7 @@ class DubinsCarOptimalRRT:
                 node.plottedPath = plottedPath
 
         #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
-        #plt.pause(0.00001)
+        plt.pause(0.00001)
         self.imgcount += 1
         self.text.remove()
 
