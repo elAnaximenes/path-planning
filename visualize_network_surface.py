@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import os
 import csv
 import argparse
+import math
 import sys
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 from dubins_path_planner.scene import Scene
 from data.mean_path_loader import MeanPathDataLoader
 
@@ -92,21 +94,47 @@ class GradientVisualizer:
         if color == 'b':
             a = 0.5
         else:
-            a = 0.5 
+            a = None 
 
         ax.plot_surface(xc, yc, zc, alpha=a, rstride=rstride, cstride=cstride, color=color)
         ax.plot_surface(xc, (2.0 * yCenter - yc), zc, alpha=a, rstride=rstride, cstride=cstride, color=color)
+
+    def _compute_grid(self, index):
+
+        gridSize = 20 
+
+        x = np.linspace(-10.0, 10.0, gridSize)
+        y = np.linspace(-10.0, 10.0, gridSize)
+
+        z = np.zeros((gridSize, gridSize)) 
+        count = np.ones((gridSize, gridSize))
+
+        for i in range(self.paths.shape[0]-1):
+
+            for j in range(self.paths.shape[2]-1):
+
+                gridRow = math.floor((gridSize * (self.paths[i, 0, j] + 10.0)) / 20.0)
+                gridCol = math.floor((gridSize * (self.paths[i, 1, j] + 10.0)) / 20.0)
+                z[gridRow, gridCol] += self.gradients[i, j, index]
+                count[gridRow, gridCol] += 1.0
+
+        z /= count
+
+        return x, y, z
 
     def _plot_surface(self, ax, index):
 
         x = []
         y = []
         z = []
+
         for i in range(self.gradients.shape[0]):
 
             x.extend(self.paths[i, 0, :-1].tolist())
             y.extend(self.paths[i, 1, :-1].tolist())
             z.extend(self.gradients[i, :, index].tolist())
+        #x, y, z = self._compute_grid(index)
+
 
         colorMap = plt.get_cmap('Spectral')
         if self.scatter:
@@ -114,12 +142,16 @@ class GradientVisualizer:
         if self.mesh:
             preds = ax.plot_trisurf(x, y, z, cmap=colorMap, alpha=0.8)
 
+
         t = self.scene.targets[target]
         self._draw_cylinder(ax, t[0], t[1], t[2])
 
         if self.obs:
             for obs in self.scene.obstacles:
                 self._draw_cylinder(ax, obs[0], obs[1], obs[2], 'teal')
+
+        x, y = np.meshgrid(x, y)
+        preds = ax.plot_surface(x,y,z, cmap = cm.Spectral, alpha = 0.9)
 
         self.fig.colorbar(preds, ax = ax, shrink = 0.5, aspect = 5)
 
@@ -170,6 +202,7 @@ class ConfidenceVisualizer:
 
                 if len(row) ==  0:
                     continue
+
                 predictionSingleInstance = []
                 for pred in row:
                     pred = pred.strip('[]')
@@ -209,10 +242,12 @@ class ConfidenceVisualizer:
         x = []
         y = []
         z = []
+        print(self.predictions.shape)
+        print(self.paths.shape)
         for i in range(self.predictions.shape[0]):
 
-            x.extend(self.paths[i, 0, :].tolist())
-            y.extend(self.paths[i, 1, :].tolist())
+            x.extend(self.paths[i, 0, ].tolist())
+            y.extend(self.paths[i, 1, ].tolist())
             z.extend(self.predictions[i, :, target].tolist())
 
         colorMap = plt.get_cmap('copper')
@@ -228,7 +263,7 @@ class ConfidenceVisualizer:
             for obs in self.scene.obstacles:
                 self._draw_cylinder(obs[0], obs[1], obs[2], 'teal')
 
-        self.fig.colorbar(preds, ax = self.ax, shrink = 0.5, aspect = 5)
+        self.fig.colorbar(preds, ax = self.ax, shrink = 0.3, aspect = 5)
 
         plt.show()
 
@@ -239,9 +274,15 @@ class ConfidenceVisualizer:
 
 def get_dataset(target, dataDir, algo, numBatches):
 
+    """
     dirToLoad = os.path.join(dataDir, '{}_batches_train'.format(algo))
     split = 1.0
     loader = MeanPathDataLoader(numBatches, dirToLoad)
+    dataset = loader.load()
+    """
+    valDataDir = os.path.join(dataDir, '{}_batches_train'.format(algo))
+    stepSize = 100
+    loader = ValidateDataLoader(numBatches, valDataDir, stepSize)
     dataset = loader.load()
 
     return dataset
@@ -260,7 +301,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--target', type=int, default=0)
     parser.add_argument('--directory', type=str, default = './data/batches-train')
-    parser.add_argument('--algo', type=str, help='Planning algorithm', default='rrt')
+    parser.add_argument('--algo', type=str, help='Planning algorithm', default='optimal_rrt')
     parser.add_argument('--batches', type=int, help='number of training batches to load', default=10)
     parser.add_argument('--surface', type=str, help='predictions/gradients', default='predictions')
     parser.add_argument('--scatter', action='store_true', default=False)
@@ -268,6 +309,7 @@ if __name__ == '__main__':
     parser.add_argument('--obs', action='store_true', default=False)
 
     args = parser.parse_args()
+    print(args, flush=True)
 
     target = args.target
     dataDir = args.directory

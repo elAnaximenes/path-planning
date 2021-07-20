@@ -120,7 +120,6 @@ class AdversarialPlanner:
         attackedPath = attackedPath[np.newaxis, :, :]
 
         return attackedPath
-        
 
     def _get_normal_vector(self, p1, p2):
 

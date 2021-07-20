@@ -11,7 +11,6 @@ class LstmTrainDataLoader():
 
     def __init__(self, split, numBatches, dataDirectory, batchSize = 512, downSampleStride = 50):
 
-        #super().__init__(split, numBatches, dataDirectory=dataDirectory)
         self.batchSize = batchSize
         self.downSampleStride = downSampleStride
         self.numBatchesToLoad = int(numBatches)

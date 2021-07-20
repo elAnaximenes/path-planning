@@ -2,6 +2,7 @@ import json
 import csv
 import argparse
 import os
+import numpy as np
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow as tf
 import logging
@@ -10,6 +11,7 @@ import json
 import matplotlib.pyplot as plt
 from dubins_path_planner.scene import Scene
 from data.mean_path_loader import MeanPathDataLoader 
+from data.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
 
 def save_predictions(target, preds):
@@ -31,10 +33,11 @@ def save_gradients(target, grads):
 def get_dataset(dataDir, algo, numBatches):
 
     valDataDir = os.path.join(dataDir, '{}_batches_train'.format(algo))
-    loader = MeanPathDataLoader(numBatches, valDataDir)
-    meanPathsData = loader.load()
+    stepSize = 100
+    loader = ValidateDataLoader(numBatches, valDataDir, stepSize)
+    dataset = loader.load()
 
-    return meanPathsData
+    return dataset 
 
 def get_gradient_analyzer(modelSelection, dataDirectory, algorithm):
 
@@ -61,22 +64,26 @@ def visualize_confidence_surface(dataDir, algo, numBatches, modelSelection, targ
     scene = Scene(sceneName)
     model = get_model(modelSelection)
     analyzer = get_gradient_analyzer(modelSelection, dataDir, algo)
-    meanPathsData = get_dataset(dataDir, algo, numBatches)
 
-    datasetsByTarget = meanPathsData.format_datasets_by_target()
+    dataset = get_dataset(dataDir, algo, numBatches)
 
-    predictionsByTarget = {0:[], 1:[], 2:[], 3:[], 4:[]}
-    gradsByTarget = {0:[], 1:[], 2:[], 3:[], 4:[]}
+    predictions = []
+    gradients = []
 
     i = 0
-    for instance, label in datasetsByTarget[target].data:
-            
-        grads, preds = analyzer.analyze(instance, label, 99)
-        gradsByTarget[target].append(grads)
-        predictionsByTarget[target].append(preds)
+    for instance, label in dataset.data:
 
-    save_predictions(target, predictionsByTarget[target])
-    save_gradients(target, gradsByTarget[target])
+        if np.argmax(label) != target:
+            continue
+            
+        grads, preds = analyzer.analyze(instance, label)
+        predictions.append(preds)
+        gradients.append(grads)
+        print(i, flush=True)
+        i += 1
+
+    save_predictions(target, predictions)
+    save_gradients(target, gradients)
     
 if __name__ == '__main__':
 
