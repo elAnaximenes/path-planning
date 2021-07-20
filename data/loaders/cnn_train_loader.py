@@ -2,7 +2,6 @@ import numpy as np
 import os
 import json
 
-
 class CNNTrainDataLoader():
 
     def __init__(self, split, numBatches, dataDirectory, batchSize=512):

@@ -1,10 +1,16 @@
 import json
 import argparse
 import os
+import sys
 import json
 import matplotlib.pyplot as plt
+from mean_path_loader import MeanPathDataLoader 
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from dubins_path_planner.scene import Scene
-from data.mean_path_loader import MeanPathDataLoader 
 
 def plot_mean_paths(dataset, scene):
 

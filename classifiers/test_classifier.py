@@ -8,9 +8,15 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from data.val_loader import ValidateDataLoader
-from classifiers.lstm import LSTM, LSTMTester
-from classifiers.feed_forward import FeedForward, FeedForwardTester
+import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from data.loaders.val_loader import ValidateDataLoader
+from lstm import LSTM, LSTMTester
+from feed_forward import FeedForward, FeedForwardTester
 
 def plot_performance(performance, modelSelection, algo):
 

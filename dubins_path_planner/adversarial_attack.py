@@ -7,12 +7,16 @@ import matplotlib.pyplot as plt
 import os
 import math
 from matplotlib import gridspec
-from data.val_loader import ValidateDataLoader
+from scene import Scene
+from car_models.dubins_model import DubinsCar
+from car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading 
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from data.loaders.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
-from dubins_path_planner.scene import Scene
-import visualize_gradients
-from dubins_path_planner.car_models.dubins_model import DubinsCar
-from dubins_path_planner.car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading 
 
 class Adversary:
 

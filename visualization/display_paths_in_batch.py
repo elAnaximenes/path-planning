@@ -1,7 +1,15 @@
 import matplotlib.pyplot as plt
 import json
 import argparse
+import os
+import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 import dubins_path_planner.RRT as RRT
+from dubins_path_planner.scene import Scene
 
 def draw_scene(scene, path, sampleNum):
 
@@ -67,6 +75,8 @@ if __name__ == '__main__':
     parser.add_argument('--format', type=str, help='Batch file format.', default='json')
     parser.add_argument('--start_index', type=int, help='What index to begin saving batches at', default=0)
     parser.add_argument('--directory', type = str, default = './data/batches-train')
+    parser.add_argument('--algo', type = str, default = 'RRT')
+
     args = parser.parse_args()
 
     sceneName = args.scene
@@ -77,9 +87,10 @@ if __name__ == '__main__':
     numSamples = args.batchsize
     saveFormat = args.format 
     startIndex = args.start_index
+    algo = args.algo
     dataDirectory = args.directory
     if dataDirectory == 'tower':
-        dataDirectory = 'D:\\path_planning_data\\batches-train'
+        dataDirectory = 'D:\\path_planning_data\\{}_batches_train'.format(algo)
 
     paths = load_paths(sceneName, batchNum, numSamples, saveFormat, dataDirectory)
     for i in range(numSamples):

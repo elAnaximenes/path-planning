@@ -1,10 +1,16 @@
 import sys
+import os
 import argparse
 import csv
 import json
 import dubins_path_planner.RRT
 import numpy as np
 import random
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from run_RRT import run_RRT
 from run_optimal_RRT import run_optimal_RRT
 

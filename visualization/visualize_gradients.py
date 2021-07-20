@@ -8,8 +8,14 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from data.val_loader import ValidateDataLoader
-from data.mean_path_loader import MeanPathDataLoader 
+import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from data.loaders.val_loader import ValidateDataLoader
+from data.loaders.mean_path_loader import MeanPathDataLoader 
 from classifiers.lstm import LSTM, LSTMGradientVisualizer
 from classifiers.feed_forward import FeedForward, FeedForwardGradientVisualizer
 from dubins_path_planner.scene import Scene

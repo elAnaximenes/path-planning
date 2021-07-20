@@ -9,11 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-from classifiers.feed_forward import FeedForward, FeedForwardTrainer
-from classifiers.lstm import LSTM, LSTMTrainer
-#from classifiers.cnn import CNN, CNNTrainer
-from data.feed_forward_train_loader import FeedForwardTrainDataLoader
-from data.lstm_train_loader import LstmTrainDataLoader
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
+from feed_forward import FeedForward, FeedForwardTrainer
+from lstm import LSTM, LSTMTrainer
+#from cnn import CNN, CNNTrainer
+from data.loaders.feed_forward_train_loader import FeedForwardTrainDataLoader
+from data.loaders.lstm_train_loader import LstmTrainDataLoader
 from training_history.plot_training_history import plot_training_history
 
 def build_model(modelSelection, inputShape):

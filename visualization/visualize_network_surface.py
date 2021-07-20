@@ -5,10 +5,16 @@ import csv
 import argparse
 import math
 import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from dubins_path_planner.scene import Scene
-from data.mean_path_loader import MeanPathDataLoader
+from data.loaders.mean_path_loader import MeanPathDataLoader
+from data.loaders.val_loader import ValidateDataLoader 
 
 class GradientVisualizer:
 

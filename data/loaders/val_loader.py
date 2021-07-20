@@ -4,7 +4,6 @@ import os
 import math
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-from .base_loaders.loaders import DataLoader 
 
 class ValidationDataSet:
 

@@ -9,9 +9,14 @@ import logging
 tf.get_logger().setLevel(logging.ERROR)
 import json
 import matplotlib.pyplot as plt
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 from dubins_path_planner.scene import Scene
-from data.mean_path_loader import MeanPathDataLoader 
-from data.val_loader import ValidateDataLoader
+from data.loaders.mean_path_loader import MeanPathDataLoader 
+from data.loaders.val_loader import ValidateDataLoader
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
 
 def save_predictions(target, preds):
