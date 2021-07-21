@@ -40,7 +40,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
     samplesInBatch = {}
     for sampleNum in range(args.batchsize):
 
-        print('sample number: {}'.format(sampleNum), flush=False)
+        print('sample number: {}'.format(sampleNum), flush=True)
 
         # uncomment for debugging
         """
