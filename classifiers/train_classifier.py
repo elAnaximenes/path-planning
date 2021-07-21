@@ -124,7 +124,7 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=Fal
     # build classifier
     inputShape = x_train[0].shape[1]
     model = build_model(modelSelection, inputShape)
-    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algo, modelSelection.lower()))
+    weightsDir = os.path.join(dataDirectory, '{}_dataset/{}_{}_weights'.format(sceneName, algo, modelSelection.lower()))
     trainer = get_trainer(modelSelection, model, weightsDir)
     print('successfully loaded data and built model')
 

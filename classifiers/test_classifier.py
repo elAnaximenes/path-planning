@@ -71,7 +71,7 @@ def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName=
 
     loader = None
 
-    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_validate'.format(tower_defense, algo)) 
+    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_validate'.format(sceneName, algo)) 
     loader =ValidateDataLoader(numBatches, trainingDataDir)
     dataset = loader.load()
     print('dataset loaded')
@@ -80,7 +80,7 @@ def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName=
     model = build_model(modelSelection, inputShape)
     print('model loaded')
 
-    weightsDir = os.path.join(dataDirectory, '{}_{}_weights'.format(algo, modelSelection.lower()))
+    weightsDir = os.path.join(dataDirectory, '{}_dataset/{}_{}_weights'.format(sceneName, algo, modelSelection.lower()))
     print(weightsDir)
     tester = get_tester(modelSelection, dataset, model, weightsDir) 
     print('tester loaded')

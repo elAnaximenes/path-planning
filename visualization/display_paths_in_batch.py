@@ -26,7 +26,7 @@ def load_json(sceneName, batchNum, dataDirectory):
 
     print('loading paths')
     
-    with open('{}/{}_batch_{}.json'.format(dataDirectory,sceneName, batchNum), 'r') as f:
+    with open('{}/{}_batch_{}.json'.format(dataDirectory, sceneName, batchNum), 'r') as f:
         paths = json.load(f)
     print('paths loaded')
 

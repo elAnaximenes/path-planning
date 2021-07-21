@@ -53,44 +53,61 @@ def load_batch_json(batchFileName):
 
     return pathLengths, labels
 
-pathLengths = []
-labels = []
-batchFileNames = os.listdir('./batches-train/')
+def profile_data(datasetDirectory, sceneName, algo)
 
-for batchFileName in batchFileNames:
-    print(batchFileName)
+    pathLengths = []
+    labels = []
+    trainDataDir = '{}/{}_dataset/{}_batches-train/'.format(datasetDirectory, sceneName, algo)
+    batchFileNames = os.listdir(trainDataDir)
 
-    lengths, targets = load_batch_json(batchFileName)
+    for batchFileName in batchFileNames:
 
-    labels += targets 
-    pathLengths += lengths
+        batchFileName = os.path.join(trainDataDir, batchFileName)
+        print(batchFileName)
 
-longestPath = 0
-for pathL in pathLengths:
-    if pathL > longestPath:
-        longestPath = pathL
+        lengths, targets = load_batch_json(batchFileName)
 
-print('longestPath:', longestPath)
+        labels += targets 
+        pathLengths += lengths
 
-print('label length', len(labels))
-print('lengths length', len(pathLengths))
-mean, std = histogram_path_lengths(pathLengths)
+    longestPath = 0
+    for pathL in pathLengths:
+        if pathL > longestPath:
+            longestPath = pathL
 
-print('Path length mean:', mean)
-print('Path length std:', std)
+    print('longestPath:', longestPath)
 
-targetCounts = {}
+    print('label length', len(labels))
+    print('lengths length', len(pathLengths))
+    mean, std = histogram_path_lengths(pathLengths)
 
-for label in labels:
+    print('Path length mean:', mean)
+    print('Path length std:', std)
 
-    if label not in targetCounts:
-        targetCounts[label] = 0
+    targetCounts = {}
 
-    targetCounts[label] += 1
+    for label in labels:
 
-plt.bar(targetCounts.keys(), targetCounts.values())
+        if label not in targetCounts:
+            targetCounts[label] = 0
 
-plt.title('Distribution of target classes')
-plt.xlabel('Target Index')
-plt.ylabel('Count in training set')
-plt.show()
+        targetCounts[label] += 1
+
+    plt.bar(targetCounts.keys(), targetCounts.values())
+
+    plt.title('Distribution of target classes')
+    plt.xlabel('Target Index')
+    plt.ylabel('Count in training set')
+    plt.show()
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--data_dir', type=str, default='../data/', help='Directory where your datasets exist')
+    parser.add_argument('--algo', type=str, default='rrt', help='optimal_rrt/rrt/adversarial_rrt')
+    parser.add_argument('--scene', type=str, default='tower_defense')
+
+    args = parser.parse_args()
+
+    profile_data(args.data_dir, args.scene, args.algo)
