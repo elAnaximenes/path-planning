@@ -12,17 +12,17 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
-from .car_models.dubins_optimal_planner import DubinsOptimalPlanner
-from .car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
-from .car_models.dubins_model import DubinsCar
+from car_models.dubins_optimal_planner import DubinsOptimalPlanner
+from car_models.dubins_optimal_planner_final_heading_extended import DubinsOptimalPlannerFinalHeading, DubinsError
+from car_models.dubins_model import DubinsCar
 from matplotlib.lines import Line2D
-from .scene import Scene
+from scene import Scene
 
-class DubinsCarOptimalRRT:
+class DubinsCarAdversarialOptimalRRT:
 
     class NodeRRT:
 
-        def __init__(self, position, pathLength=None, path=None, name=None):
+        def __init__(self, position, pathLength=None, path=None, name=None, entropy = None):
 
             self.x = position[0] 
             self.y = position[1] 
@@ -34,9 +34,10 @@ class DubinsCarOptimalRRT:
             self.path = {'x':[], 'y':[], 'theta':[]}
             if path is not None:
                 self.path = path
-                self.pathLength=pathLength
-            self.plottedPath= None
-            self.name=name
+                self.pathLength = pathLength
+            self.plottedPath = None
+            self.name = name
+            self.entropy = entropy 
 
         def _set_position(self, position):
             self.x = position[0] 
@@ -53,7 +54,6 @@ class DubinsCarOptimalRRT:
             if self.parent is not None:
                 rep += 'Parent node is: ' + self.parent.__str__() 
             return rep
-            
 
     def __init__(self, dubinsCar, scene, model, animate = False):
 
@@ -67,28 +67,23 @@ class DubinsCarOptimalRRT:
         self.scene = scene
         self.nearestNeighborRadius = 6.0
 
+        # integrated classifier
+        self.model = model
+
         # path to goal
         self.pathToGoalNodes = None
         self.plottedPathToGoal = [] 
-
-        # classifier
-        self.model = model
 
         # animation
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 400
+        self.maxIter = 350 
         self.leg=None
         if self.animate:
             self._setup_animation()
         self.text = None
         self.imgcount = 0
-
-        for i, target in enumerate(scene.targets):
-
-            print(i, target)
-
 
     def _select_random_target(self):
 
@@ -262,9 +257,9 @@ class DubinsCarOptimalRRT:
         # search tree for nearest neighbor to new point
         for node in self.nodeList:
 
-            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint))
+            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint[:2]))
 
-            # ignore nodes that are too close to point 
+            # ignore nodes that are too close to point or too far from point
             if euclideanDistance < (2.0 * self.car.minTurningRadius) or euclideanDistance > self.nearestNeighborRadius:
                 continue
 
@@ -312,7 +307,6 @@ class DubinsCarOptimalRRT:
                     if node.parent == minCostNode:
                         return node, None 
             
-
             # add node to tree/add goal node to goal node list
             newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
 
@@ -326,17 +320,39 @@ class DubinsCarOptimalRRT:
 
         return newNode, nearestNodes
 
+    def _calculate_entropy(self, path):
+
+        sampleRate = 100
+        instance = np.array([[path['x'][::sampleRate], path['y'][::sampleRate], path['theta'][::sampleRate]]])
+        print(instance.shape)
+        exit(1)
+        logits - self.model(instance)
+
     def _get_cost(self, node):
         
+        if node.name == 'Root':
+            return 0.0
+
         # sum costs from node to root
-        cost = node.pathLength
+        distanceCost = node.pathLength
+
+        fullPath = node.path.copy()
 
         while node.name != 'Root':
 
             node = node.parent
-            cost += node.pathLength
+            distanceCost += node.pathLength
 
-        return cost
+            fullPath['x'] = node.path['x'] + fullPath['x'] 
+            fullPath['y'] = node.path['y'] + fullPath['y'] 
+            fullPath['theta'] = node.path['theta'] + fullPath['theta'] 
+
+        print(distanceCost)
+        entropyCost = 0.0
+        entropyCost = self._calculate_entropy(fullPath) 
+        alpha = -0.9
+
+        return distanceCost + (alpha * entropyCost) 
 
     def _rewire(self, newNode, nearestNodes):
 
@@ -355,8 +371,11 @@ class DubinsCarOptimalRRT:
             if nearNode.numChildren > 0:
                 pathToNear, pathLengthToNear = self._calculate_dubins_path_length_final_heading(newNode, nearNode.position)
             else:
-                pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
-                pathToNear = self._get_dubins_path(newNode, nearNode.position)
+                euclideanDistance = abs(np.linalg.norm(newNode.position[:2] - nearNode.position[:2]))
+                pathToNear = None
+                if euclideanDistance > (2.0 * self.car.minTurningRadius):
+                    pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
+                    pathToNear = self._get_dubins_path(newNode, nearNode.position)
 
             if pathToNear is None:
                 continue
