@@ -113,10 +113,10 @@ def summary(history, modelSelection, numBatches, startBatch, algo):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt'):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt', sceneName='tower_defense'):
 
     # load training and validation data
-    trainingDataDir = os.path.join(dataDirectory, '{}_batches_train'.format(algo)) 
+    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_train'.format(sceneName, algo)) 
     dataLoader = get_data_loader(modelSelection, numBatches, trainingDataDir, split)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
@@ -150,6 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)
     parser.add_argument('--directory', type = str, default = '.\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
+    parser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
 
     args = parser.parse_args()
     modelSelection=args.model
@@ -160,6 +161,7 @@ if __name__ == '__main__':
     resume = args.resume
     startBatch = args.startbatch
     dataDirectory = args.directory
+    sceneName = args.scene
 
     if split > 1.0 or split < 0.0:
         print('split must be a real number between 0.0 and 1.0')
@@ -170,4 +172,4 @@ if __name__ == '__main__':
     algorithm = args.algo.lower()
 
     # train
-    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm, sceneName)

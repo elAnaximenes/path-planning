@@ -4,7 +4,7 @@ __pycache__
 *.mp4
 *.out
 car_models/saved_paths/
-batches*/
+*batches*/
 *weights/
 saved_plots/
 saved_images/

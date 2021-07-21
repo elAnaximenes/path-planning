@@ -75,7 +75,7 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 300
+        self.maxIter = 350 
         self.leg=None
         if self.animate:
             self._setup_animation()

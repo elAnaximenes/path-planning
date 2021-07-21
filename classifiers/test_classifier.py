@@ -67,11 +67,11 @@ def get_tester(modelSelection, dataset, model, weightsDir):
 
     return tester
 
-def test_model(modelSelection, dataDirectory, numBatches, algo='RRT'):
+def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName='tower_defense'):
 
     loader = None
 
-    trainingDataDir = os.path.join(dataDirectory, '{}_batches_validate'.format(algo)) 
+    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_validate'.format(tower_defense, algo)) 
     loader =ValidateDataLoader(numBatches, trainingDataDir)
     dataset = loader.load()
     print('dataset loaded')
@@ -96,15 +96,17 @@ if __name__ == '__main__':
     argparser.add_argument('--directory', type=str, default='./data/batches-validate')
     argparser.add_argument('--batches', type=int, default=1)
     argparser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
+    argparser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
 
     args = argparser.parse_args()
 
     modelSelection = args.model
     dataDirectory = args.directory
     algorithm = args.algo.lower()
+    sceneName = args.scene
 
     if dataDirectory == 'tower':
         dataDirectory = 'D:\\path_planning_data'
     numBatches = args.batches
 
-    test_model(modelSelection, dataDirectory, numBatches, algorithm)
+    test_model(modelSelection, dataDirectory, numBatches, algorithm, sceneName)

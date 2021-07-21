@@ -47,7 +47,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch', type=int, help='Batch Number to display.', default=0)
     parser.add_argument('--batchsize', type=int, help='Number of samples in batch to display.', default=1)
     parser.add_argument('--start_index', type=int, help='What index to begin saving batches at', default=0)
-    parser.add_argument('--directory', type = str, default = '../data/batches-new')
+    parser.add_argument('--directory', type = str, default = '../data/batches_new')
     parser.add_argument('--algo', type = str, default = 'RRT')
     parser.add_argument('--all', action='store_true', default = False, help='Display all paths on the same axis')
     parser.add_argument('--save', action='store_true', default = False, help='Save figure to file')

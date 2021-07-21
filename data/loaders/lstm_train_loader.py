@@ -188,7 +188,7 @@ class LstmTrainDataLoader():
         print('Loading data...')
         for i in range(startBatch, startBatch + self.numBatchesToLoad):
 
-            batchFileName = 'test_room_batch_{}.json'.format(i)
+            batchFileName = 'batch_{}.json'.format(i)
             print(batchFileName)
 
             x_batch, y_batch = self._load_batch_json(batchFileName)
