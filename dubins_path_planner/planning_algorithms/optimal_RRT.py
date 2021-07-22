@@ -66,16 +66,18 @@ class DubinsCarOptimalRRT:
         self.minCostGoalPath = []
         self.scene = scene
         self.nearestNeighborRadius = 6.0
+        self.iteration = 0
 
         # path to goal
         self.pathToGoalNodes = None
         self.plottedPathToGoal = [] 
+        self.costOverTime = {}
 
         # animation
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 350 
+        self.maxIter = 250 
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -84,7 +86,8 @@ class DubinsCarOptimalRRT:
 
     def _select_random_target(self):
 
-        targetIdx = random.randint(0, len(self.scene.targets) - 1)
+        #targetIdx = random.randint(0, len(self.scene.targets) - 1)
+        targetIdx = 4
         target = self.scene.targets[targetIdx]
 
         return target, targetIdx
@@ -269,6 +272,7 @@ class DubinsCarOptimalRRT:
 
             # store shortest path
             if shortestPathLength is None or pathLength < shortestPathLength:
+
                 path = self._get_dubins_path(node, randomPoint)
                 shortestPathLength = pathLength
                 shortestPath = path
@@ -409,6 +413,7 @@ class DubinsCarOptimalRRT:
 
         if len(self.goalNodeList) > 0:
             self.minCostGoalPath = self._get_nodes_leaf_to_root(minCostGoal)
+            self.costOverTime[self.iteration] =  minCostPath
 
     def _sample_goal(self):
 
@@ -449,8 +454,8 @@ class DubinsCarOptimalRRT:
             self._draw_target(self.target.position, 'lime')
             self.leg.remove()
         
-        iteration = 0
-        while iteration < self.maxIter:
+        self.iteration = 0
+        while self.iteration < self.maxIter:
 
             # extend tree
             newNode, nearestNodes = self._extend()
@@ -458,7 +463,7 @@ class DubinsCarOptimalRRT:
                 rewire = self._rewire(newNode, nearestNodes)
                 self._sample_goal()
 
-            iteration += 1
+            self.iteration += 1
 
         if self.animate:
             self._display_final_legend()

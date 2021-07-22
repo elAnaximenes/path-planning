@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import sys
 import json
 import csv
+import tensorflow as tf
+import scipy
+from scipy import stats
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -66,6 +69,7 @@ class DubinsCarAdversarialOptimalRRT:
         self.minCostGoalPath = []
         self.scene = scene
         self.nearestNeighborRadius = 6.0
+        self.targetIdx = None
 
         # integrated classifier
         self.model = model
@@ -78,7 +82,7 @@ class DubinsCarAdversarialOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 350 
+        self.maxIter = 250 
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -202,14 +206,20 @@ class DubinsCarAdversarialOptimalRRT:
 
         return path, pathLength
 
-    def _add_node(self, startNode, shortestPathLength, shortestPath, goal=False):
+    def _create_node(self, startNode, shortestPathLength, shortestPath):
 
         carStateAtPoint = np.array([shortestPath['x'][-1], shortestPath['y'][-1], shortestPath['theta'][-1]])
-        
-        nodeToAdd = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath)
+        newNode = self.NodeRRT(carStateAtPoint, shortestPathLength, shortestPath)
+        newNode.name = 'Temp'
+        newNode.parent = startNode
+        newNode.path = shortestPath
+
+        return newNode
+
+    def _add_node(self, startNode, shortestPathLength, shortestPath, goal=False):
+
+        nodeToAdd = self._create_node(startNode, shortestPathLength, shortestPath)
         startNode.numChildren += 1
-        nodeToAdd.parent = startNode
-        nodeToAdd.path = shortestPath
 
         if goal:
             nodeToAdd.name = 'Goal {}'.format(len(self.goalNodeList)) 
@@ -225,18 +235,21 @@ class DubinsCarAdversarialOptimalRRT:
         minPathStartNode = nearestNode 
         minPathLength = self._calculate_dubins_path_length(nearestNode, point)
         minPath = self._get_dubins_path(nearestNode, point)
-        minCost = self._get_cost(nearestNode) + minPathLength 
+
+        tempNode = self._create_node(nearestNode, minPathLength, minPath)
+        minCost = self._get_cost(tempNode) 
 
         for node in nearestNodes:
 
-            pathLength = self._calculate_dubins_path_length(node, point)
             path = self._get_dubins_path(node, point)
 
             collisionFree = self._is_point_reachable(node, point, path)
             if not collisionFree:
                 continue
 
-            costToNewPoint = self._get_cost(node) + pathLength
+            pathLength = self._calculate_dubins_path_length(node, point)
+            tempNode = self._create_node(node, pathLength, path)
+            costToNewPoint = self._get_cost(tempNode)
 
             if minPath is None or costToNewPoint < minCost:
                 minPath = path
@@ -322,11 +335,30 @@ class DubinsCarAdversarialOptimalRRT:
 
     def _calculate_entropy(self, path):
 
+        # calculate entropy once per second
         sampleRate = 100
-        instance = np.array([[path['x'][::sampleRate], path['y'][::sampleRate], path['theta'][::sampleRate]]])
-        print(instance.shape)
-        exit(1)
-        logits - self.model(instance)
+        instance = np.array([path['x'], path['y'], path['theta']]).transpose()
+        instance[:, :2] /= 10.0
+        instance[:, 2] -= math.pi
+        instance[:, 2] /= math.pi
+        instance = instance[np.newaxis, ::sampleRate, :]
+        cumulativeEntropy = 0.0
+
+        for i in range(1, instance.shape[1]):
+            inputTensor = tf.constant(instance[:, i, :])
+            logits = self.model(instance)[0, :].numpy()
+
+            #entropy = -1.0 * np.sum(scipy.special.xlogy(logits, logits))
+            entropy = stats.entropy(logits) / math.log(logits.shape[0])
+            #entropy = 1.0 - logits[self.targetIdx]
+            if entropy > 1.0:
+                print('entropy cannot be greater than 1')
+                exit(1)
+            cumulativeEntropy += entropy 
+
+        self.model.reset_states()
+
+        return cumulativeEntropy 
 
     def _get_cost(self, node):
         
@@ -338,33 +370,42 @@ class DubinsCarAdversarialOptimalRRT:
 
         fullPath = node.path.copy()
 
+        #print(node.name, flush=True)
         while node.name != 'Root':
 
             node = node.parent
+            #print(node.name, flush=True)
             distanceCost += node.pathLength
 
             fullPath['x'] = node.path['x'] + fullPath['x'] 
             fullPath['y'] = node.path['y'] + fullPath['y'] 
             fullPath['theta'] = node.path['theta'] + fullPath['theta'] 
 
-        print(distanceCost)
         entropyCost = 0.0
         entropyCost = self._calculate_entropy(fullPath) 
-        alpha = -0.9
+        alpha = -0.99
+        #print('distanceCost:', distanceCost)
+        #print('entropyCost:', entropyCost)
+        #print('totalCost:', distanceCost + (alpha * entropyCost), flush=True)
 
-        return distanceCost + (alpha * entropyCost) 
+        cost = distanceCost + (alpha * entropyCost) 
+        if cost < 0.0:
+            print(cost)
+            exit(1)
+        return cost 
 
     def _rewire(self, newNode, nearestNodes):
 
         rewire = False
+
+        newNodeCost = self._get_cost(newNode)
 
         for nearNode in nearestNodes:
 
             # cannot rewire root node
             if nearNode.name == 'Root':
                 continue
-            
-            newNodeCost = self._get_cost(newNode)
+
             nearNodeCost = self._get_cost(nearNode)
 
             # Only consider heading for rewiring to non leaf nodes
@@ -382,7 +423,10 @@ class DubinsCarAdversarialOptimalRRT:
 
             collisionFree = self._is_point_reachable(newNode, nearNode, pathToNear)
 
-            if (newNodeCost + pathLengthToNear) < nearNodeCost and collisionFree:
+            candidateNode = self._create_node(newNode, pathLengthToNear, pathToNear)
+            candidateCost = self._get_cost(candidateNode)
+
+            if candidateCost < nearNodeCost and collisionFree:
 
                 rewire = True
                 nearNode.parent.numChildren -= 1
@@ -468,6 +512,7 @@ class DubinsCarAdversarialOptimalRRT:
     def simulate(self):
         
         target, targetIdx = self._select_random_target()
+        self.targetIdx = targetIdx
         self.target = self.NodeRRT(target, name="Goal")
 
         if self.animate:
@@ -483,7 +528,12 @@ class DubinsCarAdversarialOptimalRRT:
                 rewire = self._rewire(newNode, nearestNodes)
                 self._sample_goal()
 
+            if iteration % 25 == 0:
+                print('iteration:', iteration, flush=True)
+
             iteration += 1
+
+        print(iteration, flush=True)
 
         if self.animate:
             self._display_final_legend()
@@ -492,6 +542,7 @@ class DubinsCarAdversarialOptimalRRT:
         sample = {}
         sample['target'] = {'coordinates': target, 'index': targetIdx }
         sample['path'] = self._get_final_path_start_to_goal()
+
         if len(sample['path']['x']) <= 1:
             return None
 
@@ -528,16 +579,6 @@ class DubinsCarAdversarialOptimalRRT:
         print('press', event.key)
 
         if event.key == 'escape':
-            print('number of goal nodes:', len(self.goalNodeList))
-
-            for node in self.goalNodeList:
-
-                print('Total cost = {}'.format(self._get_cost(node)))
-                print(node)
-
-            for node in self.nodeList:
-                print('Total cost = {}'.format(self._get_cost(node)))
-                print(node)
 
             plt.close('all')
             sys.exit(1)

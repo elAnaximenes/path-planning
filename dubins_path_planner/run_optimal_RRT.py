@@ -2,9 +2,11 @@ import sys
 import math
 import numpy as np
 import random
+import json
 from car_models.dubins_model import DubinsCar
 from planning_algorithms.optimal_RRT import DubinsCarOptimalRRT
 from scene import Scene
+import matplotlib.pyplot as plt
 
 def check_valid_start(scene, startPosition):
 
@@ -47,7 +49,12 @@ def run_optimal_RRT(animate=False, sceneName='test_scene'):
     # run RRT algorithm and get final path from car start to target
     sample = optimalRRTSimulator.simulate()
 
-    return sample 
+    x = optimalRRTSimulator.costOverTime.keys()
+    y = optimalRRTSimulator.costOverTime.values()
+    
+    plt.scatter(x, y)
+
+    return sample#, x, y
 
 if __name__ == '__main__':
     
@@ -64,10 +71,28 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    seed = random.randint(1, 10000)
-    #seed = 5441
-    print('seed:', seed)
-    random.seed(seed)
-    np.random.seed(seed)
+    costs = np.zeros(400)
+    counts = np.zeros(400)
+    for i in range(10):
+        #seed = random.randint(1, 10000)
+        seed = i
+        print('seed:', seed)
+        random.seed(seed)
+        np.random.seed(seed)
 
-    sample = run_optimal_RRT(animate, sceneName)
+        sample, x, y = run_optimal_RRT(animate, sceneName)
+        with open('../data/paths/optimal_rrt_path_{}.json'.format(i), 'w') as f:
+            json.dump(sample, f)
+
+    """
+        for time, cost in zip(x, y):
+
+            costs[time] += cost
+            counts[time] += 1.0
+
+    plt.plot(range(400), costs/counts, 'b--')
+    """
+
+    plt.show()
+
+    

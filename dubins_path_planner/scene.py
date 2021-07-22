@@ -51,16 +51,20 @@ class Scene:
 
         return ax
 
-    def _draw_targets(self, ax):
+    def _draw_targets(self, ax, targetColors = None):
 
-        for target in self.targets:
+        for i, target in enumerate(self.targets):
 
-            tar = plt.Circle((target[0], target[1]), target[2], color='blue', fill=False)
+            color = 'blue'
+            if targetColors is not None:
+                color = targetColors[i]
+
+            tar = plt.Circle((target[0], target[1]), target[2], color=color, fill=False)
             ax.add_patch(tar)
 
         return ax
 
-    def draw(self, ax):
+    def draw(self, ax, targetColors=None):
 
         ax.set_xlim(self.dimensions['xmin'] - 1.0, self.dimensions['xmax'] + 1.0)
         ax.set_ylim(self.dimensions['ymin'] - 1.0, self.dimensions['ymax'] + 1.0)
@@ -70,7 +74,7 @@ class Scene:
         ax.set_xlabel('X-Position(M)')
 
         ax = self._draw_obstacles(ax)
-        ax = self._draw_targets(ax)
+        ax = self._draw_targets(ax, targetColors)
 
         return ax
 

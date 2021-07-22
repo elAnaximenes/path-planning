@@ -3,6 +3,7 @@ import os
 import math
 import numpy as np
 import random
+import json
 from car_models.dubins_model import DubinsCar
 from planning_algorithms.adversarial_optimal_RRT import DubinsCarAdversarialOptimalRRT
 from scene import Scene
@@ -83,10 +84,18 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    seed = random.randint(1, 10000)
-    #seed = 5441
-    print('seed:', seed)
-    random.seed(seed)
-    np.random.seed(seed)
+    for i in range(10):
 
-    sample = run_adversarial_optimal_RRT(animate, sceneName)
+        #seed = random.randint(1, 10000)
+        seed = i 
+        print('seed:', seed)
+        random.seed(seed)
+        np.random.seed(seed)
+
+        sample = run_adversarial_optimal_RRT(animate, sceneName)
+
+        if sample is None:
+            continue
+
+        with open('../data/paths/adversarial_optimal_rrt_path_{}.json'.format(i), 'w') as f:
+            json.dump(sample, f)
