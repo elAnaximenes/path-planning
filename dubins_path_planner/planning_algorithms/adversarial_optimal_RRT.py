@@ -352,6 +352,8 @@ class DubinsCarAdversarialOptimalRRT:
             #entropy = stats.entropy(logits) / math.log(logits.shape[0])
             #entropy = 1.0 - logits[self.targetIdx]
             entropy = logits[self.targetIdx]
+            print(self.targetIdx)
+            print(logits)
             if entropy > 1.0:
                 print('entropy cannot be greater than 1')
                 exit(1)
@@ -384,10 +386,10 @@ class DubinsCarAdversarialOptimalRRT:
 
         entropyCost = 0.0
         entropyCost = self._calculate_entropy(fullPath) 
-        alpha = 0.99
-        #print('distanceCost:', distanceCost)
-        #print('entropyCost:', entropyCost)
-        #print('totalCost:', distanceCost + (alpha * entropyCost), flush=True)
+        alpha = 1.0 
+        print('distanceCost:', distanceCost)
+        print('entropyCost:', math.exp(entropyCost))
+        print('totalCost:', distanceCost + (alpha * math.exp(entropyCost)), flush=True)
 
         cost = distanceCost + (alpha * entropyCost) 
         if cost < 0.0:
@@ -589,7 +591,7 @@ class DubinsCarAdversarialOptimalRRT:
         self.fig = plt.figure()
         self.fig.canvas.mpl_connect('key_press_event', self.on_press)
         self.ax = self.fig.gca()
-        self.ax.set_title('Dubins Car RRT* - {}'.format(self.scene.name))
+        self.ax.set_title('Dubins Car Adversarial RRT* - {}'.format(self.scene.name))
         plt.xlim(self.scene.dimensions['xmin'] , self.scene.dimensions['xmax'] )
         plt.ylim(self.scene.dimensions['ymin'] , self.scene.dimensions['ymax'] )
         self.ax.set_aspect('equal')

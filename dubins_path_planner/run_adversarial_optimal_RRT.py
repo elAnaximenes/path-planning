@@ -84,7 +84,7 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    for i in range(10):
+    for i in range(1,10):
 
         #seed = random.randint(1, 10000)
         seed = i 

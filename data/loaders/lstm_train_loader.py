@@ -34,6 +34,20 @@ class LstmTrainDataLoader():
         self.x_val = self.x[splitIndex:]
         self.y_val = self.y[splitIndex:]
 
+    def _shuffle_data(self):
+
+        print(self.x.shape)
+        print(self.y.shape)
+        shuffled_x = np.empty(self.x.shape, dtype=self.x.dtype)
+        shuffled_y = np.empty(self.y.shape, dtype=self.y.dtype)
+        permutation = np.random.permutation(len(self.x))
+        for old_index, new_index in enumerate(permutation):
+            shuffled_x[new_index] = self.x[old_index]
+            shuffled_y[new_index] = self.y[old_index]
+    
+        self.x = shuffled_x
+        self.y = shuffled_y
+
     def _transform_timeseries(self):
 
         X = self.x[:, 0, :]
@@ -132,7 +146,11 @@ class LstmTrainDataLoader():
         # center mean at zero
         self._normalize_instances()
 
+        # timesteps by features
         self._transform_timeseries()
+
+        # randomize instance order
+        self._shuffle_data()
 
         # split into train and test sets
         self._split_data()
