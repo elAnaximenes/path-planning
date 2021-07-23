@@ -3,6 +3,7 @@ import math
 import numpy as np
 import random
 import json
+import argparse
 from car_models.dubins_model import DubinsCar
 from planning_algorithms.optimal_RRT import DubinsCarOptimalRRT
 from scene import Scene
@@ -16,7 +17,7 @@ def check_valid_start(scene, startPosition):
                 return False
     return True
 
-def run_optimal_RRT(animate=False, sceneName='test_scene'):
+def run_optimal_RRT(animate=False, sceneName='test_scene', target=None):
 
     # load scene information
     scene = Scene(sceneName)
@@ -44,7 +45,7 @@ def run_optimal_RRT(animate=False, sceneName='test_scene'):
     dubinsCar = DubinsCar(startPosition, velocity, U, dt=timeStep)
 
     # create simulator
-    optimalRRTSimulator = DubinsCarOptimalRRT(dubinsCar, scene, animate=animate)
+    optimalRRTSimulator = DubinsCarOptimalRRT(dubinsCar, scene, animate=animate, targetIdx=target)
 
     # run RRT algorithm and get final path from car start to target
     sample = optimalRRTSimulator.simulate()
@@ -61,18 +62,21 @@ if __name__ == '__main__':
     sceneName= 'cluttered_room'
     animate = False 
 
-    if len(sys.argv) > 1:
-        for arg in sys.argv[1:]:
-            if arg != 'animate':
-                sceneName = arg
+    parser = argparse.ArgumentParser()
 
-    if len(sys.argv) > 2:
-        for arg in sys.argv[1:]:
-            if arg == 'animate':
-                animate = True
+    parser.add_argument('--scene', type=str, default='tower_defense')
+    parser.add_argument('--animate', default=False, action='store_true')
+    parser.add_argument('--target', type=int, default=None)
+
+    args = parser.parse_args()
+
+    sceneName = args.scene
+    animate = args.animate
+    target = args.target
 
     costs = np.zeros(400)
     counts = np.zeros(400)
+
     for i in range(10):
         #seed = random.randint(1, 10000)
         seed = i
@@ -80,7 +84,7 @@ if __name__ == '__main__':
         random.seed(seed)
         np.random.seed(seed)
 
-        sample, x, y = run_optimal_RRT(animate, sceneName)
+        sample = run_optimal_RRT(animate, sceneName, target)
         with open('../data/paths/optimal_rrt_path_{}.json'.format(i), 'w') as f:
             json.dump(sample, f)
 

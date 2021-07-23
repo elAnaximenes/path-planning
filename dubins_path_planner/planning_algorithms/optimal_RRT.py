@@ -55,7 +55,7 @@ class DubinsCarOptimalRRT:
             return rep
             
 
-    def __init__(self, dubinsCar, scene, animate = False):
+    def __init__(self, dubinsCar, scene, animate = False, targetIdx = None):
 
         # tree primitives
         self.car = dubinsCar
@@ -67,6 +67,7 @@ class DubinsCarOptimalRRT:
         self.scene = scene
         self.nearestNeighborRadius = 6.0
         self.iteration = 0
+        self.targetIdx = targetIdx
 
         # path to goal
         self.pathToGoalNodes = None
@@ -77,7 +78,7 @@ class DubinsCarOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 250 
+        self.maxIter = 300 
         self.leg=None
         if self.animate:
             self._setup_animation()
@@ -86,11 +87,13 @@ class DubinsCarOptimalRRT:
 
     def _select_random_target(self):
 
-        #targetIdx = random.randint(0, len(self.scene.targets) - 1)
-        targetIdx = 4
-        target = self.scene.targets[targetIdx]
+        if self.targetIdx == None:
+            self.targetIdx = random.randint(0, len(self.scene.targets) - 1)
 
-        return target, targetIdx
+        target = self.scene.targets[self.targetIdx]
+        print(self.targetIdx)
+
+        return target, self.targetIdx
 
     def _sample_random_point(self):
 

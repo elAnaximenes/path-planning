@@ -4,7 +4,6 @@ import os
 import tensorflow as tf
 import math
 from tensorflow.keras.utils import to_categorical
-from .base_loaders.loaders import TrainLoader
 import matplotlib.pyplot as plt
 
 class LstmTrainDataLoader():

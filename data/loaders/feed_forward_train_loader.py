@@ -3,7 +3,6 @@ import json
 import os
 import math
 from tensorflow.keras.utils import to_categorical
-from .base_loaders.loaders import TrainLoader
 
 class FeedForwardTrainDataLoader:
 

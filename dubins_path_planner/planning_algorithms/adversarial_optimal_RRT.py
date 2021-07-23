@@ -349,8 +349,9 @@ class DubinsCarAdversarialOptimalRRT:
             logits = self.model(instance)[0, :].numpy()
 
             #entropy = -1.0 * np.sum(scipy.special.xlogy(logits, logits))
-            entropy = stats.entropy(logits) / math.log(logits.shape[0])
+            #entropy = stats.entropy(logits) / math.log(logits.shape[0])
             #entropy = 1.0 - logits[self.targetIdx]
+            entropy = logits[self.targetIdx]
             if entropy > 1.0:
                 print('entropy cannot be greater than 1')
                 exit(1)
@@ -383,7 +384,7 @@ class DubinsCarAdversarialOptimalRRT:
 
         entropyCost = 0.0
         entropyCost = self._calculate_entropy(fullPath) 
-        alpha = -0.99
+        alpha = 0.99
         #print('distanceCost:', distanceCost)
         #print('entropyCost:', entropyCost)
         #print('totalCost:', distanceCost + (alpha * entropyCost), flush=True)

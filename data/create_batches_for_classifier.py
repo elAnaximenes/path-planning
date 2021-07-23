@@ -32,6 +32,7 @@ parser.add_argument('--scene', type=str, help='Name of scene.', default='simple_
 parser.add_argument('--format', type=str, help='Format of save file..', default='json')
 parser.add_argument('--start_index', type=int, help='Index to begin saving batches at', default=0)
 parser.add_argument('--algo', type=str, help='RRT or optimal', default = 'RRT')
+parser.add_argument('--target', type=int, help='RRT or optimal', default = None)
 
 args = parser.parse_args()
 
@@ -58,7 +59,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
                 sample = run_RRT(animate=False, sceneName=args.scene)
             else:
                 try:
-                    sample = run_optimal_RRT(animate=False, sceneName=args.scene)
+                    sample = run_optimal_RRT(animate=False, sceneName=args.scene, target=args.target)
                 except Exception as e:
                     print('an exception occurred')
                     print(e)

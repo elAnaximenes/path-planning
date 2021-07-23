@@ -32,7 +32,7 @@ def plot_performance(performance, modelSelection, algo):
         timesteps.append(key)
 
     plt.title('{} Accuracy over time -- {}'.format(modelSelection, algo))
-    plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')
+    plt.plot(timesteps[-1], accuracyOverTime[-1], 'b', label = 'Accuracy')
     plt.xlim(0, timesteps[-1])
     plt.ylim(0.0, 1.0)
     plt.xlabel('Timesteps from goal')

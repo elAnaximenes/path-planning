@@ -138,7 +138,7 @@ def get_analyzer(sceneName):
 
     return LSTMGradientAnalyzer(model, weightsDir)
 
-def compare_predictions(modelSelection, dataDirectory, algo='optimal_rrt', pathNum=0, sceneName = 'neighborhood'):
+def compare_predictions(modelSelection, dataDirectory, algo='optimal_rrt', pathNum=0, sceneName = 'tower_defense'):
 
     analyzer = get_analyzer(sceneName)
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
-    parser.add_argument('--directory', type = str, default = '.\\data\\')
+    parser.add_argument('--directory', type = str, default = '..\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
     parser.add_argument('--path_num', type=int, default=0)
 

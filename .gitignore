@@ -11,6 +11,6 @@ saved_images/
 gradients/
 predictions/
 logs/
-data/paths/*
-training_history/*.json
+./data/paths/
+classifiers/training_history/*.json
 *.out
