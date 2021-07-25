@@ -150,7 +150,7 @@ class LstmTrainDataLoader():
         self._transform_timeseries()
 
         # randomize instance order
-        self._shuffle_data()
+        # self._shuffle_data()
 
         # split into train and test sets
         self._split_data()

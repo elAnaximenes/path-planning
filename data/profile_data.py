@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
  
@@ -33,7 +34,7 @@ def load_batch_json(batchFileName):
 
     # load raw json dict
     rawData = {}
-    with open('./batches-train/{}'.format(batchFileName), 'r') as f:
+    with open('./{}'.format(batchFileName), 'r') as f:
         rawData = json.load(f)
 
     # build a list of instances and labels
@@ -53,11 +54,11 @@ def load_batch_json(batchFileName):
 
     return pathLengths, labels
 
-def profile_data(datasetDirectory, sceneName, algo)
+def profile_data(datasetDirectory, sceneName, algo):
 
     pathLengths = []
     labels = []
-    trainDataDir = '{}/{}_dataset/{}_batches-train/'.format(datasetDirectory, sceneName, algo)
+    trainDataDir = '{}/{}_dataset/{}_batches_train/'.format(datasetDirectory, sceneName, algo)
     batchFileNames = os.listdir(trainDataDir)
 
     for batchFileName in batchFileNames:
@@ -104,7 +105,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--data_dir', type=str, default='../data/', help='Directory where your datasets exist')
+    parser.add_argument('--data_dir', type=str, default='./', help='Directory where your datasets exist')
     parser.add_argument('--algo', type=str, default='rrt', help='optimal_rrt/rrt/adversarial_rrt')
     parser.add_argument('--scene', type=str, default='tower_defense')
 

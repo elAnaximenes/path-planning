@@ -58,6 +58,7 @@ class Scene:
             color = 'blue'
             if targetColors is not None:
                 color = targetColors[i]
+            print(i, color, flush=True)
 
             tar = plt.Circle((target[0], target[1]), target[2], color=color, fill=False)
             ax.add_patch(tar)

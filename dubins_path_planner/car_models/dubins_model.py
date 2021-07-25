@@ -6,7 +6,7 @@ from scipy.io import savemat
 
 class DubinsCar:
 
-    def __init__(self, initialState, velocity, inputRange, dt=1.0/10000.0):
+    def __init__(self, initialState, velocity, inputRange, dt=0.01):
 
         self.state = {}
         self.set_state(initialState)

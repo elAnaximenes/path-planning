@@ -70,8 +70,3 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
     save_batch(samplesInBatch, batchNum, args.scene, args.algo)
 
 print('finished')
-
-
-
-        
-

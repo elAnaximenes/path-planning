@@ -56,9 +56,11 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
     # don't simulate if target is within minimum turning radius
     distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
     print('initial distance:', distanceFromStartToTarget)
+    """
     if (2.0 * planner.minTurningRadius) > distanceFromStartToTarget: 
         print('target within minimum turning radius')
         return None
+    """
 
     # get planner's path
     path = planner.run()
@@ -76,8 +78,11 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
 def train(animate=True):
 
-    startPosition = np.array( [-0.54018144, 5.2931008, 3.13272286] )
-    target = np.array( [-2.55935147, 5.31896672, 1.10494954] )
+    startPosition = np.array( [0.0, 0.0, 4.5] )
+    target = np.random.uniform(low = -1.0, high = 1.0, size = (3,)) 
+    theta = random.uniform(0.0, 2.0 * math.pi)
+    target[2] = theta
+    #target = np.array( [-1.0, 1.0, 1.10494954] )
     iteration = 0
 
     simulate_dubins_optimal_path_planner(startPosition, target, animate, iteration)
@@ -164,12 +169,12 @@ def test(animate=True):
 
     for i in tqdm(range(numTestCases)):
         # set starting position 
-        startPosition = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+        startPosition = np.random.uniform(low = 0.0, high = 0.0, size = (3,)) 
         theta = random.uniform(0.0, 2.0 * math.pi)
         startPosition[2] = theta
 
         # set random target
-        target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+        target = np.random.uniform(low = -1.0, high = 1.0, size = (3,)) 
         theta = random.uniform(0.0, 2.0 * math.pi)
         target[2] = theta
 

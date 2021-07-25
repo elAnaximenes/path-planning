@@ -50,10 +50,15 @@ class DubinsOptimalPlanner:
             else:
                 alpha = -2.0 * math.atan2((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))), (deltaY - (2 * r)))
             distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
-            
+
         # drive straight first
-        elif word == 'SR':
-            pass
+        elif word == 'SR' or word == 'SL':
+            if self._target_in_front_of_car():
+                alpha = math.pi + math.acos((deltaY - r) / r)
+            else:
+                alpha = math.pi - math.acos((deltaY - r) / r)
+
+            distance = deltaX + (r * math.sqrt(1.0 - math.pow((deltaY - r),2.0)/(r * r)))
         
         self.alpha = alpha
         self.distance = distance
@@ -112,9 +117,34 @@ class DubinsOptimalPlanner:
 
         self.path = path
 
-    def _straight_turn(self):
+    def _straight_turn(self, angularVelocity):
+
+        alpha = self.alpha
+        distance = self.distance
+
+        arcLength = abs(self.minTurningRadius * alpha)
+        path = {'x': [], 'y': [], 'theta': []}
+
+        while self.linearDistanceTraveled < distance:
+
+            self.linearDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+            state = self.dubinsCar.step(0.0)
+
+            path['x'].append(self.dubinsCar.state['x'])
+            path['y'].append(self.dubinsCar.state['y'])
+            path['theta'].append(self.dubinsCar.state['theta'])
         
-        pass
+        while self.angularDistanceTraveled < arcLength:
+
+            self.angularDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+            state = self.dubinsCar.step(angularVelocity)
+
+            path['x'].append(self.dubinsCar.state['x'])
+            path['y'].append(self.dubinsCar.state['y'])
+            path['theta'].append(self.dubinsCar.state['theta'])
+            self.angularDistanceTraveled += (self.dubinsCar.velocity * self.dubinsCar.dt)
+
+        self.path = path
 
     def _calculate_word(self):
 
@@ -143,6 +173,7 @@ class DubinsOptimalPlanner:
         
         # based on primitive, get angle of turning arc and straight distance
         self._calculate_dubins_parameters()
+
         arcLength = abs(self.minTurningRadius * self.alpha)
 
         return arcLength + self.distance
@@ -157,6 +188,10 @@ class DubinsOptimalPlanner:
             self._turn_straight(self.dubinsCar.umax)
         elif self.word == 'RS':
             self._turn_straight(self.dubinsCar.umin)
+        elif self.word == 'SL':
+            self._straight_turn(self.dubinsCar.umax)
+        elif self.word == 'SR':
+            self._straight_turn(self.dubinsCar.umin)
 
         # history of car coordinates and orientations
         return self.path

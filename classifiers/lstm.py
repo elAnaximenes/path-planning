@@ -16,9 +16,9 @@ class LSTM(tf.keras.Model):
         
         self.inputLayer = layers.InputLayer(inputShape)
         self.mask = layers.Masking(mask_value = 0.0)
-        self.lstm = layers.LSTM(1024, stateful=True)
-        self.h1 = layers.Dense(512, activation='relu')
-        self.h2 = layers.Dense(256, activation='relu')
+        self.lstm = layers.LSTM(128, stateful=True)
+        self.h1 = layers.Dense(256, activation='relu')
+        self.h2 = layers.Dense(128, activation='relu')
         self.h3 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
@@ -38,7 +38,7 @@ class LSTMTrainer():
     def __init__(self, model, weightsDir):
         
         self.model = model
-        self.optimizer = tf.keras.optimizers.Adam()
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
         self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
         self.trainAccMetric = tf.keras.metrics.CategoricalAccuracy()
         self.valAccMetric = tf.keras.metrics.CategoricalAccuracy()
@@ -91,7 +91,7 @@ class LSTMTrainer():
 
                 if batchNum == 0 and t == 10:
                     self._save_metrics(lossValue, valDataset)
-                if batchNum % 20 == 0 and t == 10:
+                if batchNum % 20 == 0 and (t == 10 or t==30 or t==50 or t==70 or t==90):
                     print("Training loss at step {} in batch number {}: {:.4f}".format(t, batchNum, float(lossValue)))
 
             # reset state after each batch
@@ -110,6 +110,7 @@ class LSTMTrainer():
 
         x_train, y_train = trainData
         x_val, y_val = valData
+        
         print('Shape of training dataset:', x_train.shape)
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
@@ -465,4 +466,3 @@ class LSTMGradientVisualizer:
         for instance, label in self.dataset.data:
 
             self.visualize_single_instance(instance, label)
-

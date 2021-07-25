@@ -14,8 +14,7 @@ def plot_path(path, origin, target, acceptableError, iteration):
     rho = np.linalg.norm(target[:2] - origin[:2])
 
     for x,y,theta in zip(path['x'], path['y'], path['theta']):
-        if i % (500 * int(rho)) == 0:
-            plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
+        plt.quiver(x, y, math.cos(theta), math.sin(theta)) 
         i += 1
 
     # text coordinate label shifts
@@ -41,7 +40,7 @@ def plot_path(path, origin, target, acceptableError, iteration):
 def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, iteration=0):
 
     # configure and create dubins car
-    velocity = 0.5
+    velocity = 1.0 
     maxSteeringAngle = (math.pi / 4.0) 
     U = [-1.0 * math.tan(maxSteeringAngle), math.tan(maxSteeringAngle)]
     dubinsCar = DubinsCar(startPosition, velocity, U)
@@ -51,9 +50,9 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 
     # don't simulate if target is within minimum turning radius
     distanceFromStartToTarget = abs(np.linalg.norm(target[:2] - startPosition[:2]))
-    if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
-        print('target within minimum turning radius')
-        return
+    #if (2.0*planner.minTurningRadius) > distanceFromStartToTarget: 
+        #print('target within minimum turning radius')
+        #return
 
     # get planner's path
     path = planner.run()
@@ -71,26 +70,25 @@ def simulate_dubins_optimal_path_planner(startPosition, target, animate=True, it
 def train(animate=True):
 
     # set starting position and target
-    startPosition = np.array([0.19, 1.01, 1.51*math.pi])
-    target = np.array([1.49, 1.97, 0.0])
-    simulate_dubins_optimal_path_planner(startPosition, target, animate)
-    startPosition = np.array([0.18, 1.55, 1.05*math.pi])
-    target = np.array([1.89, 1.34, 0.0])
+    startPosition = np.array([0.0, 0.0, 0.0])
+    target = np.array([0.5, 0.5, 0.0])
     simulate_dubins_optimal_path_planner(startPosition, target, animate)
 
 def test(animate=True):
-    numTestCases = 1000
+
+    numTestCases = 100
     if animate:
         numTestCases = 10
 
     for i in tqdm(range(numTestCases)):
+
         # set starting position 
-        startPosition = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+        startPosition = np.random.uniform(low = -1.0, high = 1.0, size = (3,)) 
         theta = random.uniform(0.0, 2.0 * math.pi)
         startPosition[2] = theta
 
         # set random target
-        target = np.random.uniform(low = -10.0, high = 10.0, size = (3,)) 
+        target = np.random.uniform(low = -1.0, high = 1.0, size = (3,)) 
 
         # run simulation
         try:

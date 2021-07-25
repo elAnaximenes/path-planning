@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+import math
 from matplotlib import gridspec
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -28,9 +29,7 @@ def label_plots(path_ax, preds_ax):
 
     return path_ax, preds_ax
 
-def plot_preds(ax, preds):
-
-    targetColors = ['blue','orange', 'green', 'pink', 'red']
+def plot_preds(ax, preds, targetColors):
 
     for targetIdx in range(len(targetColors)):
 
@@ -75,7 +74,7 @@ def plot_paths_and_preds(path, preds, scene):
 
     scene_ax = plot_path(scene_ax, path['path'])
 
-    pred_ax = plot_preds(pred_ax, preds)
+    pred_ax = plot_preds(pred_ax, preds, targetColors)
 
     
     scene_ax, preds_ax = label_plots(scene_ax, pred_ax)
@@ -84,14 +83,22 @@ def plot_paths_and_preds(path, preds, scene):
     
 def get_pred(path, analyzer):
 
-    downSample = 10
-    instance = np.array([path['path']['x'], path['path']['y'], path['path']['theta']]).transpose()
-    instance = instance[np.newaxis, ::downSample, :] / 10.0
+    instance = np.array([path['path']['x'], path['path']['y'], path['path']['theta']])
+    instance[:, :2] /= 10.0
+    instance[:, 2] -= math.pi
+    instance[:, 2] /= math.pi
+
+    downSample = 100
+    instance = instance.transpose()
+    instance = instance[np.newaxis, ::downSample, :]
+    print(instance.shape)
 
     label = np.zeros((1,5))
     label[0, path['target']['index']] = 1.0
+    print(label)
 
     _, preds= analyzer.analyze(instance, label)
+    print(preds, flush=True)
 
     return preds 
 
@@ -122,9 +129,9 @@ def compare_predictions(modelSelection, dataDirectory, algo='optimal_rrt', pathN
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
+    parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "LSTM")
     parser.add_argument('--directory', type = str, default = '..\\data\\')
-    parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
+    parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "optimal_rrt")
     parser.add_argument('--path_num', type=int, default=0)
 
     args = parser.parse_args()
@@ -137,5 +144,3 @@ if __name__ == '__main__':
     pathNum = args.path_num
 
     compare_predictions(modelSelection, dataDirectory, algorithm, pathNum)
-
-

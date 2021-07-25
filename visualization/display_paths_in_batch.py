@@ -66,7 +66,7 @@ if __name__ == '__main__':
     dataDirectory = args.directory
     saveImages = args.save
     if dataDirectory == 'tower':
-        dataDirectory = 'D:\\path_planning_data\\{}_batches_train'.format(algo)
+        dataDirectory = 'D:\\path_planning_data\\{}_dataset\\{}_batches_train'.format(sceneName,algo)
 
     paths = load_paths(sceneName, batchNum, numSamples, dataDirectory)
 
@@ -85,7 +85,9 @@ if __name__ == '__main__':
         plt.show()
     else:
         for i in range(numSamples):
-            path = paths['{}'.format(i)]['path']
+            sample = paths['{}'.format(i)]
+            print(sample['target']['index'], flush=True)
+            path = sample['path']
             if len(path['x']) == 0:
                 continue
             draw_path(scene, path, i, save=saveImages)
