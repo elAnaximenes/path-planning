@@ -12,5 +12,6 @@ gradients/
 predictions/
 logs/
 data/paths/*
+data/saved/
 classifiers/training_history/*.json
 *.out
