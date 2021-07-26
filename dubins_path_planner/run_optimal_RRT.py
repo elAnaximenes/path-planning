@@ -77,7 +77,7 @@ if __name__ == '__main__':
     costs = np.zeros(400)
     counts = np.zeros(400)
 
-    for i in range(10):
+    for i in range(5):
         #seed = random.randint(1, 10000)
         seed = i
         print('seed:', seed)

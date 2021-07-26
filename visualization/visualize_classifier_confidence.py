@@ -70,12 +70,12 @@ def plot_paths_and_preds(path, preds, scene):
     pred_ax = plt.subplot(gs[1,0])
 
     targetColors = ['blue','orange', 'green', 'pink', 'red']
+    print(targetColors)
     scene_ax = scene.draw(scene_ax, targetColors) 
 
     scene_ax = plot_path(scene_ax, path['path'])
 
     pred_ax = plot_preds(pred_ax, preds, targetColors)
-
     
     scene_ax, preds_ax = label_plots(scene_ax, pred_ax)
     
@@ -84,21 +84,19 @@ def plot_paths_and_preds(path, preds, scene):
 def get_pred(path, analyzer):
 
     instance = np.array([path['path']['x'], path['path']['y'], path['path']['theta']])
+
+    downSample = 100
+
+    instance = instance.transpose()
     instance[:, :2] /= 10.0
     instance[:, 2] -= math.pi
     instance[:, 2] /= math.pi
-
-    downSample = 100
-    instance = instance.transpose()
     instance = instance[np.newaxis, ::downSample, :]
-    print(instance.shape)
 
     label = np.zeros((1,5))
     label[0, path['target']['index']] = 1.0
-    print(label)
 
     _, preds= analyzer.analyze(instance, label)
-    print(preds, flush=True)
 
     return preds 
 

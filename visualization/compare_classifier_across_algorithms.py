@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+import math
 from matplotlib import gridspec
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -32,7 +33,6 @@ def label_plots(path_axes, preds_axes):
     adversarial_preds_ax.set_title('Confidence over time')
 
     return (optimal_path_ax, adversarial_path_ax), (optimal_preds_ax, adversarial_preds_ax)
-    
 
 def plot_preds(ax, preds):
 
@@ -103,9 +103,13 @@ def get_preds(paths, analyzer):
 
     optimalPath, adversarialPath = paths
 
-    downSample = 10
+    downSample = 100
     instance = np.array([optimalPath['path']['x'], optimalPath['path']['y'], optimalPath['path']['theta']]).transpose()
-    instance = instance[np.newaxis, ::downSample, :] / 10.0
+    instance[:, :2] /= 10
+    instance[:, 2] -= math.pi
+    instance[:, 2] /= math.pi
+    instance = instance[np.newaxis, ::downSample, :] 
+    print(instance)
 
     label = np.zeros((1,5))
     label[0, optimalPath['target']['index']] = 1.0
@@ -113,7 +117,12 @@ def get_preds(paths, analyzer):
     _, optimalPreds= analyzer.analyze(instance, label)
 
     instance = np.array([adversarialPath['path']['x'], adversarialPath['path']['y'], adversarialPath['path']['theta']]).transpose()
-    instance = instance[np.newaxis, ::downSample, :] / 10.0
+    instance[:, :2] /= 10
+    instance[:, 2] -= math.pi
+    instance[:, 2] /= math.pi
+    instance = instance[np.newaxis, ::downSample, :]
+    print(instance)
+
     label = np.zeros((1,5))
     label[0, optimalPath['target']['index']] = 1.0
 
@@ -133,7 +142,8 @@ def load_paths(pathNum):
 
 def get_analyzer(sceneName):
 
-    weightsDir = 'D:\\path_planning_data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
+    #weightsDir = 'D:\\path_planning_data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
+    weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
     model = LSTM()
 
     return LSTMGradientAnalyzer(model, weightsDir)
@@ -166,5 +176,3 @@ if __name__ == '__main__':
     pathNum = args.path_num
 
     compare_predictions(modelSelection, dataDirectory, algorithm, pathNum)
-
-

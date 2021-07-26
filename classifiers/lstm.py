@@ -77,6 +77,8 @@ class LSTMTrainer():
         valAcc = self.valAccMetric.result()
         self.history['valAcc'].append(valAcc)
         self.history['valLoss'].append(float(lossValue))
+        print('validation accuracy:', valAcc)
+        print('validation loss:', lossValue)
         self.valAccMetric.reset_states()
 
     def _train_epoch(self, trainDataset, valDataset):

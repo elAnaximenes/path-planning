@@ -84,10 +84,10 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    for i in range(5,10):
+    for i in range(5,6):
 
         #seed = random.randint(1, 10000)
-        seed = i 
+        seed = i
         print('seed:', seed)
         random.seed(seed)
         np.random.seed(seed)
@@ -99,3 +99,4 @@ if __name__ == '__main__':
 
         with open('../data/paths/adversarial_optimal_rrt_path_{}.json'.format(i), 'w') as f:
             json.dump(sample, f)
+        print('finished path {}'.format(i), flush=True)

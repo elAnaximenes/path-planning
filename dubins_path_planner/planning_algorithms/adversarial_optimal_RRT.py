@@ -82,7 +82,7 @@ class DubinsCarAdversarialOptimalRRT:
         self.animate = animate
         self.fig = None
         self.ax = None
-        self.maxIter = 150 
+        self.maxIter = 250
         self.iteration=0
         self.leg=None
         if self.animate:
@@ -168,7 +168,7 @@ class DubinsCarAdversarialOptimalRRT:
 
         return path
    
-    def _calculate_dubins_path_length(self, originNode, destinationPoint):
+    def _calculate_dubins_path_length_node_to_point(self, originNode, destinationPoint):
         ### Final heading does NOT matter
 
         # re-initialize dubins car to be at origin node
@@ -235,10 +235,11 @@ class DubinsCarAdversarialOptimalRRT:
         # calculate entropy once per second
         sampleRate = 100
         instance = np.array([path['x'], path['y'], path['theta']]).transpose()
-        instance[:, :2] /= 10.0
-        instance[:, 2] -= math.pi
-        instance[:, 2] /= math.pi
         instance = instance[np.newaxis, ::sampleRate, :]
+        instance[:, :, :2] /= 10.0
+        instance[:, :, 2] -= math.pi
+        instance[:, :, 2] /= math.pi
+
         cumulativeEntropy = 0.0
 
         for i in range(1, instance.shape[1]):
@@ -255,7 +256,7 @@ class DubinsCarAdversarialOptimalRRT:
             #print(logits)
 
             # debug, entropy should be normalized to timesteps
-            if entropy > (0.01 * sampleRate):
+            if entropy > (1.0):
                 print('entropy cannot be greater than 1')
                 exit(1)
 
@@ -276,11 +277,9 @@ class DubinsCarAdversarialOptimalRRT:
 
         fullPath = node.path.copy()
 
-        #print(node.name, flush=True)
         while node.name != 'Root':
 
             node = node.parent
-            #print(node.name, flush=True)
             distanceCost += node.pathLength
 
             fullPath['x'] = node.path['x'] + fullPath['x'] 
@@ -289,12 +288,13 @@ class DubinsCarAdversarialOptimalRRT:
 
         entropyCost = 0.0
         entropyCost = self._calculate_entropy(fullPath) 
-        alpha = 1.0 
+
+        alpha = -.99
         #print('distanceCost:', distanceCost)
-        #print('entropyCost:', math.exp(entropyCost))
-        #print('totalCost:', distanceCost + (alpha * math.exp(entropyCost)), flush=True)
+        #print('entropyCost:', entropyCost)
 
         cost = distanceCost + (alpha * entropyCost) 
+        #print('totalCost:', cost, flush=True)
 
         # debug, rrt* cannot have negative costs
         if cost < 0.0:
@@ -307,10 +307,23 @@ class DubinsCarAdversarialOptimalRRT:
 
         rewire = False
 
+        #print(newNode.name,[x.name for x in nearestNodes])
         for nearNode in nearestNodes:
 
+
+            valid = True 
             # cannot rewire root node
             if nearNode.name == 'Root':
+                valid = False 
+            # cannot rewire to node in own path(cycle)
+            else:
+                nodesInPath = self._get_nodes_leaf_to_root(nearNode)
+                for n in nodesInPath:
+
+                    if n.name == nearNode.name:
+                        valid = False
+
+            if not valid:
                 continue
 
             # Only consider heading for rewiring to non leaf nodes
@@ -320,7 +333,7 @@ class DubinsCarAdversarialOptimalRRT:
                 euclideanDistance = abs(np.linalg.norm(newNode.position[:2] - nearNode.position[:2]))
                 pathToNear = None
                 if euclideanDistance > (2.0 * self.car.minTurningRadius):
-                    pathLengthToNear = self._calculate_dubins_path_length(newNode, nearNode.position)
+                    pathLengthToNear = self._calculate_dubins_path_length_node_to_point(newNode, nearNode.position)
                     pathToNear = self._get_dubins_path(newNode, nearNode.position)
 
             if pathToNear is None:
@@ -328,6 +341,9 @@ class DubinsCarAdversarialOptimalRRT:
 
             # check obstacle collisions
             collisionFree = self._is_point_reachable(newNode, nearNode, pathToNear)
+
+            if not collisionFree:
+                continue
 
             # get current cost to near node
             nearNodeCost = self._get_cost(nearNode)
@@ -337,8 +353,9 @@ class DubinsCarAdversarialOptimalRRT:
             candidateCost = self._get_cost(candidateNode)
 
             # rewire from new node
-            if candidateCost < nearNodeCost and collisionFree:
+            if candidateCost < nearNodeCost:
 
+                #print('rewiring {} to be the parent of {}'.format( newNode, nearNode))
                 rewire = True
                 nearNode.parent.numChildren -= 1
                 carStateAtPoint = np.array([pathToNear['x'][-1], pathToNear['y'][-1], pathToNear['theta'][-1]])
@@ -352,118 +369,6 @@ class DubinsCarAdversarialOptimalRRT:
                     self._update_animation(point=nearNode.position, path=pathToNear, event='rewire', node=nearNode)
 
         return rewire
-
-    def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
-
-        # initialize mincost to nearest node
-        minPathStartNode = nearestNode 
-        minPathLength = self._calculate_dubins_path_length(nearestNode, point)
-        minPath = self._get_dubins_path(nearestNode, point)
-
-        # get cost to new node, connecting from nearest node
-        tempNode = self._create_node(nearestNode, minPathLength, minPath)
-        minCost = self._get_cost(tempNode) 
-
-        for node in nearestNodes:
-
-            # path from near node to new point
-            path = self._get_dubins_path(node, point)
-
-            # check obstacle collision
-            collisionFree = self._is_point_reachable(node, point, path)
-            if not collisionFree:
-                continue
-
-            # calculate cost to new node, connecting from near node
-            pathLength = self._calculate_dubins_path_length(node, point)
-            tempNode = self._create_node(node, pathLength, path)
-            costToNewPoint = self._get_cost(tempNode)
-
-            # set min path
-            if minPath is None or costToNewPoint < minCost:
-                minPath = path
-                minPathLength = pathLength
-                minPathStartNode = node
-                minCost = costToNewPoint
-
-        return minPath, minPathLength, minPathStartNode
-
-    def _find_nearest_nodes_to_new_point(self, randomPoint, goal=False):
-
-        # setup to begin search 
-        shortestPath = None
-        shortestPathLength = None
-        nearestNode = None
-        nearestNodes = []
-        
-        # search tree for nearest neighbor to new point
-        for node in self.nodeList:
-
-            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint[:2]))
-
-            # ignore nodes that are too close to point or too far from point
-            if euclideanDistance < (2.0 * self.car.minTurningRadius) or euclideanDistance > self.nearestNeighborRadius:
-                continue
-            #elif goal and euclideanDistance > self.goalNearestNeighborRadius:
-                #continue
-
-            # get dubins optimal path and length
-            pathLength = self._calculate_dubins_path_length(node, randomPoint)
-
-            # only care about long path case
-            if pathLength < self.nearestNeighborRadius:# and (euclideanDistance / self.car.minTurningRadius) >= 4.0 * self.car.minTurningRadius:
-                nearestNodes.append(node)
-
-            # store shortest path
-            if shortestPathLength is None or pathLength < shortestPathLength:
-                path = self._get_dubins_path(node, randomPoint)
-                shortestPathLength = pathLength
-                shortestPath = path
-                nearestNode = node
-
-                if self.animate:
-                    self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
-
-        return shortestPath, shortestPathLength, nearestNode, nearestNodes
-
-
-    def _extend(self, point=None, goal=False):
- 
-        if point is None:
-            point = self._sample_random_point()
-
-        # get nearest nodes
-        shortestPath, shortestPathLength, nearestNode, nearestNodes = self._find_nearest_nodes_to_new_point(point, goal)
-
-        # check for viable path from parent node to new point
-        isPointReachable = self._is_point_reachable(nearestNode, point, shortestPath)
-
-        newNode = None
-
-        # collision free
-        if isPointReachable:
-
-            # connect along a minimum-cost path
-            minCostPath, minCostPathLength, minCostNode = self._connect_along_min_cost_path(point, nearestNodes, nearestNode)
-            
-            if goal:
-                # check if this path is already in goal node list
-                for node in self.goalNodeList:
-                    if node.parent == minCostNode:
-                        return node, None 
-            
-            # add node to tree/add goal node to goal node list
-            newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
-
-            if goal:
-                return newNode, nearestNodes
-            elif self.animate:
-                self._update_animation(point=point, path=minCostPath, event='valid path', node=newNode)
-
-        elif self.animate:
-            self._update_animation(point=point, path=shortestPath, event='invalid path')
-
-        return newNode, nearestNodes
 
     def _get_nodes_leaf_to_root(self, node):
 
@@ -522,6 +427,119 @@ class DubinsCarAdversarialOptimalRRT:
 
         return finalPath
 
+    def _connect_along_min_cost_path(self, point, nearestNodes, nearestNode):
+
+        minPath = None
+        minPathLength = None
+        minPathStartNode = None
+
+        # initialize mincost to nearest node
+        minPathStartNode = nearestNode 
+        minPathLength = self._calculate_dubins_path_length_node_to_point(nearestNode, point)
+        minPath = self._get_dubins_path(nearestNode, point)
+
+        # get cost to new node, connecting from nearest node
+        tempNode = self._create_node(nearestNode, minPathLength, minPath)
+        minCost = self._get_cost(tempNode) 
+
+        for node in nearestNodes:
+
+            # path from near node to new point
+            path = self._get_dubins_path(node, point)
+
+            # check obstacle collision
+            collisionFree = self._is_point_reachable(node, point, path)
+            if not collisionFree:
+                continue
+
+            # calculate cost to new node, connecting from near node
+            pathLength = self._calculate_dubins_path_length_node_to_point(node, point)
+            tempNode = self._create_node(node, pathLength, path)
+            costToNewPoint = self._get_cost(tempNode)
+
+            # set min path
+            if minPath is None or costToNewPoint < minCost:
+                minPath = path
+                minPathLength = pathLength
+                minPathStartNode = node
+                minCost = costToNewPoint
+
+        return minPath, minPathLength, minPathStartNode
+
+    def _find_nearest_nodes_to_new_point(self, randomPoint, goal=False):
+
+        # setup to begin search 
+        shortestPath = None
+        shortestPathLength = None
+        nearestNode = None
+        nearestNodes = []
+        
+        # search tree for nearest neighbor to new point
+        for node in self.nodeList:
+
+            euclideanDistance = abs(np.linalg.norm(node.position[:2] - randomPoint[:2]))
+
+            # ignore nodes that are too close to point or too far from point
+            if euclideanDistance < (2.0 * self.car.minTurningRadius) or euclideanDistance > self.nearestNeighborRadius:
+                continue
+
+            # get dubins optimal path and length
+            pathLength = self._calculate_dubins_path_length_node_to_point(node, randomPoint)
+
+            if pathLength < self.nearestNeighborRadius:
+                nearestNodes.append(node)
+
+            # store shortest path
+            if shortestPathLength is None or pathLength < shortestPathLength:
+                path = self._get_dubins_path(node, randomPoint)
+                shortestPathLength = pathLength
+                shortestPath = path
+                nearestNode = node
+
+                if self.animate:
+                    self._update_animation(point=randomPoint, path=shortestPath, event='candidate')
+
+        return shortestPath, shortestPathLength, nearestNode, nearestNodes
+
+
+    def _extend(self, point=None, goal=False):
+ 
+        if point is None:
+            point = self._sample_random_point()
+
+        # get nearest nodes
+        shortestPath, shortestPathLength, nearestNode, nearestNodes = self._find_nearest_nodes_to_new_point(point, goal)
+
+        # check for viable path from parent node to new point
+        isPointReachable = self._is_point_reachable(nearestNode, point, shortestPath)
+
+        newNode = None
+
+        # collision free
+        if isPointReachable:
+
+            # connect along a minimum-cost path
+            minCostPath, minCostPathLength, minCostNode = self._connect_along_min_cost_path(point, nearestNodes, nearestNode)
+            
+            if goal:
+                # check if this path is already in goal node list
+                for node in self.goalNodeList:
+                    if node.parent == minCostNode:
+                        return node, None 
+            
+            # add node to tree/add goal node to goal node list
+            newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
+
+            if goal:
+                return newNode, nearestNodes
+            elif self.animate:
+                self._update_animation(point=point, path=minCostPath, event='valid path', node=newNode)
+
+        elif self.animate:
+            self._update_animation(point=point, path=shortestPath, event='invalid path')
+
+        return newNode, nearestNodes
+
     ########################
     #### RRT* ALGORITHM ####
     ########################
@@ -544,7 +562,7 @@ class DubinsCarAdversarialOptimalRRT:
                 self._sample_goal()
 
             # debug
-            if self.iteration % 25 == 0:
+            if self.iteration % 10 == 0:
                 print('iteration:', self.iteration, flush=True)
 
             self.iteration += 1
