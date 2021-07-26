@@ -56,6 +56,7 @@ class FeedForwardTrainer:
     def _save_metrics(self, lossValue, valDataset):
 
         trainAcc = self.trainAccMetric.result()
+        print('train accuracy:', trainAcc)
         self.trainingHistory['trainAcc'].append(trainAcc)
         self.trainingHistory['trainLoss'].append(float(lossValue))
         self.trainAccMetric.reset_states()
@@ -67,6 +68,7 @@ class FeedForwardTrainer:
             lossValue = self.loss_fn(yBatchVal, valLogits)
 
         valAcc = self.valAccMetric.result()
+        print('val accuracy:', valAcc)
         self.trainingHistory['valAcc'].append(valAcc)
         self.trainingHistory['valLoss'].append(float(lossValue))
         self.valAccMetric.reset_states()

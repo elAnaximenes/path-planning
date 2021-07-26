@@ -53,7 +53,7 @@ class CNNTrainDataLoader():
 
             sample = rawData[str(sampleNumber)]
 
-            x = sample['path
+            x = sample['path']
 
     def load(self, startBatch)
 

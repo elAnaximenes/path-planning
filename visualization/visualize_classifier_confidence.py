@@ -23,9 +23,7 @@ from dubins_path_planner.scene import Scene
 
 def label_plots(path_ax, preds_ax):
 
-    path_ax.set_title('Path')
-
-    preds_ax.set_title('Confidence over time')
+    path_ax.set_title('Path and Confidence')
 
     return path_ax, preds_ax
 
@@ -45,15 +43,15 @@ def plot_preds(ax, preds, targetColors):
 
 def get_path(path):
 
-        x = []
-        y = []
+    x = []
+    y = []
 
-        for t in range(len(path['x'])):
+    for t in range(len(path['x'])):
 
-            x.append(path['x'][t])
-            y.append(path['y'][t])
+        x.append(path['x'][t])
+        y.append(path['y'][t])
 
-        return x, y
+    return x, y
 
 def plot_path(ax, path):
 
@@ -68,6 +66,8 @@ def plot_paths_and_preds(path, preds, scene):
     gs = gridspec.GridSpec(2,1, height_ratios=(4,1))
     scene_ax = plt.subplot(gs[0,0])
     pred_ax = plt.subplot(gs[1,0])
+
+    fig.tight_layout(pad=3.0)
 
     targetColors = ['blue','orange', 'green', 'pink', 'red']
     print(targetColors)
