@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class LstmTrainDataLoader():
 
-    def __init__(self, split, numBatches, dataDirectory, batchSize = 128, downSampleStride = 50):
+    def __init__(self, split, numBatches, dataDirectory, batchSize = 100, downSampleStride = 50):
 
         self.batchSize = batchSize
         self.downSampleStride = downSampleStride
@@ -31,6 +31,7 @@ class LstmTrainDataLoader():
         roundedSetSize = int(self.x.shape[0] // 100) * 100
         self.x = self.x[:roundedSetSize]
         self.y = self.y[:roundedSetSize]
+        print(self.x.shape, flush=True)
         
         splitIndex = int(self.x.shape[0] * self.split)
         self.x_train = self.x[:splitIndex]

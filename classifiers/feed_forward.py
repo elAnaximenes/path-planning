@@ -10,7 +10,7 @@ class FeedForward(tf.keras.Model):
         self.inputLayer = layers.InputLayer(input_shape=(inputShape))
         self.flattenLayer = (layers.Flatten())
         #self.mask = layers.Masking()
-        self.H1 = layers.Dense(1028, activation='relu')
+        self.H1 = layers.Dense(512, activation='relu')
         self.H2 = layers.Dense(256, activation='relu')
         self.H3 = layers.Dense(64, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
@@ -76,8 +76,8 @@ class FeedForwardTrainer:
         if resume:
             self.model.load_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
 
-        x_train, y_train = trainData
-        x_val, y_val = valData
+        (x_train, y_train) = trainData
+        (x_val, y_val) = valData
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         trainDataset = trainDataset.shuffle(buffer_size=1024).batch(batchSize)
@@ -99,8 +99,7 @@ class FeedForwardTrainer:
 
             self._save_metrics(lossValue, valDataset)
 
-        self.model.save_weights('{}/feed_forward_final_weights'.format(self.weightsDir))
-        self.model.save('{}/feed_forward_model'.format(self.weightsDir))
+        self.model.save_weights('{}/feed_forward_final_weights_{}_time_steps'.format(self.weightsDir, x_train.shape[-1]))
 
         return self.trainingHistory
     

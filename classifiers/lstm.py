@@ -16,10 +16,12 @@ class LSTM(tf.keras.Model):
         
         self.inputLayer = layers.InputLayer(inputShape)
         self.mask = layers.Masking(mask_value = 0.0)
-        self.lstm = layers.LSTM(128, stateful=True)
-        self.h1 = layers.Dense(256, activation='relu')
-        self.h2 = layers.Dense(128, activation='relu')
+        self.lstm = layers.LSTM(1024, stateful=True)
+        self.h1 = layers.Dense(1024, activation='relu')
+        self.h1 = layers.Dense(512, activation='relu')
+        self.h2 = layers.Dense(256, activation='relu')
         self.h3 = layers.Dense(64, activation='relu')
+        self.h3 = layers.Dense(8, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
 		
     def call(self, x):
@@ -126,9 +128,10 @@ class LSTMTrainer():
             print("\nStart of epoch {}\n".format(epoch))
             self._train_epoch(trainDataset, valDataset)
 
-            self.model.save_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
-            self.model.save(os.path.join(self.weightsDir, 'lstm_model'))
-            print('saving weights {}/lstm_final_weights'.format(self.weightsDir))
+            self.model.save_weights(os.path.join(self.weightsDir, 'lstm_weights_epoch_{}'.format(epoch)))
+            print('saving weights {}/lstm_weights_epoch_{}'.format(self.weightsDir, epoch))
+
+        self.model.save_weights(os.path.join(self.weightsDir, 'lstm_final_weights'))
             
         return self.history
 

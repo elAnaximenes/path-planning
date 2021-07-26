@@ -55,11 +55,11 @@ def get_trainer(modelSelection, model, weightsDir):
 
     return trainer
 
-def get_data_loader(modelSelection, numBatches, dataDirectory, split):
+def get_data_loader(modelSelection, numBatches, dataDirectory, split, truncation, stepSize):
 
     if modelSelection.lower() == 'feedforward':
 
-        dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
+        dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory, truncatedPathLength=truncation, stepSize=stepSize)
 
     elif modelSelection.lower() == 'lstm' or modelSelection.lower() == 'cnn':
 
@@ -113,11 +113,11 @@ def summary(history, modelSelection, numBatches, startBatch, algo):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt', sceneName='tower_defense'):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt', sceneName='tower_defense', truncation=1, stepSize=100):
 
     # load training and validation data
     trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_train'.format(sceneName, algo)) 
-    dataLoader = get_data_loader(modelSelection, numBatches, trainingDataDir, split)
+    dataLoader = get_data_loader(modelSelection, numBatches, trainingDataDir, split, truncation, stepSize)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
 
@@ -134,7 +134,7 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=Fal
     print('successfully trained model')
 
     # summarize training results
-    summary(history, modelSelection, numBatches, startBatch, algo)
+    #summary(history, modelSelection, numBatches, startBatch, algo)
 
 if __name__ == '__main__':
 
@@ -142,26 +142,30 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Deep neural network model for classifying a path\'s target based on the beginning of the path\'s trajectory.')
     parser.add_argument('--model', type=str, help='Which model to use for classification.', default = "FeedForward")
     parser.add_argument('--epochs', type=int, help='number of epochs to train for', default = 30)
-    parser.add_argument('--batchsize', type=int, help='Size of batch in each epoch.', default = 512)
+    parser.add_argument('--batch_size', type=int, help='Size of batch in each epoch.', default = 512)
     parser.add_argument('--split', type=float, help='Percentage of set to use for training.', default = 0.95)
     parser.add_argument('--batches', type=int, help='How many batches to train on.', default = 10)
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
     parser.set_defaults(resume=False)
-    parser.add_argument('--startbatch', type = int, help='What batch number to start at', default = 0)
+    parser.add_argument('--start_batch', type = int, help='What batch number to start at', default = 0)
     parser.add_argument('--directory', type = str, default = '.\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
     parser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
+    parser.add_argument('--truncation', type=int, help='how much of the path to make visible to classifier', default=1)
+    parser.add_argument('--step_size', type=int, help='Sample path every ? timesteps', default=100)
 
     args = parser.parse_args()
     modelSelection=args.model
     epochs = args.epochs
-    batchSize = args.batchsize
+    batchSize = args.batch_size
     split = args.split
     numBatches = args.batches
     resume = args.resume
-    startBatch = args.startbatch
+    startBatch = args.start_batch
     dataDirectory = args.directory
     sceneName = args.scene
+    truncation = args.truncation
+    stepSize = args.step_size
 
     if split > 1.0 or split < 0.0:
         print('split must be a real number between 0.0 and 1.0')
@@ -172,4 +176,4 @@ if __name__ == '__main__':
     algorithm = args.algo.lower()
 
     # train
-    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm, sceneName)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm, sceneName, truncation, stepSize)

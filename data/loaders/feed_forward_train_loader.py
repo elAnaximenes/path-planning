@@ -6,7 +6,7 @@ from tensorflow.keras.utils import to_categorical
 
 class FeedForwardTrainDataLoader:
 
-    def __init__(self, split, numBatches, truncatedPathLength=1000, dataDirectory='./data/batches-train/'):
+    def __init__(self, split, numBatches, truncatedPathLength=1000, stepSize=1, dataDirectory='./data/batches-train/'):
 
         #super().__init__(split, numBatches, dataDirectory=dataDirectory)
         self.numBatchesToLoad = int(numBatches)
@@ -22,6 +22,7 @@ class FeedForwardTrainDataLoader:
         self.y_val = None
         self.trainData = None
         self.valData = None
+        self.stepSize = stepSize
         self.split = split
 
     def _split_data(self):
@@ -98,10 +99,10 @@ class FeedForwardTrainDataLoader:
         for sampleNumber in range(len(rawData)):
 
             sample = rawData[str(sampleNumber)]
-            
-            x = sample['path']['x']
-            y = sample['path']['y']
-            theta = sample['path']['theta']
+        
+            x = sample['path']['x'][::self.stepSize]
+            y = sample['path']['y'][::self.stepSize]
+            theta = sample['path']['theta'][::self.stepSize]
 
             if len(x) < self.truncatedPathLength:
                 instance = np.zeros((3, self.truncatedPathLength))
@@ -135,7 +136,7 @@ class FeedForwardTrainDataLoader:
         print('Loading data...')
         for i in range(startBatch, startBatch + self.numBatchesToLoad):
 
-            batchFileName = 'test_room_batch_{}.json'.format(i)
+            batchFileName = 'batch_{}.json'.format(i)
             print(batchFileName)
 
             x_batch, y_batch = self._load_batch_json(batchFileName)
