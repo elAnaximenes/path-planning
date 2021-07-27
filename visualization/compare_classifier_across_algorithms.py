@@ -19,6 +19,7 @@ sys.path.append(parentdir)
 from data.loaders.val_loader import ValidateDataLoader
 from data.loaders.mean_path_loader import MeanPathDataLoader 
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
+from classifiers.feed_forward import FeedForward, FeedForwardGradientAnalyzer
 from dubins_path_planner.scene import Scene
 
 def label_plots(path_axes, preds_axes):
@@ -46,7 +47,7 @@ def plot_preds(ax, preds):
 
             conf.insert(0, preds[t, targetIdx])
         
-        ax.plot(range(preds.shape[0], 0, -1), conf, linestyle='--', color=targetColors[targetIdx])
+        ax.plot(range(preds.shape[0]), conf, linestyle='--', color=targetColors[targetIdx])
 
     return ax
 
@@ -91,9 +92,9 @@ def plot_paths_and_preds(paths, preds, scene):
     optimalPreds, adversarialPreds = preds
 
     time = max(optimalPreds.shape[0], adversarialPreds.shape[0])
-    optimal_pred_ax.set_xlim(time, 0)
+    optimal_pred_ax.set_xlim(0, time)
     optimal_pred_ax.grid(True)
-    adversarial_pred_ax.set_xlim(time, 0)
+    adversarial_pred_ax.set_xlim(0, time)
     adversarial_pred_ax.grid(True)
 
     optimal_pred_ax = plot_preds(optimal_pred_ax, optimalPreds)
@@ -147,17 +148,23 @@ def load_paths(pathNum):
 
     return optimalPath, adversarialPath
 
-def get_analyzer(sceneName):
+def get_analyzer(sceneName, modelSelection):
 
     #weightsDir = 'D:\\path_planning_data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
-    weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
-    model = LSTM()
+    analyzer = None
+    if modelSelection == 'lstm':
+        weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
+        model = LSTM()
+        LSTMGradientAnalyzer(model, weightsDir)
+    elif modelSelection == 'feedforward':
+        weightsDir = '..\\data\\{}_dataset\\optimal_rrt_feedforward_weights\\'.format(sceneName)
+        analyzer = FeedForwardGradientAnalyzer(weightsDir)
 
-    return LSTMGradientAnalyzer(model, weightsDir)
+    return analyzer
 
 def compare_predictions(modelSelection, dataDirectory, algo='optimal_rrt', pathNum=0, sceneName = 'tower_defense'):
 
-    analyzer = get_analyzer(sceneName)
+    analyzer = get_analyzer(sceneName, modelSelection)
 
     paths = load_paths(pathNum)
     preds = get_preds(paths, analyzer)

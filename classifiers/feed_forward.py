@@ -161,7 +161,7 @@ class FeedForwardGradientAnalyzer:
         self.label = None
         self.gradientMagnitudes = None
         self.grads = None
-        self.predictions = None
+        self.predictions = [] 
 
     def _normalize_grads(self, grads):
 
@@ -183,7 +183,12 @@ class FeedForwardGradientAnalyzer:
         label = self.label
         self.losses = []
 
-        x = self.instance
+        xCoords = self.instance[0, :, 0]
+        yCoords = self.instance[0, :, 1]
+        theta = self.instance[0, :, 2]
+
+        x = np.array([xCoords, yCoords, theta])
+        x = x[np.newaxis, :, :]
 
         # array to tensor
         x = tf.constant(x)
@@ -196,18 +201,20 @@ class FeedForwardGradientAnalyzer:
             lossValue = self.loss_fn(label, logits)
 
             self.losses.append(lossValue)
-            print(logits)
+            print(logits[0].numpy().tolist())
 
             # gradient for each output logit w.r.t. inputs x,y,theta
             #jacobian = tape.jacobian(logits, x)
 
         #self.grads = self._normalize_grads(grads)
         self.grads = None
-        self.predictions = np.array(predictions)
+        self.predictions.append(logits[0].numpy().tolist())
 
     def analyze(self, instance, label):
 
         self.timeSteps = instance.shape[1]
+        self.predictions = []
+
         for i in range(1, self.timeSteps):
 
             weightsPath = os.path.join(self.weightsDir, 'feed_forward_final_weights_{}_time_steps'.format(i))
@@ -221,6 +228,9 @@ class FeedForwardGradientAnalyzer:
             self.label = label
 
             self._calculate_gradients_and_predictions()
+
+        self.predictions = np.array(self.predictions)
+        print(self.predictions)
 
         return self.grads, self.predictions
 

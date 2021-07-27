@@ -46,7 +46,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
         print('sample number: {}'.format(sampleNum), flush=True)
 
         if args.seed:
-            seed = sampleNum
+            seed = sampleNum + (batchNum * args.batchsize)
             print('seed:', seed)
             np.random.seed(seed)
             random.seed(seed)
@@ -54,10 +54,12 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
         sample = None 
         while sample is None:
 
-            print('running RRT*')
+
             if args.algo.lower() == 'rrt':
+                print('running RRT')
                 sample = run_RRT(animate=False, sceneName=args.scene)
             elif args.algo.lower() == 'optimal_rrt':
+                print('running RRT*')
                 try:
                     sample = run_optimal_RRT(animate=False, sceneName=args.scene, target=args.target)
                 except Exception as e:
@@ -65,6 +67,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
                     print(e)
                     sample = None
             elif args.algo.lower() == 'adversarial_optimal_rrt':
+                print('running AdvRRT*')
                 try:
                     sample = run_adversarial_optimal_RRT(animate=False, sceneName=args.scene)
                 except Exception as e:

@@ -91,7 +91,7 @@ def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName=
     model = build_model(modelSelection, inputShape)
     print('model loaded')
 
-    weightsDir = os.path.join(dataDirectory, '{}_dataset/{}_{}_weights'.format(sceneName, algo, modelSelection.lower()))
+    weightsDir = os.path.join(dataDirectory, '{}_dataset/optimal_rrt_{}_weights'.format(sceneName, modelSelection.lower()))
     print(weightsDir)
     tester = get_tester(modelSelection, dataset, model, weightsDir) 
     print('tester loaded')
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     argparser = argparse.ArgumentParser(description='Test selected model on validation or test set')
     argparser.add_argument('--model', type=str, default='FeedForward')
-    argparser.add_argument('--directory', type=str, default='./data/batches-validate')
+    argparser.add_argument('--directory', type=str, default='../data/')
     argparser.add_argument('--batches', type=int, default=1)
     argparser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
     argparser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
