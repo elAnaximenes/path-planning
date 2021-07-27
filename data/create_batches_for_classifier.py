@@ -13,6 +13,7 @@ sys.path.append(parentdir)
 import dubins_path_planner.planning_algorithms.RRT
 from dubins_path_planner.run_RRT import run_RRT
 from dubins_path_planner.run_optimal_RRT import run_optimal_RRT
+from dubins_path_planner.run_adversarial_optimal_RRT import run_adversarial_optimal_RRT
 
 def save_json_format(samplesInBatch, batchNum, sceneName, algo):
 
@@ -33,6 +34,7 @@ parser.add_argument('--format', type=str, help='Format of save file..', default=
 parser.add_argument('--start_index', type=int, help='Index to begin saving batches at', default=0)
 parser.add_argument('--algo', type=str, help='RRT or optimal', default = 'RRT')
 parser.add_argument('--target', type=int, help='RRT or optimal', default = None)
+parser.add_argument('--seed', action='store_true', default = False)
 
 args = parser.parse_args()
 
@@ -43,23 +45,28 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
 
         print('sample number: {}'.format(sampleNum), flush=True)
 
-        # uncomment for debugging
-        """
-        seed = random.randint(1, 100000)
-        print('seed:', seed)
-        np.random.seed(seed)
-        random.seed(seed)
-        """
+        if args.seed:
+            seed = sampleNum
+            print('seed:', seed)
+            np.random.seed(seed)
+            random.seed(seed)
 
         sample = None 
         while sample is None:
 
             print('running RRT*')
-            if args.algo == 'RRT':
+            if args.algo.lower() == 'rrt':
                 sample = run_RRT(animate=False, sceneName=args.scene)
-            else:
+            elif args.algo.lower() == 'optimal_rrt':
                 try:
                     sample = run_optimal_RRT(animate=False, sceneName=args.scene, target=args.target)
+                except Exception as e:
+                    print('an exception occurred')
+                    print(e)
+                    sample = None
+            elif args.lower.algo.lower() == 'adversarial_optimal_rrt':
+                try:
+                    sample = run_adversarial_optimal_RRT(animate=False, sceneName=args.scene, target=args.target)
                 except Exception as e:
                     print('an exception occurred')
                     print(e)
