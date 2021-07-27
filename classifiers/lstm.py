@@ -153,7 +153,7 @@ class LSTMTester:
 
         for instance, label in self.dataset.data:
 
-            numTimeSteps = instance.shape[1] * self.dataset.stepSize
+            numTimeSteps = instance.shape[1]
 
             for t in range(instance.shape[1]):
 
@@ -162,7 +162,7 @@ class LSTMTester:
                 logits = self.model(inputTensor)
                 prediction = np.argmax(logits)
                 
-                timeToGoal = numTimeSteps - (t*self.dataset.stepSize)
+                timeToGoal = numTimeSteps - t
 
                 if timeToGoal not in self.accuracyInfo['tp']:
                     self.accuracyInfo['tp'][timeToGoal] = 1

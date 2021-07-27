@@ -64,9 +64,9 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
                     print('an exception occurred')
                     print(e)
                     sample = None
-            elif args.lower.algo.lower() == 'adversarial_optimal_rrt':
+            elif args.algo.lower() == 'adversarial_optimal_rrt':
                 try:
-                    sample = run_adversarial_optimal_RRT(animate=False, sceneName=args.scene, target=args.target)
+                    sample = run_adversarial_optimal_RRT(animate=False, sceneName=args.scene)
                 except Exception as e:
                     print('an exception occurred')
                     print(e)

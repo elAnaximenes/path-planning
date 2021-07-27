@@ -20,19 +20,30 @@ from feed_forward import FeedForward, FeedForwardTester
 
 def plot_performance(performance, modelSelection, algo):
 
+    print(performance)
     tp = performance['tp']
     labelCount = performance['label count']
 
     accuracyOverTime = []
-    timesteps = []
+    correct = []
+    pathsAlive = []
+    timesteps = sorted(labelCount.keys())
+    totalPaths = float(labelCount[timesteps[0]])
 
-    for key in sorted(labelCount.keys()):
+    for key in timesteps: 
+
         percent = float(tp[key])/float(labelCount[key])
         accuracyOverTime.append(percent)
-        timesteps.append(key)
+        correct.append(float(tp[key])/totalPaths)
+        pathsAlive.append(float(labelCount[key])/totalPaths)
+
+    print(pathsAlive)
+    print(correct)
 
     plt.title('{} Accuracy over time -- {}'.format(modelSelection, algo))
-    plt.plot(timesteps[-1], accuracyOverTime[-1], 'b', label = 'Accuracy')
+    plt.plot(timesteps, accuracyOverTime, 'b', label = 'Accuracy')
+    plt.plot(timesteps, correct, 'r--', label = 'True Positives')
+    plt.plot(timesteps, pathsAlive, 'g--', label = 'Path Count')
     plt.xlim(0, timesteps[-1])
     plt.ylim(0.0, 1.0)
     plt.xlabel('Timesteps from goal')
