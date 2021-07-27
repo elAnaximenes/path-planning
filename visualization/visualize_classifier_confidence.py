@@ -19,6 +19,7 @@ sys.path.append(parentdir)
 from data.loaders.val_loader import ValidateDataLoader
 from data.loaders.mean_path_loader import MeanPathDataLoader 
 from classifiers.lstm import LSTM, LSTMGradientAnalyzer
+from classifiers.feed_forward import FeedForward, FeedForwardGradientAnalyzer
 from dubins_path_planner.scene import Scene
 
 def label_plots(path_ax, preds_ax):
@@ -107,16 +108,22 @@ def load_path(pathNum):
 
     return path 
 
-def get_analyzer(sceneName):
+def get_analyzer(sceneName, modelSelection):
 
-    weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
-    model = LSTM()
+    analyzer = None
+    if modelSelection == 'lstm':
+        weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
+        model = LSTM()
+        analyzer = LSTMGradientAnalyzer(model, weightsDir)
+    elif modelSelection == 'feedforward':
+        weightsDir = '..\\data\\{}_dataset\\optimal_rrt_feedforward_weights\\'.format(sceneName)
+        analyzer = FeedForwardGradientAnalyzer(weightsDir)
 
-    return LSTMGradientAnalyzer(model, weightsDir)
+    return analyzer
 
 def compare_predictions(modelSelection, dataDirectory, algo='optimal_rrt', pathNum=0, sceneName = 'tower_defense'):
 
-    analyzer = get_analyzer(sceneName)
+    analyzer = get_analyzer(sceneName, modelSelection)
 
     path = load_path(pathNum)
     pred = get_pred(path, analyzer)
@@ -134,7 +141,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    modelSelection = args.model
+    modelSelection = args.model.lower()
     algorithm = args.algo.lower()
     dataDirectory = args.directory
     if dataDirectory == 'tower':

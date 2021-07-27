@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers 
+import os
 import numpy as np
 
 class FeedForward(tf.keras.Model):
@@ -149,11 +150,11 @@ class FeedForwardTester:
 
 class FeedForwardGradientAnalyzer:
 
-    def __init__(self, model, weightsDir):
+    def __init__(self, weightsDir):
 
-        self.model = model
+        self.model = None 
         self.weightsDir = weightsDir
-        self.model.load_weights(os.path.join(self.weightsDir, 'feed_forward_final_weights'))
+        self.timeSteps = None 
         self.loss_fn = tf.keras.losses.CategoricalCrossentropy()
         self.losses = []
         self.instance = None
@@ -182,46 +183,44 @@ class FeedForwardGradientAnalyzer:
         label = self.label
         self.losses = []
 
-        # this is our input array, 'x,y,theta' x timesteps
-        x = np.zeros((1,3,1000))
-
-        timeStepsInPath = self.instance.shape[1]
-
-        # pad short sequences
-        if timeStepsInPath < 1000:
-            x[0, 0, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 0]  
-            x[0, 1, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 1]  
-            x[0, 2, :timeStepsInPath] = self.instance[0, :timeStepsInPath, 2]  
-        # truncate long sequences
-        else:
-            x[0, 0, :] = self.instance[0, :, 0]  
-            x[0, 1, :] = self.instance[0, :, 1]  
-            x[0, 2, :] = self.instance[0, :, 2]  
+        x = self.instance
 
         # array to tensor
-        x = tf.constant(x, shape= (1,3,1000))
+        x = tf.constant(x)
 
         with tf.GradientTape() as tape:
 
             tape.watch(x)
             logits = self.model(x)
-            label = labe.reshape(1,5)
+            label = label.reshape(1,5)
             lossValue = self.loss_fn(label, logits)
 
             self.losses.append(lossValue)
+            print(logits)
 
             # gradient for each output logit w.r.t. inputs x,y,theta
-            jacobian = tape.jacobian(logits, x)
+            #jacobian = tape.jacobian(logits, x)
 
-        self.grads = self._normalize_grads(grads)
+        #self.grads = self._normalize_grads(grads)
+        self.grads = None
         self.predictions = np.array(predictions)
 
     def analyze(self, instance, label):
 
-        self.instance = instance
-        self.label = label
+        self.timeSteps = instance.shape[1]
+        for i in range(1, self.timeSteps):
 
-        self._calculate_gradients_and_predictions()
+            weightsPath = os.path.join(self.weightsDir, 'feed_forward_final_weights_{}_time_steps'.format(i))
+            print(weightsPath, flush=True)
+
+            self.model = FeedForward((i,3))
+            self.model.load_weights(weightsPath)
+
+            self.instance = instance[:, :i, :]
+            print(self.instance.shape, flush=True)
+            self.label = label
+
+            self._calculate_gradients_and_predictions()
 
         return self.grads, self.predictions
 

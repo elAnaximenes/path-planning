@@ -50,11 +50,6 @@ def run_optimal_RRT(animate=False, sceneName='test_scene', target=None):
     # run RRT algorithm and get final path from car start to target
     sample = optimalRRTSimulator.simulate()
 
-    x = optimalRRTSimulator.costOverTime.keys()
-    y = optimalRRTSimulator.costOverTime.values()
-    
-    plt.scatter(x, y)
-
     return sample#, x, y
 
 if __name__ == '__main__':

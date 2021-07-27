@@ -44,23 +44,23 @@ def plot_preds(ax, preds):
 
         for t in range(preds.shape[0]):
 
-            conf.append(preds[t, targetIdx])
+            conf.insert(0, preds[t, targetIdx])
         
-        ax.plot(range(0, preds.shape[0]), conf, linestyle='--', color=targetColors[targetIdx])
+        ax.plot(range(preds.shape[0], 0, -1), conf, linestyle='--', color=targetColors[targetIdx])
 
     return ax
 
 def get_path(path):
 
-        x = []
-        y = []
+    x = []
+    y = []
 
-        for t in range(len(path['x'])):
+    for t in range(len(path['x'])):
 
-            x.append(path['x'][t])
-            y.append(path['y'][t])
+        x.append(path['x'][t])
+        y.append(path['y'][t])
 
-        return x, y
+    return x, y
 
 def plot_path(ax, path):
 
@@ -73,6 +73,7 @@ def plot_paths_and_preds(paths, preds, scene):
 
     fig = plt.figure()
     gs = gridspec.GridSpec(2,2, width_ratios=(1,1), height_ratios=(4,1))
+
     optimal_scene_ax = plt.subplot(gs[0,0])
     optimal_pred_ax = plt.subplot(gs[1,0])
     adversarial_scene_ax = plt.subplot(gs[0,1])
@@ -88,6 +89,12 @@ def plot_paths_and_preds(paths, preds, scene):
     adversarial_scene_ax = plot_path(adversarial_scene_ax, adversarialPath['path'])
 
     optimalPreds, adversarialPreds = preds
+
+    time = max(optimalPreds.shape[0], adversarialPreds.shape[0])
+    optimal_pred_ax.set_xlim(time, 0)
+    optimal_pred_ax.grid(True)
+    adversarial_pred_ax.set_xlim(time, 0)
+    adversarial_pred_ax.grid(True)
 
     optimal_pred_ax = plot_preds(optimal_pred_ax, optimalPreds)
     adversarial_pred_ax = plot_preds(adversarial_pred_ax, adversarialPreds)
