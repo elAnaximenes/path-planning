@@ -110,12 +110,13 @@ class LSTMTrainer():
         else:
             print('training from scratch', flush=True)
 
-        self.batchSize = batchSize
-
         x_train, y_train = trainData
         x_val, y_val = valData
+
+        self.batchSize = (x_train.shape[0] + x_val.shape[0]) // 100
         
         print('Shape of training dataset:', x_train.shape)
+        print('Batch size:', self.batchSize)
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         trainDataset = trainDataset.batch(self.batchSize)

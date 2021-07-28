@@ -113,10 +113,10 @@ def summary(history, modelSelection, numBatches, startBatch, algo):
     with open(historyFileName, 'w') as jsonFile:
         json.dump(trainingHistory, jsonFile)
 
-def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt', sceneName='tower_defense', truncation=1, stepSize=100):
+def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=False, startBatch=0, dataDirectory='./data/rrt-batches-train/', algo='rrt', sceneName='tower_defense', truncation=1, stepSize=100, predictorPlanner = 'planner'):
 
     # load training and validation data
-    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_train'.format(sceneName, algo)) 
+    trainingDataDir = os.path.join(dataDirectory, '{}_dataset/{}_batches_train_{}'.format(sceneName, algo, predictorPlanner)) 
     dataLoader = get_data_loader(modelSelection, numBatches, trainingDataDir, split, truncation, stepSize)
     (x_train, y_train), (x_val, y_val) = dataLoader.load(startBatch) 
     print('number of paths in training set:', len(x_train))
@@ -124,7 +124,7 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=Fal
     # build classifier
     inputShape = x_train[0].shape[1]
     model = build_model(modelSelection, inputShape)
-    weightsDir = os.path.join(dataDirectory, '{}_dataset/{}_{}_weights'.format(sceneName, algo, modelSelection.lower()))
+    weightsDir = os.path.join(dataDirectory, '{}_dataset/{}_{}_weights_{}'.format(sceneName, algo, modelSelection.lower(), predictorPlanner))
     trainer = get_trainer(modelSelection, model, weightsDir)
     print('successfully loaded data and built model')
 
@@ -134,7 +134,7 @@ def train_model(modelSelection, epochs, batchSize, split, numBatches, resume=Fal
     print('successfully trained model')
 
     # summarize training results
-    #summary(history, modelSelection, numBatches, startBatch, algo)
+    # summary(history, modelSelection, numBatches, startBatch, algo)
 
 if __name__ == '__main__':
 
@@ -153,6 +153,7 @@ if __name__ == '__main__':
     parser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
     parser.add_argument('--truncation', type=int, help='how much of the path to make visible to classifier', default=1)
     parser.add_argument('--step_size', type=int, help='Sample path every ? timesteps', default=100)
+    parser.add_argument('--predictor', action='store_true', help='Is this LSTM is for planning or predicting', default=False)
 
     args = parser.parse_args()
     modelSelection=args.model
@@ -166,6 +167,10 @@ if __name__ == '__main__':
     sceneName = args.scene
     truncation = args.truncation
     stepSize = args.step_size
+    predictor = args.predictor
+    predictorPlanner = 'planner'
+    if predictor:
+        predictorPlanner = 'predictor'
 
     if split > 1.0 or split < 0.0:
         print('split must be a real number between 0.0 and 1.0')
@@ -176,4 +181,4 @@ if __name__ == '__main__':
     algorithm = args.algo.lower()
 
     # train
-    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm, sceneName, truncation, stepSize)
+    train_model(modelSelection, epochs, batchSize, split, numBatches, resume, startBatch, dataDirectory, algorithm, sceneName, truncation, stepSize, predictorPlanner)
