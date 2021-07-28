@@ -155,7 +155,7 @@ def get_analyzer(sceneName, modelSelection):
     if modelSelection == 'lstm':
         weightsDir = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\'.format(sceneName)
         model = LSTM()
-        LSTMGradientAnalyzer(model, weightsDir)
+        analyzer = LSTMGradientAnalyzer(model, weightsDir)
     elif modelSelection == 'feedforward':
         weightsDir = '..\\data\\{}_dataset\\optimal_rrt_feedforward_weights\\'.format(sceneName)
         analyzer = FeedForwardGradientAnalyzer(weightsDir)

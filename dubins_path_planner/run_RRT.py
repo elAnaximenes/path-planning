@@ -1,6 +1,8 @@
 import sys
 import math
 import numpy as np
+import math
+import random
 from car_models.dubins_model import DubinsCar
 from planning_algorithms.RRT import DubinsCarRRT
 from scene import Scene

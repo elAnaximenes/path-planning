@@ -72,6 +72,7 @@ if __name__ == '__main__':
     costs = np.zeros(400)
     counts = np.zeros(400)
 
+    """
     for i in range(5):
         #seed = random.randint(1, 10000)
         seed = i
@@ -83,7 +84,6 @@ if __name__ == '__main__':
         with open('../data/paths/optimal_rrt_path_{}.json'.format(i), 'w') as f:
             json.dump(sample, f)
 
-    """
         for time, cost in zip(x, y):
 
             costs[time] += cost
@@ -91,7 +91,14 @@ if __name__ == '__main__':
 
     plt.plot(range(400), costs/counts, 'b--')
     """
+    seed = 4
+    print('seed:', seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
-    plt.show()
+
+    sample = run_optimal_RRT(animate, sceneName, target)
+
+
 
     
