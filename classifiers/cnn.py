@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import os
 from tensorflow.keras import layers 
 
 class CNN(tf.keras.Model):
@@ -8,22 +9,27 @@ class CNN(tf.keras.Model):
         
         super(CNN, self).__init__()
         
-        self.inputLayer = layers.Inputlayer(inputShape)
-        self.conv1 = layers.Conv1D(64, 7, padding='causal', activation='relu')
-        self.maxPool = layers.MaxPooling1D(5)
-        self.conv2 = layers.Conv1D(64, 7, padding='causal', activation='relu')
-        self.globalMaxPool = layers.GlobalMaxPooling1D()
-        self.h1 = layers.Dense(64, activation='relu')
+        self.inputLayer = layers.InputLayer(inputShape)
+        self.conv1 = layers.Conv1D(8, 24, padding='causal', activation='relu')
+        self.maxPool = layers.MaxPooling1D(2)
+        #self.conv2 = layers.Conv1D(64, 7, padding='causal', activation='relu')
+        #self.globalMaxPool = layers.GlobalMaxPooling1D()
+        self.h1 = layers.Dense(32, activation='relu')
         self.outputLayer = layers.Dense(5, activation='softmax')
+        print('built model', flush=True)
 		
     def call(self, x):
         
+        print(x.shape)
+        print('calling model', flush=True)
         x = self.inputLayer(x)
         x = self.conv1(x)
         x = self.maxPool(x)
-        x = self.conv2(x)
-        x = self.globalMaxPool(x)
+        print('hello', flush=True)
+        #x = self.conv2(x)
+        #x = self.globalMaxPool(x)
         x = self.h1(x)
+
 
         return self.outputLayer(x)
 		
@@ -79,11 +85,12 @@ class CNNTrainer():
             print('loading weights from checkpoint')
             print(self.weightsDir, flush=True)
         else:
-            print('\nTraining from scratch\n'
+            print('\nTraining from scratch\n', flush=True)
 
         x_train, y_train = trainData
         x_val, y_val = valData
-        print(x_train.shape)
+        print('training set shape:', x_train.shape)
+        print('Batch size:', batchSize, flush=True)
 
         trainDataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
         trainDataset = trainDataset.batch(batchSize)
@@ -106,6 +113,7 @@ class CNNTrainer():
 
             self._save_metrics(lossValue, valDataset)
 
+        print(self.weightsDir)
         self.model.save_weights(os.path.join(self.weightsDir, 'cnn_final_weights'))
         self.model.save(os.path.join(self.weightsDir, 'cnn_model'))
             

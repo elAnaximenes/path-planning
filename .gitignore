@@ -14,5 +14,6 @@ logs/
 data/paths/*
 data/saved_paths/*
 data/saved/
+data/*dataset/
 classifiers/training_history/*.json
 *.out

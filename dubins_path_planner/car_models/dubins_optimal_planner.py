@@ -51,6 +51,7 @@ class DubinsOptimalPlanner:
                 alpha = -2.0 * math.atan2((deltaX + math.pow(((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY)), (0.5))), (deltaY - (2 * r)))
             distance = math.pow((deltaX * deltaX) + (deltaY * deltaY) - (2 * r * deltaY), 0.5)
 
+        """
         # drive straight first
         elif word == 'SR' or word == 'SL':
             if self._target_in_front_of_car():
@@ -59,6 +60,7 @@ class DubinsOptimalPlanner:
                 alpha = math.pi - math.acos((deltaY - r) / r)
 
             distance = deltaX + (r * math.sqrt(1.0 - math.pow((deltaY - r),2.0)/(r * r)))
+        """
         
         self.alpha = alpha
         self.distance = distance

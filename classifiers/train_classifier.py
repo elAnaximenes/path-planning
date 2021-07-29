@@ -16,9 +16,10 @@ sys.path.append(parentdir)
 
 from feed_forward import FeedForward, FeedForwardTrainer
 from lstm import LSTM, LSTMTrainer
-#from cnn import CNN, CNNTrainer
+from cnn import CNN, CNNTrainer
 from data.loaders.feed_forward_train_loader import FeedForwardTrainDataLoader
 from data.loaders.lstm_train_loader import LstmTrainDataLoader
+from data.loaders.cnn_train_loader import CNNTrainDataLoader
 from training_history.plot_training_history import plot_training_history
 
 def build_model(modelSelection, inputShape):
@@ -33,9 +34,9 @@ def build_model(modelSelection, inputShape):
 
         model = LSTM()
 
-    #elif modelSelection.lower() == 'cnn':
+    elif modelSelection.lower() == 'cnn':
 
-        #model = CNN()
+        model = CNN()
         
     return model
 
@@ -49,9 +50,9 @@ def get_trainer(modelSelection, model, weightsDir):
 
         trainer = LSTMTrainer(model, weightsDir)
 
-    #elif modelSelection.lower() == 'cnn':
+    elif modelSelection.lower() == 'cnn':
         
-        #trainer = CNNTrainer(model, weightsDir)
+        trainer = CNNTrainer(model, weightsDir)
 
     return trainer
 
@@ -61,9 +62,13 @@ def get_data_loader(modelSelection, numBatches, dataDirectory, split, truncation
 
         dataLoader = FeedForwardTrainDataLoader(split, numBatches, dataDirectory = dataDirectory, truncatedPathLength=truncation, stepSize=stepSize)
 
-    elif modelSelection.lower() == 'lstm' or modelSelection.lower() == 'cnn':
+    elif modelSelection.lower() == 'lstm':
 
         dataLoader = LstmTrainDataLoader(split, numBatches, dataDirectory = dataDirectory)
+
+    elif modelSelection.lower() == 'cnn':
+
+        dataLoader = CNNTrainDataLoader(split, numBatches, dataDirectory = dataDirectory, truncatedPathLength=truncation, stepSize=stepSize)
 
     return dataLoader
 

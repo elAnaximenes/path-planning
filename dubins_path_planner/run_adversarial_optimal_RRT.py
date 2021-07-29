@@ -17,7 +17,7 @@ from classifiers.lstm import LSTM
 def get_model(sceneName):
 
     model = LSTM()
-    weightsFile = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights\\lstm_final_weights'.format(sceneName)
+    weightsFile = '..\\data\\{}_dataset\\optimal_rrt_lstm_weights_planner\\lstm_final_weights'.format(sceneName)
     model.load_weights(weightsFile)
 
     return model
