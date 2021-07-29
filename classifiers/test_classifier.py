@@ -78,7 +78,7 @@ def get_tester(modelSelection, dataset, model, weightsDir):
 
     return tester
 
-def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName='tower_defense'):
+def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName='tower_defense', adv=None):
 
     loader = None
 
@@ -91,7 +91,11 @@ def test_model(modelSelection, dataDirectory, numBatches, algo='RRT', sceneName=
     model = build_model(modelSelection, inputShape)
     print('model loaded')
 
-    weightsDir = os.path.join(dataDirectory, '{}_dataset/optimal_rrt_{}_weights'.format(sceneName, modelSelection.lower()))
+    if adv is None:
+        weightsDir = os.path.join(dataDirectory, '{}_dataset/optimal_rrt_{}_weights'.format(sceneName, modelSelection.lower()))
+    else: 
+        weightsDir = os.path.join(dataDirectory, '{}_dataset/optimal_rrt_{}_weights_{}'.format(sceneName, modelSelection.lower(), adv))
+
     print(weightsDir)
     tester = get_tester(modelSelection, dataset, model, weightsDir) 
     print('tester loaded')
@@ -108,6 +112,7 @@ if __name__ == '__main__':
     argparser.add_argument('--batches', type=int, default=1)
     argparser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
     argparser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
+    argparser.add_argument('--adv', type=str, help='If testing adversary, specify "planner"(adversary) or "predictor".', default = None) 
 
     args = argparser.parse_args()
 
@@ -115,9 +120,10 @@ if __name__ == '__main__':
     dataDirectory = args.directory
     algorithm = args.algo.lower()
     sceneName = args.scene
+    adv = args.adv
 
     if dataDirectory == 'tower':
         dataDirectory = 'D:\\path_planning_data'
     numBatches = args.batches
 
-    test_model(modelSelection, dataDirectory, numBatches, algorithm, sceneName)
+    test_model(modelSelection, dataDirectory, numBatches, algorithm, sceneName, adv)

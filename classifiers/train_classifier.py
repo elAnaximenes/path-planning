@@ -153,7 +153,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume',  dest='resume', action = 'store_true')
     parser.set_defaults(resume=False)
     parser.add_argument('--start_batch', type = int, help='What batch number to start at', default = 0)
-    parser.add_argument('--directory', type = str, default = '.\\data\\')
+    parser.add_argument('--directory', type = str, default = '..\\data\\')
     parser.add_argument('--algo', type=str, help='Which path planning algorithm dataset to train over.', default = "RRT")
     parser.add_argument('--scene', type=str, help='Which scene to train over.', default = "tower_defense")
     parser.add_argument('--truncation', type=int, help='how much of the path to make visible to classifier', default=1)
