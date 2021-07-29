@@ -5,6 +5,8 @@ import csv
 import json
 import numpy as np
 import random
+import cProfile
+import re
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -70,6 +72,7 @@ for batchNum in range(args.start_index, args.start_index + args.batches):
                 print('running AdvRRT*')
                 try:
                     sample = run_adversarial_optimal_RRT(animate=False, sceneName=args.scene)
+                    exit(1)
                 except Exception as e:
                     print('an exception occurred')
                     print(e)

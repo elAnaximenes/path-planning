@@ -7,6 +7,7 @@ import json
 from car_models.dubins_model import DubinsCar
 from planning_algorithms.adversarial_optimal_RRT import DubinsCarAdversarialOptimalRRT
 from scene import Scene
+import cProfile
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -92,7 +93,8 @@ if __name__ == '__main__':
         random.seed(seed)
         np.random.seed(seed)
 
-        sample = run_adversarial_optimal_RRT(animate, sceneName)
+        cProfile.run('run_adversarial_optimal_RRT(animate, sceneName)')
+        exit(1)
 
         if sample is None:
             continue
