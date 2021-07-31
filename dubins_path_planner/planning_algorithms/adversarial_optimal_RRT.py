@@ -97,14 +97,15 @@ class NodeAdvRRT:
         self.parent = None
         self.childList = ChildList()
         self.sibling = None
-        self.pathLength = 0.0
+
         self.path = {'x':[], 'y':[], 'theta':[]}
         if path is not None:
             self.path = path
             self.pathLength = pathLength
         self.plottedPath = None
         self.name = name
-        self.cost = 0.0
+        self.pathLength = 0.0
+        self.entropy = 0.0
         self.lstmStates = None
 
     def _set_position(self, position):
@@ -281,6 +282,7 @@ class DubinsCarAdversarialOptimalRRT:
         newNode.name = 'Temp'
         newNode.parent = startNode
         newNode.path = shortestPath
+        newNode.entropy = self._calculate_entropy(newNode)
 
         return newNode
 
@@ -301,7 +303,12 @@ class DubinsCarAdversarialOptimalRRT:
             
         return nodeToAdd
 
-    def _calculate_entropy(self, path):
+    def _calculate_entropy(self, node):
+
+        branch = self._get_nodes_leaf_to_root(node)
+
+        path = {'x':[], 'y':[], 'theta'[]}
+        path = node.path
 
         # calculate entropy once per second
         sampleRate = 100
@@ -311,7 +318,8 @@ class DubinsCarAdversarialOptimalRRT:
         instance[:, :, 2] -= math.pi
         instance[:, :, 2] /= math.pi
 
-        cumulativeEntropy = 0.0
+        cumulativeEntropy = node.parent.entropy
+        self.model.initialize_states(node.parent.lstmStates)
 
         for i in range(1, instance.shape[1]):
 
@@ -336,7 +344,7 @@ class DubinsCarAdversarialOptimalRRT:
         # reset model after predicting entire path
         self.model.reset_states()
 
-        return cumulativeEntropy 
+        return entropy 
 
     def _get_cost(self, node):
         
@@ -345,6 +353,7 @@ class DubinsCarAdversarialOptimalRRT:
 
         # sum costs from node to root
         distanceCost = node.pathLength
+        entropyCost = node.entropy
 
         fullPath = node.path.copy()
 
@@ -352,17 +361,9 @@ class DubinsCarAdversarialOptimalRRT:
 
             node = node.parent
             distanceCost += node.pathLength
-
-            fullPath['x'] = node.path['x'] + fullPath['x'] 
-            fullPath['y'] = node.path['y'] + fullPath['y'] 
-            fullPath['theta'] = node.path['theta'] + fullPath['theta'] 
-
-        entropyCost = 0.0
-        entropyCost = self._calculate_entropy(fullPath) 
+            entropyCost += node.entropy
 
         alpha = -.99
-        #print('distanceCost:', distanceCost)
-        #print('entropyCost:', entropyCost)
 
         cost = distanceCost + (alpha * entropyCost) 
         #print('totalCost:', cost, flush=True)
@@ -601,6 +602,7 @@ class DubinsCarAdversarialOptimalRRT:
             
             # add node to tree/add goal node to goal node list
             newNode = self._add_node(minCostNode, minCostPathLength, minCostPath, goal)
+
 
             if goal:
                 return newNode, nearestNodes

@@ -470,7 +470,8 @@ class DubinsCarOptimalRRT:
 
         if self.animate:
             self._display_final_legend()
-            plt.show()
+            plt.savefig('./saved-images/optimal-{}.png'.format(self.imgcount))
+            #plt.show()
 
         sample = {}
         sample['target'] = {'coordinates': target, 'index': targetIdx }
@@ -633,9 +634,10 @@ class DubinsCarOptimalRRT:
                 node.plottedPath.remove()
                 node.plottedPath = plottedPath
 
-        #plt.savefig('./saved-images/fig-{}.png'.format(self.imgcount))
-        plt.pause(0.00001)
+        
+
         self.imgcount += 1
+        #plt.pause(0.00001)
         self.text.remove()
 
         if event == 'invalid path' or event == 'candidate':

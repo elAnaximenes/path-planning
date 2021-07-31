@@ -280,9 +280,6 @@ class DubinsCarRRT:
 
         plt.pause(0.00001)
 
-        #plt.savefig('./saved-images/rrt-{}.png'.format(self.imgcount))
-        self.imgcount += 1
-
         if event != 'reached target':
             self.text.remove()
 
@@ -354,6 +351,7 @@ class DubinsCarRRT:
                             markeredgecolor='blue', markersize=15)
                             ]
             leg = self.ax.legend(handles=legend_elements, loc='best')
+            plt.savefig('./saved-images/rrt-{}.png'.format(self.imgcount))
             plt.show()
 
 

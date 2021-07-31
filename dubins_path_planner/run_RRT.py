@@ -16,7 +16,7 @@ def check_valid_start(scene, startPosition):
 
     return True
 
-def run_RRT(animate=False, sceneName='test_scene'):
+def run_RRT(animate=False, sceneName='test_scene', it = 0):
 
     # load scene information
     scene = Scene(sceneName)
@@ -45,6 +45,7 @@ def run_RRT(animate=False, sceneName='test_scene'):
 
     # create simulator
     rrtSimulator = DubinsCarRRT(dubinsCar, scene, animate=animate)
+    rrtSimulator.imgcount = it
 
     # run RRT algorithm and get final path from car start to target
     sample = rrtSimulator.simulate()
@@ -66,4 +67,6 @@ if __name__ == '__main__':
             if arg == 'animate':
                 animate = True
 
-    sample = run_RRT(animate, sceneName)
+    for i in range(10):
+
+        sample = run_RRT(animate, sceneName, i)
